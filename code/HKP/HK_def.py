@@ -10,9 +10,7 @@ Modified on Dec 15, 2022
 
 # -----------------------------------------------------------
 # definition: constant
-SUB_CNT = 9 #whole subsystems
-
-COM_CNT = 6 #hardware without motors
+COM_CNT = 6 
 PDU_IDX = 8
 TM_CNT = 8
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])

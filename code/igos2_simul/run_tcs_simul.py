@@ -1,6 +1,5 @@
 from tcs_simul import run_server
-from SetConfig import LoadConfig, get_ini_files
-
+import Libs.SetConfig as sc
 
 def main():
     import os
@@ -19,10 +18,10 @@ def main():
                                             os.path.join(config_dir,
                                                          "IGRINS_test.ini")])
 
-    ini_files = get_ini_files(env_name="IGRINS_CONFIG",
+    ini_files = sc.get_ini_files(env_name="IGRINS_CONFIG",
                               default_file='')
 
-    cfg = LoadConfig(ini_files)
+    cfg = sc.LoadConfig(ini_files)
 
     host = cfg.get("SC", "tcs-ip")
     port = int(cfg.get("SC", "tcs-port"))

@@ -42,5 +42,5 @@ class LOG():
         file.write(data)
         file.close()
 
-        if level != "INFO":
-            print(data)
+        #if level != "INFO":
+        #    print(data)

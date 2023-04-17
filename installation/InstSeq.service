@@ -1,0 +1,9 @@
+[Unit]
+Description="subsystem Service"
+
+[Service]
+Type=simple
+ExecStart=/home/ics/ics_pack/installation/run_InstSeq.sh
+
+[Install]
+WantedBy=multi-user.target

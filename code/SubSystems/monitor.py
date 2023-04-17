@@ -2,7 +2,7 @@
 """
 Created on Nov 9, 2022
 
-Created on Dec 14, 2022
+Created on Apr 17, 2023
 
 @author: hilee
 """
@@ -14,14 +14,14 @@ import time as ti
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from HKP.HK_def import *
+from SubSystems_def import *
 import Libs.SetConfig as sc
 from Libs.MsgMiddleware import *
 from Libs.logger import *
 
 class monitor(threading.Thread) :
     
-    def __init__(self, comport, simul='0'):  
+    def __init__(self, comport):  
         
         self.iam = ""
         self.comport = comport
@@ -45,13 +45,14 @@ class monitor(threading.Thread) :
         self.ics_id = cfg.get(MAIN, 'id')
         self.ics_pwd = cfg.get(MAIN, 'pwd')
         
-        self.hk_sub_ex = cfg.get(MAIN, 'hk_sub_exchange')     
-        self.hk_sub_q = cfg.get(MAIN, 'hk_sub_routing_key')
+        self.hk_sub_ex = cfg.get(MAIN, 'hk_exchange')     
+        self.hk_sub_q = cfg.get(MAIN, 'hk_routing_key')
         self.sub_hk_q = self.iam+'.q'
         
         self.Period = int(cfg.get(HK,'hk-monitor-intv'))
                 
-        if bool(int(simul)):
+        simul = bool(cfg.get(MAIN, "simulation"))
+        if simul:
             self.ip = "localhost"
         else:
             self.ip = cfg.get(HK, "device-server-ip")
@@ -59,7 +60,8 @@ class monitor(threading.Thread) :
         self.comSocket = None
         self.comStatus = False
         
-        self.producer = None      
+        self.producer = None    
+        self.consumer = None 
                 
         
     
@@ -72,7 +74,8 @@ class monitor(threading.Thread) :
             
         self.close_component()
         
-        self.producer.__del__()      
+        self.producer.channel.close()
+        self.consumer.channel.close() 
 
         self.log.send(self.iam, DEBUG, "Closed!")              
                     
@@ -96,7 +99,6 @@ class monitor(threading.Thread) :
             msg = "disconnected"
             self.log.send(self.iam, ERROR, msg)
             
-            ti.sleep(1)
             self.re_connect_to_component()
 
             
@@ -113,7 +115,6 @@ class monitor(threading.Thread) :
             
         if self.comSocket != None:
             self.close_component()
-        ti.sleep(1)
         self.connect_to_component()        
 
            
@@ -179,7 +180,6 @@ class monitor(threading.Thread) :
         except:
             self.comStatus = False
             self.log.send(self.iam, ERROR, "communication error") 
-            ti.sleep(1)
             self.re_connect_to_component()
 
             return DEFAULT_VALUE
@@ -211,9 +211,10 @@ class monitor(threading.Thread) :
         ti.sleep(self.Period)
         threading.Thread(target=self.start_monitoring).start()
     
+    
     #-------------------------------
-    # sub -> hk    
-    def connect_to_server_sub_ex(self):
+    # monitor publish   
+    def connect_to_server_ex(self):
         # RabbitMQ connect        
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
         self.producer.connect_to_server()
@@ -221,14 +222,14 @@ class monitor(threading.Thread) :
         
         
     #-------------------------------
-    # hk -> sub
+    # consumer from hk
     def connect_to_server_hk_q(self):
         # RabbitMQ connect
-        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      
-        consumer.connect_to_server()
-        consumer.define_consumer(self.hk_sub_q, self.callback_hk)
+        self.consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      
+        self.consumer.connect_to_server()
+        self.consumer.define_consumer(self.hk_sub_q, self.callback_hk)
         
-        th = threading.Thread(target=consumer.start_consumer)
+        th = threading.Thread(target=self.consumer.start_consumer)
         th.start()
         
     
@@ -251,9 +252,9 @@ class monitor(threading.Thread) :
             
 if __name__ == "__main__":
     
-    proc = monitor(sys.argv[1], sys.argv[2])
+    proc = monitor(sys.argv[1])
         
-    proc.connect_to_server_sub_ex()
+    proc.connect_to_server_ex()
     proc.connect_to_server_hk_q()
     
     proc.connect_to_component()

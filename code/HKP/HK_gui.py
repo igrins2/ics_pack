@@ -3,7 +3,7 @@
 """
 Created on Sep 17, 2021
 
-Modified on Dec 29, 2022
+Modified on Apr 17, 2023
 
 @author: hilee
 """
@@ -44,19 +44,7 @@ label_list = ["tmc1-a",
               "tm-6",
               "tm-7",
               "tm-8"]
-class DtvalueFromLabel:
-    def __init__(self, key_to_label, values_dict):
-        self._key_to_label = key_to_label
-        self._label_to_key = dict((v, k) for (k, v) in list(key_to_label.items()))
-        self._values_dict = values_dict
 
-    def __getitem__(self, label):
-        k = self._label_to_key.get(label, None)
-        return self._values_dict.get(k, DEFAULT_VALUE)
-
-    def as_dict(self):
-        return dict((l, float(self._values_dict.get(k, DEFAULT_VALUE)))
-                    for l, k in list(self._label_to_key.items()) if l)
             
 class MainWindow(Ui_Dialog, QMainWindow):
     
@@ -81,13 +69,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.ics_id = self.cfg.get(MAIN, "id")
         self.ics_pwd = self.cfg.get(MAIN, "pwd")
         
-        self.hk_main_ex = self.cfg.get(MAIN, 'gui_main_exchange')     
-        self.hk_main_q = self.cfg.get(MAIN, 'gui_main_routing_key')
+        self.hk_ex = self.cfg.get(MAIN, 'hk_exchange')     
+        self.hk_q = self.cfg.get(MAIN, 'hk_routing_key')
         
-        self.hk_sub_ex = self.cfg.get(MAIN, "hk_sub_exchange")     
-        self.hk_sub_q = self.cfg.get(MAIN, "hk_sub_routing_key")
+        self.EngTools_ex = self.cfg.get(MAIN, "engtools_exchange")     
+        self.EngTools_q = self.cfg.get(MAIN, "engtools_routing_key")
                 
-        self.sub_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu", "lt", "ut", "uploader"]
+        self.sub_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu", "uploader"]
         
         self.power_list = self.cfg.get(HK,'pdu-list').split(',')
         tmp_lst = self.cfg.get(HK,'temp-descriptions').split(',')
@@ -114,22 +102,20 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.iter_color = cycle(["white", "black"]) 
         self.iter_bgcolor = cycle(["red", "white"])
          
-        key_to_label = {}
-        self.temp_normal, self.temp_lower, self.temp_upper = {},{},{}
-        for k in label_list:
+        self.temp_warn_lower, self.temp_normal_lower, self.temp_normal_upper, self.temp_warn_upper = dict() ,dict() ,dict() ,dict() 
+        range_list = label_list[0:4] + [label_list[5], label_list[-1]]
+        for k in range_list:
             hk_list = self.cfg.get(HK, k).split(",")
-            key_to_label[k] = hk_list[0]
-            self.temp_lower[k] = hk_list[1]
-            self.temp_normal[k] = hk_list[2]
-            self.temp_upper[k] = hk_list[3]
+            self.temp_warn_lower[k] = hk_list[0]
+            self.temp_normal_lower[k] = hk_list[1]
+            self.temp_normal_upper[k] = hk_list[3]
+            self.temp_warn_upper[k] = hk_list[4]
             
-        self.dtvalue = dict()
-        self.dtvalue_from_label = DtvalueFromLabel(key_to_label, self.dtvalue)
-        
+        self.dtvalue = dict()        
         self.set_point = ["-999" for _ in range(5)]   #set point
         
         self.dpvalue = DEFAULT_VALUE
-        for key in key_to_label:
+        for key in label_list:
             self.dtvalue[key] = DEFAULT_VALUE
         
         self.heatlabel = dict() #heat value
@@ -137,8 +123,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             if i != 4:
                 self.heatlabel[label_list[i]] = DEFAULT_VALUE
                                 
-        # 0 - ENG_TOOLS, 1 - HK_SUB
-        self.producer = [None, None]
+        self.producer = None
+        self.consumer_sub = [None for _ in range(COM_CNT)]
                 
         self.alarm_status = ALM_OK
         self.alarm_status_back = None
@@ -149,9 +135,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.uploade_status = False
         self.uploader_monitor()
                                
-        self.connect_to_server_main_ex()
+        self.connect_to_server_ex()
         
-        self.connect_to_server_hk_ex()
+        self.connect_to_server_EngTools_q()
         self.connect_to_server_sub_q()
                      
         self.monit_timer = QTimer(self)
@@ -182,10 +168,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "%s %s" % (EXIT, HK)
         self.producer[ENG_TOOLS].send_message(self.hk_main_q, msg)
         
-        for i in range(2):
-            if self.producer[i] != None:
-                self.producer[i].__del__()
-        self.producer[HK_SUB] = None
+        self.producer.channel.close()
+        for i in range(COM_CNT):
+            self.consumer_sub[i].channel.close()
 
         self.log.send(self.iam, DEBUG, "Closed!") 
                 
@@ -306,9 +291,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # sub -> hk
     def connect_to_server_sub_q(self):
         # RabbitMQ connect
-        sub_hk_ex = [self.sub_list[i]+'.ex' for i in range(SUB_CNT)]
-        consumer = [None for _ in range(SUB_CNT)]
-        for idx in range(SUB_CNT):
+        sub_hk_ex = [self.sub_list[i]+'.ex' for i in range(COM_CNT)]
+        consumer = [None for _ in range(COM_CNT)]
+        for idx in range(COM_CNT):
             consumer[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, sub_hk_ex[idx])      
             consumer[idx].connect_to_server()
             
@@ -320,7 +305,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         consumer[PDU].define_consumer(self.sub_list[PDU]+'.q', self.callback_pdu)
         consumer[UPLOADER].define_consumer(self.sub_list[UPLOADER]+'.q', self.callback_uploader)      
         
-        for idx in range(SUB_CNT):
+        for idx in range(COM_CNT):
             th = threading.Thread(target=consumer[idx].start_consumer)
             th.daemon = True
             th.start()
@@ -629,20 +614,20 @@ class MainWindow(Ui_Dialog, QMainWindow):
             file=open(f_p_name,'w')
 
         hk_entries = [self.dpvalue,
-                      self.dtvalue_from_label["bench"],     self.heatlabel["tmc1-a"],
-                      self.dtvalue_from_label["grating"],   self.heatlabel["tmc1-b"],
-                      self.dtvalue_from_label["detS"],      self.heatlabel["tmc2-a"],
-                      self.dtvalue_from_label["detK"],      self.heatlabel["tmc2-b"],
-                      self.dtvalue_from_label["camH"],    
-                      self.dtvalue_from_label["detH"],      self.heatlabel["tmc3-b"],
-                      self.dtvalue_from_label["benchcenter"],    
-                      self.dtvalue_from_label["coldhead01"],
-                      self.dtvalue_from_label["coldhead02"],    
-                      self.dtvalue_from_label["coldstop"],    
-                      self.dtvalue_from_label["charcoalBox"],
-                      self.dtvalue_from_label["camK"],    
-                      self.dtvalue_from_label["shieldtop"],  
-                      self.dtvalue_from_label["air"]]  
+                      self.dtvalue["tmc1-a"],     self.heatlabel["tmc1-a"],
+                      self.dtvalue["grating"],   self.heatlabel["tmc1-b"],
+                      self.dtvalue["detS"],      self.heatlabel["tmc2-a"],
+                      self.dtvalue["detK"],      self.heatlabel["tmc2-b"],
+                      self.dtvalue["camH"],    
+                      self.dtvalue["detH"],      self.heatlabel["tmc3-b"],
+                      self.dtvalue["benchcenter"],    
+                      self.dtvalue["coldhead01"],
+                      self.dtvalue["coldhead02"],    
+                      self.dtvalue["coldstop"],    
+                      self.dtvalue["charcoalBox"],
+                      self.dtvalue["camK"],    
+                      self.dtvalue["shieldtop"],  
+                      self.dtvalue["air"]]  
 
         #alert_status = "On(T>%d)" % self.alert_temperature
         if self.chk_alert.isChecked():    

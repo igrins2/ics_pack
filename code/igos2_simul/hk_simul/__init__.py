@@ -213,31 +213,31 @@ HK["pdu"] = dict(com_resp=com_resp,
                  default_resp=pdu_simul.pdu_handle)
 
 # TMC1
-com_resp = [('SETP? 1', '+125.000\r\n'),
-            ('SETP? 2', '+66.4000\r\n'),
-            ('KRDG? A', '+120.798\r\n'),
-            ('KRDG? B', '+130.798\r\n'),
-            ('HTR? 1', '+000.0\r\n'),
-            ('HTR? 2', '+000.0\r\n')]
+com_resp = [('SETP? 1', '+120.000\r\n'),
+            ('SETP? 2', '+130.000\r\n'),
+            ('KRDG? A', '+120.53\r\n'),
+            ('KRDG? B', '+130.79\r\n'),
+            ('HTR? 1', '+05.0\r\n'),
+            ('HTR? 2', '+15.0\r\n')]
 HK["tmc1"] = dict(com_resp=com_resp, default_resp=None)
 
 
 # TMC2
-com_resp = [('SETP? 1', '+124.000\r\n'),
-            ('SETP? 2', '+65.4000\r\n'),
-            ('KRDG? A', '+60.0\r\n'),
-            ('KRDG? B', '+66.798\r\n'),
-            ('HTR? 1', '+000.0\r\n'),
-            ('HTR? 2', '+000.0\r\n')]
+com_resp = [('SETP? 1', '+63.000\r\n'),
+            ('SETP? 2', '+65.000\r\n'),
+            ('KRDG? A', '+62.54\r\n'),
+            ('KRDG? B', '+65.12\r\n'),
+            ('HTR? 1', '+80.0\r\n'),
+            ('HTR? 2', '+00.0\r\n')]
 HK["tmc2"] = dict(com_resp=com_resp, default_resp=None)
 
 # TMC3
-com_resp = [('SETP? 1', '+65.4000\r\n'),
-            ('SETP? 2', '+66.4000\r\n'),
-            ('KRDG? A', '+65.198\r\n'),
-            ('KRDG? B', '+75.798\r\n'),
-            ('HTR? 1', '+000.0\r\n'),
-            ('HTR? 2', '+000.0\r\n')]
+com_resp = [('SETP? 1', '+00.0000\r\n'),
+            ('SETP? 2', '+65.000\r\n'),
+            ('KRDG? A', '+68.198\r\n'),
+            ('KRDG? B', '+67.761\r\n'),
+            ('HTR? 1', '+10.0\r\n'),
+            ('HTR? 2', '+21.0\r\n')]
 HK["tmc3"] = dict(com_resp=com_resp, default_resp=None)
 
 # TM
@@ -247,9 +247,9 @@ com_resp = [('KRDG? 1', '+120.81\r\n'),
             ('KRDG? 4', '+120.81\r\n'),
             ('KRDG? 5', '+35.81\r\n'),
             ('KRDG? 6', '+66.81\r\n'),
-            ('KRDG? 7', '+280.81\r\n'),
+            ('KRDG? 7', '+28.00\r\n'),
             ('KRDG? 8', '+280.81\r\n'),
-            ('KRDG? 0', '+120.81,+62.81,+16.81,+120.81,+35.81,+66.81,+280.81,+280.81\r\n')]
+            ('KRDG? 0', '+120.81,+62.81,+16.81,+120.81,+35.81,+66.81,+28.00,+280.81\r\n')]
 HK["tm"] = dict(com_resp=com_resp, default_resp=None)
 
 # VGM
@@ -387,7 +387,7 @@ if __name__ == "__main__":
     # Port 0 means to select an arbitrary unused port
 
     import sys
-    from SetConfig import LoadConfig, get_ini_files
+    import Libs.SetConfig as sc
 
     config_dir = sys.argv[1]
     
@@ -396,7 +396,7 @@ if __name__ == "__main__":
                      S="s_fits.list")
 
     ini_file = config_dir + "/IGRINS/Config/IGRINS_test.ini"
-    cfg = LoadConfig(ini_file)
+    cfg = sc.LoadConfig(ini_file)
 
     host_port_list, handler_list = get_handlers(cfg, fits_list)
 

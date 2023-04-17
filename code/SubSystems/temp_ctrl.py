@@ -2,7 +2,7 @@
 """
 Created on Nov 8, 2022
 
-Modified on Dec 29, 2022
+Modified on Apr 17, 2023
 
 @author: hilee
 """
@@ -14,14 +14,14 @@ import time as ti
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from HKP.HK_def import *
+from SubSystems_def import *
 import Libs.SetConfig as sc
 from Libs.MsgMiddleware import *
 from Libs.logger import *
 
 class temp_ctrl(threading.Thread):
     
-    def __init__(self, comport, simul='0'):
+    def __init__(self, comport):
                        
         self.comport = comport
         self.iam = "tmc%d" % (int(self.comport)-10000)               
@@ -41,13 +41,14 @@ class temp_ctrl(threading.Thread):
         self.ics_id = cfg.get(MAIN, "id")
         self.ics_pwd = cfg.get(MAIN, "pwd")
         
-        self.hk_sub_ex = cfg.get(MAIN, "hk_sub_exchange")     
-        self.hk_sub_q = cfg.get(MAIN, "hk_sub_routing_key")
+        self.hk_sub_ex = cfg.get(MAIN, "hk_exchange")     
+        self.hk_sub_q = cfg.get(MAIN, "hk_routing_key")
         self.sub_hk_q = self.iam+'.q'
         
         Period = int(cfg.get(HK,'hk-monitor-intv'))
-               
-        if bool(int(simul)):
+        
+        simul = bool(cfg.get(MAIN, "simulation"))
+        if simul:
             self.ip = "localhost"
         else:   
             self.ip = cfg.get(HK, "device-server-ip")
@@ -58,6 +59,9 @@ class temp_ctrl(threading.Thread):
         self.comStatus = False
         
         self.producer = None
+        self.consumer_hk, self.consumer_uploader = None, None
+        
+        self.pause = False
         
         self.wait_time = float(Period/4)
                 
@@ -71,7 +75,9 @@ class temp_ctrl(threading.Thread):
             
         self.close_component()
         
-        self.producer.__del__()   
+        self.producer.channel.close()
+        self.consumer_hk.channel.close()
+        self.consumer_uploader.channel.close()
 
         self.log.send(self.iam, DEBUG, "Closed!")                 
         
@@ -109,7 +115,6 @@ class temp_ctrl(threading.Thread):
             
         if self.comSocket != None:
             self.close_component()
-        ti.sleep(1)
         self.connect_to_component()
 
            
@@ -188,6 +193,9 @@ class temp_ctrl(threading.Thread):
     
     def start_monitoring(self):
         
+        if self.pause:
+            return
+        
         value = [DEFAULT_VALUE, DEFAULT_VALUE]
         heat = [DEFAULT_VALUE, DEFAULT_VALUE]
             
@@ -216,9 +224,9 @@ class temp_ctrl(threading.Thread):
         threading.Thread(target=self.start_monitoring).start()
 
     
-     #-------------------------------
-    # sub -> hk    
-    def connect_to_server_sub_ex(self):
+    #-------------------------------
+    # temp ctrl publish
+    def connect_to_server_ex(self):
         # RabbitMQ connect  
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
         self.producer.connect_to_server()
@@ -226,14 +234,14 @@ class temp_ctrl(threading.Thread):
         
                    
     #-------------------------------
-    # hk -> sub
+    # consumer from hk
     def connect_to_server_hk_q(self):
         # RabbitMQ connect
-        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      
-        consumer.connect_to_server()
-        consumer.define_consumer(self.hk_sub_q, self.callback_hk)
+        self.consumer_hk = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      
+        self.consumer_hk.connect_to_server()
+        self.consumer_hk.define_consumer(self.hk_sub_q, self.callback_hk)
         
-        th = threading.Thread(target=consumer.start_consumer)
+        th = threading.Thread(target=self.consumer_hk.start_consumer)
         th.start()
                 
             
@@ -242,6 +250,8 @@ class temp_ctrl(threading.Thread):
         param = cmd.split()
                             
         if param[0] == HK_REQ_GETSETPOINT:           
+            self.pause = True
+            
             if self.iam != "tmc3":
                 self.setpoint[0] = self.get_setpoint(1)
                 ti.sleep(1)
@@ -252,10 +262,16 @@ class temp_ctrl(threading.Thread):
             else:
                 msg = "%s %s" % (HK_REQ_GETSETPOINT, self.setpoint[1])
             self.producer.send_message(self.sub_hk_q, msg)
+            
+            self.pause = False
+            self.start_monitoring()            
                                     
-        elif param[0] == HK_REQ_MANUAL_CMD:
+        elif param[0] == HK_REQ_MANUAL_CMD:            
             if self.iam != param[1]:
                 return
+            
+            self.pause = True
+            
             cmd = ""
             for idx in range(len(param)-2):
                 cmd += param[idx+2] + " "
@@ -263,14 +279,53 @@ class temp_ctrl(threading.Thread):
             value = self.socket_send(cmd)
             msg = "%s %s" % (param[0], value) 
             self.producer.send_message(self.sub_hk_q, msg)  
+            
+            self.pause = False
+            self.start_monitoring() 
+            
+            
+    #-------------------------------
+    # consumer from uploader
+    def connect_to_server_uploader_q(self):
+        # RabbitMQ connect
+        self.consumer_uploader = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, "uploader.ex")      
+        self.consumer_uploader.connect_to_server()
+        self.consumer_uploader.define_consumer("uploader.q", self.callback_uploader)
+        
+        th = threading.Thread(target=self.consumer_uploader.start_consumer)
+        th.start()
 
+
+    def callback_uploader(self, ch, method, properties, body):
+        cmd = body.decode()
+        param = cmd.split()
+                            
+        if param[0] == HK_REQ_GETSETPOINT:   
+            self.pause = True
+
+            if self.iam != "tmc3":
+                self.setpoint[0] = self.get_setpoint(1)
+                ti.sleep(1)
+            self.setpoint[1] = self.get_setpoint(2)
+            
+            if self.iam != "tmc3":
+                msg = "%s %s %s" % (HK_REQ_GETSETPOINT, self.setpoint[0], self.setpoint[1]) 
+            else:
+                msg = "%s %s" % (HK_REQ_GETSETPOINT, self.setpoint[1])
+            self.producer.send_message(self.sub_hk_q, msg)
+            
+            self.pause = False
+            self.start_monitoring() 
+                                            
 
 if __name__ == "__main__":
         
-    proc = temp_ctrl(sys.argv[1], sys.argv[2])
+    proc = temp_ctrl(sys.argv[1])
     
-    proc.connect_to_server_sub_ex()
+    proc.connect_to_server_ex()
+    
     proc.connect_to_server_hk_q()
+    proc.connect_to_server_uploader_q()
     
     proc.connect_to_component()
     proc.start_monitoring()

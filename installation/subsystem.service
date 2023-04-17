@@ -1,9 +1,9 @@
 [Unit]
-Description="DC-core Service"
+Description="subsystem Service"
 
 [Service]
 Type=simple
-ExecStart=/home/ics/dcs_pack/installation/run_dc_core.sh
+ExecStart=/home/ics/ics_pack/installation/run_subsystem.sh
 
 [Install]
-WantedBy=multi-user.target
+WantedBy=multi-user.target 

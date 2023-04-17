@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on 
+Modified on Apr 17, 2023
 
 @author: hilee
 """
@@ -12,7 +12,7 @@ import threading
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from ObsApp.ObsApp_def import *
+from InstSeq_def import *
 
 import Libs.SetConfig as sc
 from Libs.MsgMiddleware import *
@@ -36,16 +36,14 @@ class Inst_Seq(threading.Thread):
         self.ics_id = self.cfg.get(MAIN, "id")
         self.ics_pwd = self.cfg.get(MAIN, "pwd")
         
-        self.InstSeq_ObsApp_ex = self.cfg.get(MAIN, 'main_gui_exchange')
-        self.InstSeq_ObsApp_q = self.cfg.get(MAIN, 'main_gui_routing_key')
-        self.ObsApp_InstSeq_ex = self.cfg.get(MAIN, 'gui_main_exchange')     
-        self.ObsApp_InstSeq_q = self.cfg.get(MAIN, 'gui_main_routing_key')
-        
-        self.InstSeq_dcs_ex = self.cfg.get(DT, 'dt_dcs_exchange')     
-        self.InstSeq_dcs_q = self.cfg.get(DT, 'dt_dcs_routing_key')
-        
-        # 0 - ObsApp, 1 - DCS
-        self.producer = [None, None]
+        self.InstSeq_ex = self.cfg.get(MAIN, 'instseq_exchange')
+        self.InstSeq_q = self.cfg.get(MAIN, 'instseq_routing_key')
+        self.ObsApp_ex = self.cfg.get(MAIN, 'obsapp_exchange')     
+        self.ObsApp_q = self.cfg.get(MAIN, 'obsapp_routing_key')
+         
+        self.producer = None
+        self.consumer_ObsApp = None
+        self.consumer_dcs = [None for _ in range(DCS_CNT)]
                         
         self.simulation_mode = bool(int(simul))
         
@@ -56,10 +54,9 @@ class Inst_Seq(threading.Thread):
         self.dcs_target = ["SVC", "H_K", "all"]     # for command
         self.dcs_ready = [False for _ in range(DCS_CNT)]
                         
-        self.connect_to_server_InstSeq_ex()
-        self.connect_to_server_ObsApp_q()
+        self.connect_to_server_ex()
         
-        self.connect_to_server_dt_ex()
+        self.connect_to_server_ObsApp_q()
         self.connect_to_server_dcs_q()
                                      
         
@@ -70,30 +67,32 @@ class Inst_Seq(threading.Thread):
         for th in threading.enumerate():
             self.log.send(self.iam, INFO, th.name + " exit.")
             
-        for i in range(2):
-            self.producer[i].__del__()  
+        self.producer.channel.close()
+        self.consumer_ObsApp.channel.close()
+        for i in range(DCS_CNT):
+            self.consumer_dcs[i].channel.close()
 
         self.log.send(self.iam, DEBUG, "Closed!") 
         #exit()
         
     
     #--------------------------------------------------------
-    # ObsApp -> Inst. Sequencer
-    def connect_to_server_InstSeq_ex(self):
-        self.producer[OBS_APP] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.InstSeq_ObsApp_ex)      
-        self.producer[OBS_APP].connect_to_server()
-        self.producer[OBS_APP].define_producer()
+    # Publish Inst. Sequencer
+    def connect_to_server_ex(self):
+        self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.InstSeq_ex)      
+        self.producer.connect_to_server()
+        self.producer.define_producer()
             
         
     
     #--------------------------------------------------------
-    # Inst. Sequencer -> ObsApp
+    # consumer from ObsApp
     def connect_to_server_ObsApp_q(self):
-        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.ObsApp_InstSeq_ex)      
-        consumer.connect_to_server()
-        consumer.define_consumer(self.ObsApp_InstSeq_q, self.callback_ObsApp)       
+        self.consumer_ObsApp = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.ObsApp_ex)      
+        self.consumer_ObsApp.connect_to_server()
+        self.consumer_ObsApp.define_consumer(self.ObsApp_q, self.callback_ObsApp)       
         
-        th = threading.Thread(target=consumer.start_consumer)
+        th = threading.Thread(target=self.consumer_ObsApp.start_consumer)
         th.start()
     
     
@@ -107,32 +106,22 @@ class Inst_Seq(threading.Thread):
         if param[0] == EXIT:
             self.__del__()          
         
-   
+                      
     #--------------------------------------------------------
-    # sub -> hk    
-    def connect_to_server_dt_ex(self):
-        # RabbitMQ connect  
-        self.producer[DCS] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.InstSeq_dcs_ex)      
-        self.producer[DCS].connect_to_server()
-        self.producer[DCS].define_producer()
-        
-                   
-    #--------------------------------------------------------
-    # hk -> sub
+    # consumer from dcs
     def connect_to_server_dcs_q(self):
         # RabbitMQ connect
         dcs_InstSeq_ex = [self.dcs_list[i]+'.ex' for i in range(DCS_CNT)]
-        consumer = [None for _ in range(DCS_CNT)]
         for idx in range(DCS_CNT):
-            consumer[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, dcs_InstSeq_ex[idx])      
-            consumer[idx].connect_to_server()
+            self.consumer_dcs[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, dcs_InstSeq_ex[idx])      
+            self.consumer_dcs[idx].connect_to_server()
             
-        consumer[SVC].define_consumer(self.dcs_list[SVC]+'.q', self.callback_svc)
-        consumer[H].define_consumer(self.dcs_list[H]+'.q', self.callback_h)
-        consumer[K].define_consumer(self.dcs_list[K]+'.q', self.callback_k)
+        self.consumer_dcs[SVC].define_consumer(self.dcs_list[SVC]+'.q', self.callback_svc)
+        self.consumer_dcs[H].define_consumer(self.dcs_list[H]+'.q', self.callback_h)
+        self.consumer_dcs[K].define_consumer(self.dcs_list[K]+'.q', self.callback_k)
         
         for idx in range(DCS_CNT):
-            th = threading.Thread(target=consumer[idx].start_consumer)
+            th = threading.Thread(target=self.consumer_dcs[idx].start_consumer)
             th.start()
                         
                 
@@ -152,7 +141,7 @@ class Inst_Seq(threading.Thread):
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
             msg = "%s %s" % (CMD_COMPLETED, self.dcs_list[SVC])
-            self.producer[OBS_APP].send_message(self.InstSeq_ObsApp_q, msg)
+            self.producer.send_message(self.InstSeq_q, msg)
             
         elif param[0] == CMD_STOPACQUISITION:
             pass
@@ -173,7 +162,7 @@ class Inst_Seq(threading.Thread):
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
             msg = "%s %s" % (CMD_COMPLETED, self.dcs_list[H])
-            self.producer[OBS_APP].send_message(self.InstSeq_ObsApp_q, msg)
+            self.producer.send_message(self.InstSeq_q, msg)
             
         elif param[0] == CMD_STOPACQUISITION:
             pass
@@ -194,7 +183,7 @@ class Inst_Seq(threading.Thread):
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
             msg = "%s %s" % (CMD_COMPLETED, self.dcs_list[K])
-            self.producer[OBS_APP].send_message(self.InstSeq_ObsApp_q, msg)
+            self.producer.send_message(self.InstSeq_q, msg)
             
         elif param[0] == CMD_STOPACQUISITION:
             pass
@@ -206,19 +195,19 @@ class Inst_Seq(threading.Thread):
     # SVC, H_K, ALL
     def initialize2(self, target_idx):
         msg = "%s %s %d" % (CMD_INITIALIZE2_ICS, self.dcs_target[target_idx], self.simulation_mode)
-        self.producer[DCS].send_message(self.InstSeq_dcs_q, msg)
+        self.producer.send_message(self.InstSeq_q, msg)
         
         
     # SVC or H_K, Not ALL!!!!
     def set_exp(self, target_idx):                        
         _fowlerTime = self.exptime[target_idx] - T_frame * self.FS_number[target_idx]
         msg = "%s %s %d %.3f 1 %d 1 %.3f 1" % (CMD_SETFSPARAM_ICS, self.dcs_target[target_idx], self.simulation_mode, self.exptime[target_idx], self.FS_number, _fowlerTime)
-        self.producer[DCS].send_message(self.InstSeq_dcs_q, msg)
+        self.producer.send_message(self.InstSeq_q, msg)
 
         
     def start_acquisition(self, target_idx):     
         msg = "%s %s %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_target[target_idx], self.simulation_mode)
-        self.producer[DCS].send_message(self.InstSeq_dcs_q, msg)
+        self.producer.send_message(self.InstSeq_q, msg)
         
         
         

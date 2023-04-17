@@ -2,7 +2,7 @@
 """
 Created on Nov 9, 2022
 
-Created on Dec 14, 2022
+Created on Apr 17, 2023
 
 @author: hilee
 """
@@ -14,14 +14,14 @@ import time as ti
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from HKP.HK_def import *
+from SubSystems_def import *
 import Libs.SetConfig as sc
 from Libs.MsgMiddleware import *
 from Libs.logger import *
 
 class pdu(threading.Thread) :
     
-    def __init__(self, simul='0'):
+    def __init__(self):
         
         self.iam = "pdu"
         
@@ -41,14 +41,17 @@ class pdu(threading.Thread) :
         self.ics_id = cfg.get(MAIN, 'id')
         self.ics_pwd = cfg.get(MAIN, 'pwd')
         
-        self.hk_sub_ex = cfg.get(MAIN, 'hk_sub_exchange')     
-        self.hk_sub_q = cfg.get(MAIN, 'hk_sub_routing_key')
+        self.hk_sub_ex = cfg.get(MAIN, 'hk_exchange')     
+        self.hk_sub_q = cfg.get(MAIN, 'hk_routing_key')
+        self.dt_sub_ex = cfg.get(MAIN, 'dt_exchange')     
+        self.dt_sub_q = cfg.get(MAIN, 'dt_routing_key')
         self.sub_hk_q = self.iam+'.q'
                 
         self.power_str = cfg.get(HK, "pdu-list").split(',')
         self.pow_flag = [OFF for _ in range(PDU_IDX)]
         
-        if bool(int(simul)):
+        simul = bool(cfg.get(MAIN, "simulation"))
+        if simul:
             self.ip = "localhost"
             self.comport = int(cfg.get(HK, "pdu-port")) + 50000
         else:
@@ -61,6 +64,8 @@ class pdu(threading.Thread) :
         self.comStatus = False
                 
         self.producer = None
+        self.consumer_hk = None
+        self.consumer_dt = None
         
     
     def __del__(self):
@@ -72,7 +77,9 @@ class pdu(threading.Thread) :
             
         self.close_component()
         
-        self.producer.__del__()
+        self.producer.channel.close()
+        self.consumer_hk.channel.close()
+        self.consumer_dt.channel.close()
 
         self.log.send(self.iam, DEBUG, "Closed!")                    
             
@@ -174,7 +181,7 @@ class pdu(threading.Thread) :
                 
             msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
             self.producer.send_message(self.sub_hk_q, msg)  
-            print(pow_flag)
+            #print(pow_flag)
         except:                  
             self.comStatus = False
             self.log.send(self.iam, ERROR, "communication error")
@@ -203,8 +210,8 @@ class pdu(threading.Thread) :
             
     
     #-------------------------------
-    # sub -> hk    
-    def connect_to_server_sub_ex(self):
+    # pdu publish 
+    def connect_to_server_ex(self):
         # RabbitMQ connect        
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
         self.producer.connect_to_server()
@@ -212,17 +219,16 @@ class pdu(threading.Thread) :
            
            
     #-------------------------------
-    # hk -> sub
+    # consumer from hk 
     def connect_to_server_hk_q(self):
         # RabbitMQ connect
-        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      
-        consumer.connect_to_server()
-        consumer.define_consumer(self.hk_sub_q, self.callback_hk)
+        self.consumer_hk = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      
+        self.consumer_hk.connect_to_server()
+        self.consumer_hk.define_consumer(self.hk_sub_q, self.callback_hk)
         
-        th = threading.Thread(target=consumer.start_consumer)
+        th = threading.Thread(target=self.consumer_hk.start_consumer)
         th.start()
-            
-                            
+                          
     
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
@@ -238,14 +244,39 @@ class pdu(threading.Thread) :
             print('CLI >> PDU', param)
             for idx in range(PDU_IDX):
                 self.change_power(idx, param[idx+1])
+                
+                
+    #-------------------------------
+    # consumer from dt
+    def connect_to_server_dt_q(self):
+        # RabbitMQ connect
+        self.consumer_dt = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_sub_ex)      
+        self.consumer_dt.connect_to_server()
+        self.consumer_dt.define_consumer(self.dt_sub_q, self.callback_dt)
+        
+        th = threading.Thread(target=self.consumer_dt.start_consumer)
+        th.start()
+                          
+    
+    def callback_dt(self, ch, method, properties, body):
+        cmd = body.decode()
+        param = cmd.split()
+                                                       
+        if param[0] == HK_REQ_PWR_STS:
+            self.power_status("DN0\r")
+            
+        elif param[0] == HK_REQ_PWR_ONOFF_IDX:
+            self.change_power(int(param[1]), param[2]) 
                         
             
 if __name__ == "__main__":
     
-    proc = pdu(sys.argv[1])
+    proc = pdu()
             
-    proc.connect_to_server_sub_ex()
+    proc.connect_to_server_ex()
+    
     proc.connect_to_server_hk_q()
+    proc.connect_to_server_dt_q()
     
     proc.connect_to_component()
     proc.initPDU()
