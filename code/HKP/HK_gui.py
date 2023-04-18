@@ -75,13 +75,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.EngTools_ex = self.cfg.get(MAIN, "engtools_exchange")     
         self.EngTools_q = self.cfg.get(MAIN, "engtools_routing_key")
                 
-        self.sub_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu", "uploader"]
+        self.sub_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu"]
         
         self.power_list = self.cfg.get(HK,'pdu-list').split(',')
         tmp_lst = self.cfg.get(HK,'temp-descriptions').split(',')
         self.temp_list = [s.strip() for s in tmp_lst]
         
         self.Period = int(self.cfg.get(HK,'hk-monitor-intv'))
+        self.logging_interval = int(self.cfg.get(HK,'upload-intv'))
         
         self.logpath=self.cfg.get(HK,'hk-log-location')
         
@@ -106,10 +107,16 @@ class MainWindow(Ui_Dialog, QMainWindow):
         range_list = label_list[0:4] + [label_list[5], label_list[-1]]
         for k in range_list:
             hk_list = self.cfg.get(HK, k).split(",")
-            self.temp_warn_lower[k] = hk_list[0]
-            self.temp_normal_lower[k] = hk_list[1]
-            self.temp_normal_upper[k] = hk_list[3]
-            self.temp_warn_upper[k] = hk_list[4]
+            if k == "tm-8":
+                self.temp_warn_lower[k] = hk_list[0]
+                self.temp_normal_lower[k] = hk_list[0]
+                self.temp_normal_upper[k] = hk_list[1]
+                self.temp_warn_upper[k] = hk_list[2]
+            else:
+                self.temp_warn_lower[k] = hk_list[0]
+                self.temp_normal_lower[k] = hk_list[1]
+                self.temp_normal_upper[k] = hk_list[3]
+                self.temp_warn_upper[k] = hk_list[4]
             
         self.dtvalue = dict()        
         self.set_point = ["-999" for _ in range(5)]   #set point
@@ -124,6 +131,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.heatlabel[label_list[i]] = DEFAULT_VALUE
                                 
         self.producer = None
+        
+        self.consumer_EngTools = None
         self.consumer_sub = [None for _ in range(COM_CNT)]
                 
         self.alarm_status = ALM_OK
@@ -132,32 +141,28 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.monitoring = False
         
         self.uploade_start = 0
-        self.uploade_status = False
-        self.uploader_monitor()
                                
-        self.connect_to_server_ex()
-        
-        self.connect_to_server_EngTools_q()
+        self.connect_to_server_ex()        
         self.connect_to_server_sub_q()
                      
         self.monit_timer = QTimer(self)
-        self.monit_timer.setInterval(self.Period)
+        self.monit_timer.setInterval(self.Period * 1000)
         self.monit_timer.timeout.connect(self.PeriodicFunc)
         
         self.show_timer = QTimer(self)
-        self.show_timer.setInterval(self.Period/2)
+        self.show_timer.setInterval(self.Period/2 * 1000)
         self.show_timer.timeout.connect(self.sub_data_processing)
         
         self.startup()
         
         
     def closeEvent(self, event: QCloseEvent) -> None:
-
         self.monit_timer.stop()
         self.show_timer.stop()
         
+        self.alert_toggling = False
         self.monitoring = False
-        ti.sleep(2)
+        #ti.sleep(2)
         
         self.log.send(self.iam, DEBUG, "Closing %s : " % sys.argv[0])
         self.log.send(self.iam, DEBUG, "This may take several seconds waiting for threads to close")
@@ -166,8 +171,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.log.send(self.iam, INFO, th.name + " exit.")       
                                 
         msg = "%s %s" % (EXIT, HK)
-        self.producer[ENG_TOOLS].send_message(self.hk_main_q, msg)
-        
+        self.producer.send_message(self.hk_q, msg)
+    
         self.producer.channel.close()
         for i in range(COM_CNT):
             self.consumer_sub[i].channel.close()
@@ -192,14 +197,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for i in range(PDU_IDX):
             self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black", "white")
         
-        self.bt_pwr_onoff1.clicked.connect(lambda: self.power_onoff_index(0))
-        self.bt_pwr_onoff2.clicked.connect(lambda: self.power_onoff_index(1))
-        self.bt_pwr_onoff3.clicked.connect(lambda: self.power_onoff_index(2))
-        self.bt_pwr_onoff4.clicked.connect(lambda: self.power_onoff_index(3))
-        self.bt_pwr_onoff5.clicked.connect(lambda: self.power_onoff_index(4))
-        self.bt_pwr_onoff6.clicked.connect(lambda: self.power_onoff_index(5))
-        self.bt_pwr_onoff7.clicked.connect(lambda: self.power_onoff_index(6))
-        self.bt_pwr_onoff8.clicked.connect(lambda: self.power_onoff_index(7))       
+        self.bt_pwr_onoff1.clicked.connect(lambda: self.power_onoff_index(1))
+        self.bt_pwr_onoff2.clicked.connect(lambda: self.power_onoff_index(2))
+        self.bt_pwr_onoff3.clicked.connect(lambda: self.power_onoff_index(3))
+        self.bt_pwr_onoff4.clicked.connect(lambda: self.power_onoff_index(4))
+        self.bt_pwr_onoff5.clicked.connect(lambda: self.power_onoff_index(5))
+        self.bt_pwr_onoff6.clicked.connect(lambda: self.power_onoff_index(6))
+        self.bt_pwr_onoff7.clicked.connect(lambda: self.power_onoff_index(7))
+        self.bt_pwr_onoff8.clicked.connect(lambda: self.power_onoff_index(8))       
         
         self.chk_manual_test.clicked.connect(self.Periodic)
         self.chk_manual_test.setChecked(False)
@@ -266,47 +271,32 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     
     #-------------------------------
-    # hk -> main
-    def connect_to_server_main_ex(self):
+    # hk publish
+    def connect_to_server_ex(self):
         # RabbitMQ connect  
-        self.producer[ENG_TOOLS] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_main_ex)      
-        self.producer[ENG_TOOLS].connect_to_server()
-        self.producer[ENG_TOOLS].define_producer()
-        
-        msg = "%s %s" % (ALIVE, HK)
-        self.producer[ENG_TOOLS].send_message(self.hk_main_q, msg)
-            
-            
-        
-    #-------------------------------
-    # hk -> sub    
-    def connect_to_server_hk_ex(self):
-        # RabbitMQ connect  
-        self.producer[HK_SUB] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      
-        self.producer[HK_SUB].connect_to_server()
-        self.producer[HK_SUB].define_producer()
-    
+        self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_ex)      
+        self.producer.connect_to_server()
+        self.producer.define_producer()
+         
          
     #-------------------------------
-    # sub -> hk
+    # consumer from sub
     def connect_to_server_sub_q(self):
         # RabbitMQ connect
         sub_hk_ex = [self.sub_list[i]+'.ex' for i in range(COM_CNT)]
-        consumer = [None for _ in range(COM_CNT)]
         for idx in range(COM_CNT):
-            consumer[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, sub_hk_ex[idx])      
-            consumer[idx].connect_to_server()
+            self.consumer_sub[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, sub_hk_ex[idx])      
+            self.consumer_sub[idx].connect_to_server()
             
-        consumer[TMC1].define_consumer(self.sub_list[TMC1]+'.q', self.callback_tmc1)       
-        consumer[TMC2].define_consumer(self.sub_list[TMC2]+'.q', self.callback_tmc2)
-        consumer[TMC3].define_consumer(self.sub_list[TMC3]+'.q', self.callback_tmc3)
-        consumer[TM].define_consumer(self.sub_list[TM]+'.q', self.callback_tm)
-        consumer[VM].define_consumer(self.sub_list[VM]+'.q', self.callback_vm)
-        consumer[PDU].define_consumer(self.sub_list[PDU]+'.q', self.callback_pdu)
-        consumer[UPLOADER].define_consumer(self.sub_list[UPLOADER]+'.q', self.callback_uploader)      
+        self.consumer_sub[TMC1].define_consumer(self.sub_list[TMC1]+'.q', self.callback_tmc1)       
+        self.consumer_sub[TMC2].define_consumer(self.sub_list[TMC2]+'.q', self.callback_tmc2)
+        self.consumer_sub[TMC3].define_consumer(self.sub_list[TMC3]+'.q', self.callback_tmc3)
+        self.consumer_sub[TM].define_consumer(self.sub_list[TM]+'.q', self.callback_tm)
+        self.consumer_sub[VM].define_consumer(self.sub_list[VM]+'.q', self.callback_vm)
+        self.consumer_sub[PDU].define_consumer(self.sub_list[PDU]+'.q', self.callback_pdu)
         
         for idx in range(COM_CNT):
-            th = threading.Thread(target=consumer[idx].start_consumer)
+            th = threading.Thread(target=self.consumer_sub[idx].start_consumer)
             th.daemon = True
             th.start()
                     
@@ -315,7 +305,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # rev <- sub 
     def callback_tmc1(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "tc1 -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -341,7 +331,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
     def callback_tmc2(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "tc2 -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -366,7 +356,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def callback_tmc3(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "tc3 -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -389,7 +379,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     def callback_tm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "tm -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -407,7 +397,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     def callback_vm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "vm -> : %s" % cmd
         if len(cmd) < 80:
             self.log.send(self.iam, INFO, msg)
         param = cmd.split()
@@ -424,7 +414,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
     def callback_pdu(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "pdu -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -435,25 +425,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
             for i in range(PDU_IDX):
                 self.power_status[i] = param[i+1]
             
-            
-    def callback_uploader(self, ch, method, properties, body):
-        cmd = body.decode()
-        msg = "receive: %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-        param = cmd.split()
-        
-        if param[0] == HK_REQ_UPLOAD_STS:
-            self.uploade_status = True     
         
     #-------------------------------
-    # com sts monitoring                        
-    
-    def uploader_monitor(self):
-        clr = "gray"
-        if self.uploade_status:
-            clr = "green"
-        self.QWidgetLabelColor(self.sts_uploading_sts, clr) 
-        
+    # com sts monitoring                            
         
     def tempctrl_monitor(self, con, idx):
         clr = "gray"
@@ -497,6 +471,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
    
     def judge_value(self, input):
+        if input == None:
+            return ""
+        
         if input != DEFAULT_VALUE:
             value = "%.2f" % float(input)
         else:
@@ -512,12 +489,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
             msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx, OFF)
         else:
             msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx, ON)
-        self.producer[HK_SUB].send_message(self.hk_sub_q, msg)         
+        self.producer.send_message(self.hk_q, msg)         
         
 
     def manual_command(self, idx):
         msg = "%s %s %s" % (HK_REQ_MANUAL_CMD, self.sub_list[idx], self.e_sendto.text())
-        self.producer[HK_SUB].send_message(self.hk_sub_q, msg)
+        self.producer.send_message(self.hk_q, msg)
         
         
     def toggle_alert(self):
@@ -537,18 +514,18 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
             
     #-----------------------------
-    # strat process
+    # start process
     
-    def sendTomain_status(self):        
+    def sendToEngTools_status(self):        
         if self.alarm_status_back == self.alarm_status:            
             return
         msg = "%s %s" % (HK_STATUS, self.alarm_status)
-        self.producer[ENG_TOOLS].send_message(self.hk_main_q, msg)
+        self.producer.send_message(self.hk_q, msg)
         self.alarm_status_back = self.alarm_status
         
        
     def startup(self):             
-        self.producer[HK_SUB].send_message(self.hk_sub_q, HK_REQ_PWR_STS)
+        self.producer.send_message(self.hk_q, HK_REQ_PWR_STS)
             
         pwr_list = [ON, ON, OFF, OFF, OFF, OFF, OFF, OFF]
         self.power_onoff(pwr_list)
@@ -571,7 +548,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.manaul_test(False)
             self.monitoring = True
             
-            self.producer[HK_SUB].send_message(self.hk_sub_q, HK_REQ_GETSETPOINT)
+            self.producer.send_message(self.hk_q, HK_REQ_GETSETPOINT)
                              
             self.log.send(self.iam, INFO, "Periodic Monitoring started")
             self.st_time = ti.time()
@@ -586,7 +563,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if not self.monitoring:
             return
         
-        if self.producer[HK_SUB] == None:
+        if self.producer == None:
             return
         
         self.send_alert_if_needed()
@@ -599,7 +576,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for i in range(PDU_IDX):
             pwr_list += args[i] + " "
         msg = "%s %s" % (HK_REQ_PWR_ONOFF, pwr_list)
-        self.producer[HK_SUB].send_message(self.hk_sub_q, msg)
+        self.producer.send_message(self.hk_q, msg)
 
         
     def LoggingFun(self):     
@@ -607,27 +584,29 @@ class MainWindow(Ui_Dialog, QMainWindow):
             return
 
         fname = ti.strftime("%Y%m%d", ti.localtime())+".log"
+        self.log.createFolder(self.logpath)
         f_p_name = self.logpath+fname
+        
         if os.path.isfile(f_p_name):
             file=open(f_p_name,'a+')
         else:
             file=open(f_p_name,'w')
 
         hk_entries = [self.dpvalue,
-                      self.dtvalue["tmc1-a"],     self.heatlabel["tmc1-a"],
-                      self.dtvalue["grating"],   self.heatlabel["tmc1-b"],
-                      self.dtvalue["detS"],      self.heatlabel["tmc2-a"],
-                      self.dtvalue["detK"],      self.heatlabel["tmc2-b"],
-                      self.dtvalue["camH"],    
-                      self.dtvalue["detH"],      self.heatlabel["tmc3-b"],
-                      self.dtvalue["benchcenter"],    
-                      self.dtvalue["coldhead01"],
-                      self.dtvalue["coldhead02"],    
-                      self.dtvalue["coldstop"],    
-                      self.dtvalue["charcoalBox"],
-                      self.dtvalue["camK"],    
-                      self.dtvalue["shieldtop"],  
-                      self.dtvalue["air"]]  
+                      self.dtvalue[label_list[TMC1_A]],   self.heatlabel[label_list[TMC1_A]],
+                      self.dtvalue[label_list[TMC1_B]],   self.heatlabel[label_list[TMC1_B]],
+                      self.dtvalue[label_list[TMC2_A]],   self.heatlabel[label_list[TMC2_A]],
+                      self.dtvalue[label_list[TMC2_B]],   self.heatlabel[label_list[TMC2_B]],
+                      self.dtvalue[label_list[TMC3_A]],    
+                      self.dtvalue[label_list[TMC3_B]],   self.heatlabel[label_list[TMC3_B]],
+                      self.dtvalue[label_list[TM_1]],    
+                      self.dtvalue[label_list[TM_1+1]],
+                      self.dtvalue[label_list[TM_1+2]],    
+                      self.dtvalue[label_list[TM_1+3]],    
+                      self.dtvalue[label_list[TM_1+4]],
+                      self.dtvalue[label_list[TM_1+5]],    
+                      self.dtvalue[label_list[TM_1+6]],  
+                      self.dtvalue[label_list[TM_1+7]]]  
 
         #alert_status = "On(T>%d)" % self.alert_temperature
         if self.chk_alert.isChecked():    
@@ -646,16 +625,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
         upload = ti.time() - self.uploade_start
         #print("Logging time:", upload)
-        if upload >= LOGGING_INTERVAL:
-            self.uploade_status = False
-            
+        if upload >= self.logging_interval:            
             str_log = "    ".join([updated_datetime] + list(map(str, hk_entries)))     
             msg = "%s %s" % (HK_REQ_UPLOAD_DB, str_log)
-            self.producer[HK_SUB].send_message(self.hk_sub_q, msg)
+            self.producer.send_message(self.hk_q, msg)
             
             self.uploade_start = ti.time()
-
-        threading.Timer(1, self.uploader_monitor).start()
               
         
     def send_alert_if_needed(self):
@@ -670,7 +645,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             if self.alert_toggling:
                 self.set_alert_status_off()
                 
-        self.sendTomain_status()           
+        self.sendToEngTools_status()           
             
     '''        
     def check_temperature_danger(self):
@@ -684,7 +659,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             return False
     '''    
         
-    def set_alert_status_on(self):
+    def set_alert_status_on(self):            
         if not self.chk_alert.isChecked():
             return
         if self.alarm_status == ALM_OK or self.alarm_status == ALM_WARN:
@@ -695,7 +670,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.alert_status.setText("ALERT")
         self.QWidgetLabelColor(self.alert_status, clr, bg)
         
-        threading.Timer(1, self.set_alert_status_on).start()
+        if self.alert_toggling:
+            threading.Timer(1, self.set_alert_status_on).start()
                              
         
     def set_alert_status_off(self):
@@ -705,42 +681,27 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
         
     #----------------------
-    # about gui set
-    '''
-    def QShowValue(self, row, col, text, state):
-        #monitor = self.tb_Monitor.item(row, col)
-        if state == "warm":
-            self.monitor[row][col].setForeground(QColor("white"))
-            self.monitor[row][col].setBackground(QColor("red"))
-        else:
-            self.monitor[row][col].setForeground(QColor("black"))
-            self.monitor[row][col].setBackground(QColor("white"))
-        #monitor.setText(text)
-        self.monitor[row][col].setText(text)
-    '''
-    
+    # about gui set   
         
-    def QShowValue(self, row, col, label, limit):      
+    def QShowValue(self, row, col, label, judge = True):      
         value = self.dtvalue[label]
         if value == DEFAULT_VALUE:
             self.monitor[row][col].setForeground(QColor("dimgray"))
-            #self.monitor[row][col].setBackground(QColor("white"))
             self.alarm_status = ALM_ERR
             
-        elif abs(float(self.temp_normal[label]) - float(value)) < limit:
-            self.monitor[row][col].setForeground(QColor("green"))
-            #self.monitor[row][col].setBackground(QColor("white"))
-            self.alarm_status = ALM_OK
-            
-        elif float(self.temp_lower[label]) <= float(value) <= float(self.temp_upper[label]):
-            self.monitor[row][col].setForeground(QColor("gold"))
-            #self.monitor[row][col].setBackground(QColor("yellow"))
-            self.alarm_status = ALM_WARN
-            
-        elif float(self.temp_upper[label]) < float(value):
-            self.monitor[row][col].setForeground(QColor("red"))
-            #self.monitor[row][col].setBackground(QColor("red"))
-            self.alarm_status = ALM_FAT
+        else:
+            if judge:
+                if float(self.temp_normal_lower[label]) <= float(value) <= float(self.temp_normal_upper[label]):
+                    self.monitor[row][col].setForeground(QColor("green"))
+                    self.alarm_status = ALM_OK
+                    
+                elif float(self.temp_warn_lower[label]) <= float(value) < float(self.temp_normal_lower[label]) or float(self.temp_normal_upper[label]) < float(value) <= float(self.temp_warn_upper[label]):
+                    self.monitor[row][col].setForeground(QColor("gold"))
+                    self.alarm_status = ALM_WARN
+                    
+                elif float(self.temp_warn_lower[label]) > float(value) or float(self.temp_warn_upper[label]) < float(value):
+                    self.monitor[row][col].setForeground(QColor("red"))
+                    self.alarm_status = ALM_FAT
             
         self.monitor[row][col].setText(value)
             
@@ -784,12 +745,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
         # communication port error                       
         for idx in range(COM_CNT):
             if not self.com_status[idx]:
+                self.alarm_status = ALM_ERR
                 if not self.alert_toggling:
                     self.alert_toggling = True
-                    self.set_alert_status_on()                    
-                        
-                    self.alarm_status = ALM_ERR
-                    self.sendTomain_status()
+                    self.set_alert_status_on()                        
+                    self.sendToEngTools_status()
                 break 
             
         # show lamp
@@ -807,23 +767,26 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.monitor[5][1].setText(self.set_point[4])
                
         # show value and color         
-        self.QShowValue(TMC1_A, 0, label_list[TMC1_A], 1.0)
-        self.QShowValue(TMC1_B, 0, label_list[TMC1_B], 0.1)
+        self.QShowValue(TMC1_A, 0, label_list[TMC1_A])
+        self.QShowValue(TMC1_B, 0, label_list[TMC1_B])
         self.monitor[TMC1_A][2].setText(self.heatlabel[label_list[TMC1_A]])
         self.monitor[TMC1_B][2].setText(self.heatlabel[label_list[TMC1_B]])
             
-        self.QShowValue(TMC2_A, 0, label_list[TMC2_A], 0.1)
-        self.QShowValue(TMC2_B, 0, label_list[TMC2_B], 0.1)
+        self.QShowValue(TMC2_A, 0, label_list[TMC2_A])
+        self.QShowValue(TMC2_B, 0, label_list[TMC2_B])
         self.monitor[TMC2_A][2].setText(self.heatlabel[label_list[TMC2_A]])
         self.monitor[TMC2_B][2].setText(self.heatlabel[label_list[TMC2_B]])
                 
-        self.QShowValue(TMC3_A, 0, label_list[TMC3_A], 0.1)
-        self.QShowValue(TMC3_B, 0, label_list[TMC3_B], 0.1)
+        self.QShowValue(TMC3_A, 0, label_list[TMC3_A], False)
+        self.QShowValue(TMC3_B, 0, label_list[TMC3_B])
         self.monitor[TMC3_B][2].setText(self.heatlabel[label_list[TMC3_B]])
 
         # for all
         for i in range(TM_CNT):
-            self.QShowValue(TM_1+i, 0, label_list[TM_1+i], 0.1)
+            if i == 7:
+                self.QShowValue(TM_1+i, 0, label_list[TM_1+i])
+            else:
+                self.QShowValue(TM_1+i, 0, label_list[TM_1+i], False)
                 
         # from VM
         if self.dpvalue == DEFAULT_VALUE:

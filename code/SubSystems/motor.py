@@ -21,7 +21,7 @@ from Libs.logger import *
 
 class motor(threading.Thread) :
     
-    def __init__(self, motor, port, simul='0'):
+    def __init__(self, motor, port):
         
         self.iam = motor  
         self.port = port 
@@ -43,16 +43,19 @@ class motor(threading.Thread) :
         self.ics_id = self.cfg.get(MAIN, 'id')
         self.ics_pwd = self.cfg.get(MAIN, 'pwd')
         
-        self.hk_sub_ex = self.cfg.get(MAIN, 'hk_sub_exchange')     
-        self.hk_sub_q = self.cfg.get(MAIN, 'hk_sub_routing_key')
-        self.sub_hk_q = self.iam+'.q'
+        self.hk_ex = self.cfg.get(MAIN, 'hk_exchange')     
+        self.hk_q = self.cfg.get(MAIN, 'hk_routing_key')
+        self.dt_ex = self.cfg.get(MAIN, 'dt_exchange')     
+        self.dt_q = self.cfg.get(MAIN, 'dt_routing_key')
+        self.sub_q = self.iam+'.q'
                 
         motor_pos = "%s-pos" % self.iam
         self.motor_pos = self.cfg.get(HK, motor_pos).split(",")
         
         ip_addr = "%s-ip" % self.iam
         
-        if bool(int(simul)):
+        simul = bool(self.cfg.get(MAIN, "simulation"))
+        if simul:
             self.ip = "localhost"
         else:
             self.ip = self.cfg.get(HK, ip_addr)
@@ -61,6 +64,8 @@ class motor(threading.Thread) :
         self.comStatus = False
         
         self.producer = None
+        self.consumer_hk = None
+        self.consumer_dt = None
                 
         self.init = False
         
@@ -77,7 +82,9 @@ class motor(threading.Thread) :
             
         self.close_component()
                     
-        self.producer.__del__()   
+        self.producer.channel.close()
+        self.consumer_hk.channel.close()
+        self.consumer_dt.channel.close()
 
         self.log.send(self.iam, DEBUG, "Closed!")                 
             
@@ -104,7 +111,7 @@ class motor(threading.Thread) :
             #(1, self.re_connect_to_component).start()
                         
         msg = "%s %d" % (HK_REQ_COM_STS, self.comStatus)   
-        self.producer.send_message(self.sub_hk_q, msg)
+        self.producer.send_message(self.sub_q, msg)
                              
     
     def re_connect_to_component(self):
@@ -356,49 +363,70 @@ class motor(threading.Thread) :
         
     
     #-------------------------------
-    # sub -> hk    
-    def connect_to_server_sub_ex(self):
+    # motor publish  
+    def connect_to_server_ex(self):
         # RabbitMQ connect  
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
         self.producer.connect_to_server()
         self.producer.define_producer()
     
 
-
     #-------------------------------
-    # hk -> sub
+    # consumer from hk
     def connect_to_server_hk_q(self):
         # RabbitMQ connect
-        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      
+        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_ex)      
         consumer.connect_to_server()
-        consumer.define_consumer(self.hk_sub_q, self.callback_hk)
+        consumer.define_consumer(self.hk_q, self.callback_hk)
         
         th = threading.Thread(target=consumer.start_consumer)
         th.start()
-            
-            
+        
         
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+        
+        self.data_processing(param)
+        
+    #-------------------------------
+    # consumer from dt
+    def connect_to_server_dt_q(self):
+        # RabbitMQ connect
+        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_ex)      
+        consumer.connect_to_server()
+        consumer.define_consumer(self.dt_q, self.callback_dt)
+        
+        th = threading.Thread(target=consumer.start_consumer)
+        th.start()
+
+    
+    def callback_dt(self, ch, method, properties, body):
+        cmd = body.decode()
+        param = cmd.split()
+        
+        self.data_processing(param)
+        
+        
+    def data_processing(self, param):    
                     
         if len(param) < 2:
             return
                 
         if param[0] == HK_REQ_COM_STS:
             msg = "%s %d" % (param[0], self.comStatus)   
-            self.producer.send_message(self.sub_hk_q, msg)
+            self.producer.send_message(self.sub_q, msg)
             
         elif param[0] == DT_REQ_INITMOTOR:
             if self.iam != param[1]:
                 return
             self.init_motor()
             msg = "%s OK" % param[0]
-            self.producer.send_message(self.sub_hk_q, msg)
+            self.producer.send_message(self.sub_q, msg)
         else:
             if self.init is False:
                 msg = "%s TRY" % param[0]
-                self.producer.send_message(self.sub_hk_q, msg)
+                self.producer.send_message(self.sub_q, msg)
             
             elif param[0] == DT_REQ_MOVEMOTOR:
                 if self.iam == MOTOR_LT:
@@ -408,7 +436,7 @@ class motor(threading.Thread) :
                     curpos = self.move_motor(int(param[2]))
                     
                 msg = "%s %s" % (param[0], curpos)
-                self.producer.send_message(self.sub_hk_q, msg)
+                self.producer.send_message(self.sub_q, msg)
             #-----------------------------------------------------    
             # for each
             elif param[0] == DT_REQ_MOTORGO:
@@ -418,7 +446,7 @@ class motor(threading.Thread) :
                 if self.iam == MOTOR_LT:
                     curpos = "%s" % (int(curpos) * (-1))
                 msg = "%s %s" % (param[0], curpos)
-                self.producer.send_message(self.sub_hk_q, msg)
+                self.producer.send_message(self.sub_q, msg)
                 
             elif param[0] == DT_REQ_MOTORBACK:
                 if self.iam != param[1]:
@@ -427,30 +455,31 @@ class motor(threading.Thread) :
                 if self.iam == MOTOR_LT:
                     curpos = "%s" % (int(curpos) * (-1))
                 msg = "%s %s" % (param[0], curpos)
-                self.producer.send_message(self.sub_hk_q, msg)
+                self.producer.send_message(self.sub_q, msg)
                 
             elif param[0] == DT_REQ_SETUT:
                 if self.iam != MOTOR_UT:
                     return
                 self.setUT(int(param[2]))
                 msg = "%s OK" % param[0]
-                self.producer.send_message(self.sub_hk_q, msg)
+                self.producer.send_message(self.sub_q, msg)
                 
             elif param[0] == DT_REQ_SETLT:
                 if self.iam != MOTOR_LT:
                     return
                 self.setLT(int(param[2]))
                 msg = "%s OK" % param[0]
-                self.producer.send_message(self.sub_hk_q, msg)
+                self.producer.send_message(self.sub_q, msg)
 
     
 if __name__ == "__main__":
 
 
-    proc = motor(sys.argv[1], sys.argv[2], sys.argv[3])
+    proc = motor(sys.argv[1], sys.argv[2])
         
-    proc.connect_to_server_sub_ex()
+    proc.connect_to_server_ex()
     proc.connect_to_server_hk_q()
+    proc.connect_to_server_dt_q()
         
     proc.connect_to_component()
     '''

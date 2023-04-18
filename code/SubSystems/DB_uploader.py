@@ -230,7 +230,7 @@ class uploader(threading.Thread):
     
     def callback_tmc1(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "tc1 -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -249,7 +249,7 @@ class uploader(threading.Thread):
             
     def callback_tmc2(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "tc2 -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
      
@@ -268,7 +268,7 @@ class uploader(threading.Thread):
         
     def callback_tmc3(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "tc3 -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -285,7 +285,7 @@ class uploader(threading.Thread):
     
     def callback_tm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "tm -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -304,7 +304,7 @@ class uploader(threading.Thread):
        
     def callback_vm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "vm -> : %s" % cmd
         if len(cmd) < 80:
             self.log.send(self.iam, INFO, msg)
         param = cmd.split()
@@ -325,7 +325,7 @@ class uploader(threading.Thread):
         cmd = body.decode()
         param = cmd.split()
         
-        msg = "receive: %s" % cmd
+        msg = "hk gui -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
         if param[0] == HK_REQ_UPLOAD_DB:

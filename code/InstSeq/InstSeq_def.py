@@ -3,7 +3,7 @@
 """
 Created on Feb 10, 2023
 
-Modified on 
+Modified on Apr 18, 2023
 
 @author: hilee
 """
@@ -51,8 +51,6 @@ HK_REQ_PWR_ONOFF = "PowerOnOff" #pdu
 
 HK_REQ_COM_STS = "ComPortStatus"
 HK_REQ_GETVALUE = "GetValue"  #temp_ctrl, tm, vm
-HK_REQ_UPLOAD_DB = "UploadDB"   #uploader
-HK_REQ_UPLOAD_STS = "UploadDBStatus"    #uploader
 
 CMD_REQ_TEMP = "ReqTempInfo"    #from DCS
 CMD_SIMULATION = "Simulation"

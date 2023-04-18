@@ -20,12 +20,14 @@ import Libs.SetConfig as sc
 
 import subprocess
 
-com_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu", "uploader"]
+com_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu", "lt", "ut", "uploader"]
 proc_sub = [None for _ in range(len(com_list))]
 
 def start_sub_system():          
     ini_file = WORKING_DIR + "IGRINS/Config/IGRINS.ini"
     cfg = sc.LoadConfig(ini_file)
+    
+    simul = bool(cfg.get(MAIN, "simulation"))
     
     path = WORKING_DIR + "ics_pack/code/SubSystems"
     comport = []
@@ -34,7 +36,7 @@ def start_sub_system():
         if name != "uploader":
             comport.append(cfg.get(HK, name + "-port"))
     
-    for i in range(len(com_list)):                        
+    for i in range(len(com_list)-4):                        
         if 0 <= i <= TMC3:
             cmd = "%s/temp_ctrl.py" % path
             proc_sub[i] = subprocess.Popen(['python', cmd, comport[i]])
@@ -47,6 +49,13 @@ def start_sub_system():
 
     cmd = "%s/DB_uploader.py" % path
     proc_sub[i] = subprocess.Popen(['python', cmd]) 
+    
+    if simul:
+        cmd = "%s/motor.py" % path
+        proc_sub[i] = subprocess.Popen(['python', cmd, com_list[LT], comport[LT]]) 
+    
+        cmd = "%s/motor.py" % path
+        proc_sub[i] = subprocess.Popen(['python', cmd, com_list[UT], comport[UT]]) 
                 
                 
 def exit_sub_system():

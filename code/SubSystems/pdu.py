@@ -179,8 +179,8 @@ class pdu(threading.Thread) :
                 pow_flag += self.pow_flag[i]
                 pow_flag += " "
                 
-            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-            self.producer.send_message(self.sub_hk_q, msg)  
+            return pow_flag
+            
             #print(pow_flag)
         except:                  
             self.comStatus = False
@@ -197,16 +197,16 @@ class pdu(threading.Thread) :
         
         cmd = ""
         if onoff == OFF:
-            self.pow_flag[idx] = OFF
-            cmd = "F0%d\r" % (idx+1)
+            self.pow_flag[idx-1] = OFF
+            cmd = "F0%d\r" % idx
         elif onoff == ON:
-            self.pow_flag[idx] = ON
-            cmd = "N0%d\r" % (idx+1)
+            self.pow_flag[idx-1] = ON
+            cmd = "N0%d\r" % idx
             
-        msg = " %s Button clicked"  % self.pow_flag[idx]
-        self.log.send(self.iam, INFO, self.power_str[idx] + msg)
+        msg = " %s Button clicked"  % self.pow_flag[idx-1]
+        self.log.send(self.iam, INFO, self.power_str[idx-1] + msg)
     
-        self.power_status(cmd)
+        return self.power_status(cmd)
             
     
     #-------------------------------
@@ -233,17 +233,26 @@ class pdu(threading.Thread) :
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+        
+        #print('pdu:', cmd)
                                                        
         if param[0] == HK_REQ_PWR_STS:
-            self.power_status("DN0\r")
+            pow_flag = self.power_status("DN0\r")
+            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+            self.producer.send_message(self.sub_hk_q, msg) 
             
         elif param[0] == HK_REQ_PWR_ONOFF_IDX:
-            self.change_power(int(param[1]), param[2]) 
+            pow_flag = self.change_power(int(param[1]), param[2]) 
+            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+            self.producer.send_message(self.sub_hk_q, msg)  
             
         elif param[0] == HK_REQ_PWR_ONOFF:
-            print('CLI >> PDU', param)
+            #print('CLI >> PDU', param)
             for idx in range(PDU_IDX):
-                self.change_power(idx, param[idx+1])
+                pow_flag = self.change_power(idx+1, param[idx+1])
+                
+            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+            self.producer.send_message(self.sub_hk_q, msg) 
                 
                 
     #-------------------------------

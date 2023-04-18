@@ -61,7 +61,7 @@ class temp_ctrl(threading.Thread):
         self.producer = None
         self.consumer_hk, self.consumer_uploader = None, None
         
-        self.pause = False
+        #self.pause = False
         
         self.wait_time = float(Period/4)
                 
@@ -193,8 +193,8 @@ class temp_ctrl(threading.Thread):
     
     def start_monitoring(self):
         
-        if self.pause:
-            return
+        #if self.pause:
+        #    return
         
         value = [DEFAULT_VALUE, DEFAULT_VALUE]
         heat = [DEFAULT_VALUE, DEFAULT_VALUE]
@@ -250,7 +250,7 @@ class temp_ctrl(threading.Thread):
         param = cmd.split()
                             
         if param[0] == HK_REQ_GETSETPOINT:           
-            self.pause = True
+            #self.pause = True
             
             if self.iam != "tmc3":
                 self.setpoint[0] = self.get_setpoint(1)
@@ -263,14 +263,14 @@ class temp_ctrl(threading.Thread):
                 msg = "%s %s" % (HK_REQ_GETSETPOINT, self.setpoint[1])
             self.producer.send_message(self.sub_hk_q, msg)
             
-            self.pause = False
-            self.start_monitoring()            
+            #self.pause = False
+            #self.start_monitoring()            
                                     
         elif param[0] == HK_REQ_MANUAL_CMD:            
             if self.iam != param[1]:
                 return
             
-            self.pause = True
+            #self.pause = True
             
             cmd = ""
             for idx in range(len(param)-2):
@@ -280,7 +280,7 @@ class temp_ctrl(threading.Thread):
             msg = "%s %s" % (param[0], value) 
             self.producer.send_message(self.sub_hk_q, msg)  
             
-            self.pause = False
+            #self.pause = False
             self.start_monitoring() 
             
             
@@ -301,7 +301,7 @@ class temp_ctrl(threading.Thread):
         param = cmd.split()
                             
         if param[0] == HK_REQ_GETSETPOINT:   
-            self.pause = True
+            #self.pause = True
 
             if self.iam != "tmc3":
                 self.setpoint[0] = self.get_setpoint(1)
@@ -314,8 +314,8 @@ class temp_ctrl(threading.Thread):
                 msg = "%s %s" % (HK_REQ_GETSETPOINT, self.setpoint[1])
             self.producer.send_message(self.sub_hk_q, msg)
             
-            self.pause = False
-            self.start_monitoring() 
+            #self.pause = False
+            #self.start_monitoring() 
                                             
 
 if __name__ == "__main__":

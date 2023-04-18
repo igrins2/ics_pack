@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'HKPUvgdqr.ui'
+## Form generated from reading UI file 'HKPzpVfkr.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.3.0
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -60,9 +60,8 @@ class Ui_Dialog(object):
         self.sts_pdu_off.setFont(font1)
         self.sts_interval = QLabel(Dialog)
         self.sts_interval.setObjectName(u"sts_interval")
-        self.sts_interval.setGeometry(QRect(250, 7, 181, 20))
+        self.sts_interval.setGeometry(QRect(489, 30, 171, 20))
         self.sts_interval.setFont(font)
-        self.sts_interval.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
         self.sts_pdu3 = QLabel(Dialog)
         self.sts_pdu3.setObjectName(u"sts_pdu3")
         self.sts_pdu3.setGeometry(QRect(8, 129, 19, 20))
@@ -645,15 +644,6 @@ class Ui_Dialog(object):
         self.label_14.setGeometry(QRect(10, 400, 61, 21))
         self.label_14.setFont(font1)
         self.label_14.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-        self.sts_updated_2 = QLabel(Dialog)
-        self.sts_updated_2.setObjectName(u"sts_updated_2")
-        self.sts_updated_2.setGeometry(QRect(450, 30, 191, 21))
-        self.sts_updated_2.setFont(font)
-        self.sts_updated_2.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-        self.sts_uploading_sts = QLabel(Dialog)
-        self.sts_uploading_sts.setObjectName(u"sts_uploading_sts")
-        self.sts_uploading_sts.setGeometry(QRect(650, 30, 20, 20))
-        self.sts_uploading_sts.setFont(font6)
         self.chk_manual_test = QCheckBox(Dialog)
         self.chk_manual_test.setObjectName(u"chk_manual_test")
         self.chk_manual_test.setGeometry(QRect(10, 340, 141, 21))
@@ -671,7 +661,7 @@ class Ui_Dialog(object):
         self.label_29.setText(QCoreApplication.translate("Dialog", u"power on             power off", None))
         self.sts_pdu_on.setText(QCoreApplication.translate("Dialog", u"\u2b1b", None))
         self.sts_pdu_off.setText(QCoreApplication.translate("Dialog", u"\u2b1b", None))
-        self.sts_interval.setText("")
+        self.sts_interval.setText(QCoreApplication.translate("Dialog", u"interval :", None))
         self.sts_pdu3.setText(QCoreApplication.translate("Dialog", u"\u2b1b", None))
         self.sts_pdu5.setText(QCoreApplication.translate("Dialog", u"\u2b1b", None))
         self.sts_pdu4.setText(QCoreApplication.translate("Dialog", u"\u2b1b", None))
@@ -759,8 +749,6 @@ class Ui_Dialog(object):
         self.e_sendto.setText(QCoreApplication.translate("Dialog", u"command", None))
         self.e_recv.setText("")
         self.label_14.setText(QCoreApplication.translate("Dialog", u"Receive:", None))
-        self.sts_updated_2.setText(QCoreApplication.translate("Dialog", u"WebApp Uploading Status", None))
-        self.sts_uploading_sts.setText(QCoreApplication.translate("Dialog", u"\u26ab", None))
         self.chk_manual_test.setText(QCoreApplication.translate("Dialog", u"Manual Test", None))
     # retranslateUi
 

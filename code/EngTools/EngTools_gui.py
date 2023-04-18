@@ -118,11 +118,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # consumer from hk
     def connect_to_server_hk_q(self):
         # RabbitMQ connect
-        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_ex)      
-        consumer.connect_to_server()
-        consumer.define_consumer(self.hk_q, self.callback_hk)       
+        self.consumer_hk = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_ex)      
+        self.consumer_hk.connect_to_server()
+        self.consumer_hk.define_consumer(self.hk_q, self.callback_hk)       
         
-        th = threading.Thread(target=consumer.start_consumer)
+        th = threading.Thread(target=self.consumer_hk.start_consumer)
         th.daemon = True
         th.start()
         
@@ -130,14 +130,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_hk(self, ch, method, properties, body):
         
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "hk gui -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_STATUS:
             self.label_stsHKP.setText(param[1])
             self.bt_runHKP.setEnabled(False)
-            self.label_stsHKP.setText("STARTED")
             
         elif param[0] == EXIT:                     
             self.proc[HKP] = None
@@ -153,11 +152,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # consumer from dt
     def connect_to_server_dt_q(self):
         # RabbitMQ connect
-        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_ex)      
-        consumer.connect_to_server()
-        consumer.define_consumer(self.dt_q, self.callback_dt)       
+        self.consumer_dt = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_ex)      
+        self.consumer_dt.connect_to_server()
+        self.consumer_dt.define_consumer(self.dt_q, self.callback_dt)       
         
-        th = threading.Thread(target=consumer.start_consumer)
+        th = threading.Thread(target=self.consumer_dt.start_consumer)
         th.daemon = True
         th.start()
         
@@ -165,7 +164,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_dt(self, ch, method, properties, body):
         
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "dt gui -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         

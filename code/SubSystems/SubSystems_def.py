@@ -3,7 +3,7 @@
 """
 Created on Sep 17, 2021
 
-Modified on Dec 15, 2022
+Modified on Apr 17, 2023
 
 @author: hilee
 """
@@ -37,6 +37,9 @@ TMC2 = 1
 TMC3 = 2
 TM = 3
 VM = 4
+
+LT = 6
+UT = 7
 
 # ---------------------------
 ON = "on"

@@ -3,7 +3,7 @@
 """
 Created on Jun 28, 2022
 
-Modified on Mar 10, 2023
+Modified on Apr 18, 2023
 
 @author: hilee
 """
@@ -198,11 +198,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.connect_to_server_dcs_q() 
                     
         self.show_sub_timer = QTimer(self)
-        self.show_sub_timer.setInterval(0.5)
+        self.show_sub_timer.setInterval(500)
         self.show_sub_timer.timeout.connect(self.sub_data_processing) 
         
         self.show_dcs_timer = QTimer(self)
-        self.show_dcs_timer.setInterval(0.1)
+        self.show_dcs_timer.setInterval(100)
         self.show_dcs_timer.timeout.connect(self.dcs_data_processing)     
         self.show_dcs_timer.start()           
         
@@ -421,7 +421,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # rev <- main        
     def callback_main(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "EngTools -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()     
         
@@ -469,7 +469,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # rev <- sub        
     def callback_pdu(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "pdu -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         self.param_sub[PDU] = cmd
         
@@ -485,7 +485,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def callback_lt(self, ch, method, properties, body):
         cmd = body.decode() 
-        msg = "receive: %s" % cmd
+        msg = "lt -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
         self.param_sub[LT] = cmd
@@ -506,7 +506,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def callback_ut(self, ch, method, properties, body):
         cmd = body.decode()   
-        msg = "receive: %s" % cmd
+        msg = "ut -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
         self.param_sub[UT] = cmd
@@ -557,21 +557,21 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # rev <- DCSs
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "svc -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         self.param_dcs[SVC] = cmd
         
     
     def callback_h(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "h -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         self.param_dcs[H] = cmd
         
     
     def callback_k(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "k -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
         self.param_dcs[K] = cmd
         
@@ -713,7 +713,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         # elapsed               
         self.elapsed_timer[dc_idx] = QTimer(self) 
-        self.elapsed_timer[dc_idx].setInterval(0.001)
+        self.elapsed_timer[dc_idx].setInterval(1)
         self.elapsed_timer[dc_idx].timeout.connect(lambda: self.show_elapsed(dc_idx))
 
         self.elapsed[dc_idx] = ti.time()

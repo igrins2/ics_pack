@@ -128,7 +128,7 @@ class Inst_Seq(threading.Thread):
             
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()        
-        msg = "receive: %s" % cmd
+        msg = "svc -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
         param = cmd.split()
@@ -149,7 +149,7 @@ class Inst_Seq(threading.Thread):
     
     def callback_h(self, ch, method, properties, body):
         cmd = body.decode()        
-        msg = "receive: %s" % cmd
+        msg = "h -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
         param = cmd.split()
@@ -170,7 +170,7 @@ class Inst_Seq(threading.Thread):
                     
     def callback_k(self, ch, method, properties, body):
         cmd = body.decode()        
-        msg = "receive: %s" % cmd
+        msg = "k -> : %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
         param = cmd.split()

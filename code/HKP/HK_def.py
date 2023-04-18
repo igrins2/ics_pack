@@ -3,7 +3,7 @@
 """
 Created on Sep 17, 2021
 
-Modified on Dec 15, 2022
+Modified on Apr 18, 2023
 
 @author: hilee
 """
@@ -44,9 +44,6 @@ VM = 4
 PDU = 5
 LT = 6
 UT = 7
-UPLOADER = 8
-
-
 
 # ---------------------------
 ON = "on"
@@ -71,8 +68,6 @@ ALM_ERR = "ERROR"
 ALM_OK = "GOOD"
 ALM_WARN = "WARN"
 ALM_FAT = "FATAL"
-
-LOGGING_INTERVAL = 60
 
 # ---------------------------
 # motor
@@ -110,5 +105,4 @@ CMD_REQ_TEMP = "ReqTempInfo"    #from DCS
 
 HK_STATUS = "HKStatus"
 EXIT = "Exit"
-ALIVE = "Alive"
 
