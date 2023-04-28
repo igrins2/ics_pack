@@ -20,7 +20,7 @@ from Libs.logger import *
 
 class Inst_Seq(threading.Thread):
     
-    def __init__(self, simul='0'):
+    def __init__(self):
         
         self.iam = "InstSeq"
         
@@ -45,7 +45,7 @@ class Inst_Seq(threading.Thread):
         self.consumer_ObsApp = None
         self.consumer_dcs = [None for _ in range(DCS_CNT)]
                         
-        self.simulation_mode = bool(int(simul))
+        self.simulation_mode = bool(self.cfg.get(MAIN, "simulation"))
         
         self.exptime = [0.0, 0.0]   # SVC, H_K
         self.FS_number = [0, 0]     # SVC, H_K
@@ -83,6 +83,12 @@ class Inst_Seq(threading.Thread):
         self.producer.connect_to_server()
         self.producer.define_producer()
             
+            
+    def publish_to_queue(self, msg):
+        self.producer.send_message(self.InstSeq_q, msg)
+        
+        msg = "%s ->" % msg
+        self.log.send(self.iam, INFO, msg)
         
     
     #--------------------------------------------------------
@@ -98,7 +104,7 @@ class Inst_Seq(threading.Thread):
     
     def callback_ObsApp(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "receive: %s" % cmd
+        msg = "<- [ObsApp] %s" % cmd
         self.log.send(self.iam, INFO, msg)
     
         param = cmd.split()
@@ -128,7 +134,7 @@ class Inst_Seq(threading.Thread):
             
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()        
-        msg = "svc -> : %s" % cmd
+        msg = "<- [DCSS] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
         param = cmd.split()
@@ -141,7 +147,7 @@ class Inst_Seq(threading.Thread):
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
             msg = "%s %s" % (CMD_COMPLETED, self.dcs_list[SVC])
-            self.producer.send_message(self.InstSeq_q, msg)
+            self.publish_to_queue(msg)
             
         elif param[0] == CMD_STOPACQUISITION:
             pass
@@ -149,7 +155,7 @@ class Inst_Seq(threading.Thread):
     
     def callback_h(self, ch, method, properties, body):
         cmd = body.decode()        
-        msg = "h -> : %s" % cmd
+        msg = "<- [DCSH] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
         param = cmd.split()
@@ -162,7 +168,7 @@ class Inst_Seq(threading.Thread):
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
             msg = "%s %s" % (CMD_COMPLETED, self.dcs_list[H])
-            self.producer.send_message(self.InstSeq_q, msg)
+            self.publish_to_queue(msg)
             
         elif param[0] == CMD_STOPACQUISITION:
             pass
@@ -170,7 +176,7 @@ class Inst_Seq(threading.Thread):
                     
     def callback_k(self, ch, method, properties, body):
         cmd = body.decode()        
-        msg = "k -> : %s" % cmd
+        msg = "<- [DCSK] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
         param = cmd.split()
@@ -183,7 +189,7 @@ class Inst_Seq(threading.Thread):
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
             msg = "%s %s" % (CMD_COMPLETED, self.dcs_list[K])
-            self.producer.send_message(self.InstSeq_q, msg)
+            self.publish_to_queue(msg)
             
         elif param[0] == CMD_STOPACQUISITION:
             pass
@@ -195,19 +201,19 @@ class Inst_Seq(threading.Thread):
     # SVC, H_K, ALL
     def initialize2(self, target_idx):
         msg = "%s %s %d" % (CMD_INITIALIZE2_ICS, self.dcs_target[target_idx], self.simulation_mode)
-        self.producer.send_message(self.InstSeq_q, msg)
+        self.publish_to_queue(msg)
         
         
     # SVC or H_K, Not ALL!!!!
     def set_exp(self, target_idx):                        
         _fowlerTime = self.exptime[target_idx] - T_frame * self.FS_number[target_idx]
         msg = "%s %s %d %.3f 1 %d 1 %.3f 1" % (CMD_SETFSPARAM_ICS, self.dcs_target[target_idx], self.simulation_mode, self.exptime[target_idx], self.FS_number, _fowlerTime)
-        self.producer.send_message(self.InstSeq_q, msg)
+        self.publish_to_queue(msg)
 
         
     def start_acquisition(self, target_idx):     
         msg = "%s %s %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_target[target_idx], self.simulation_mode)
-        self.producer.send_message(self.InstSeq_q, msg)
+        self.publish_to_queue(msg)
         
         
         
@@ -220,6 +226,5 @@ class Inst_Seq(threading.Thread):
 
 if __name__ == "__main__":
         
-    #sys.argv.append('1')
-    Inst_Seq(sys.argv[1])
+    Inst_Seq()
     

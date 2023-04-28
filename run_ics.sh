@@ -12,15 +12,7 @@ cd code
 case "$1" in
 	simul)
 	    (cd igos2_simul; $PYTHONBIN run_hk_simulator.py)
-            ;;
-
-	sub)
-	    (cd SubSystems; $PYTHONBIN start_sub.py)
-            ;;
-
-        obs)
-	    (cd InstSeq; $PYTHONBIN InstSeq.py)
-            ;;       
+            ;;      
 
 	eng)
 	    (cd EngTools; $PYTHONBIN EngTools_gui.py)
@@ -31,6 +23,6 @@ case "$1" in
             ;;
          
         *)
-            echo $"Usage: $0 {simul|sub|obs|eng|cli}"
+            echo $"Usage: $0 {simul|eng|cli}"
             exit 1
 esac

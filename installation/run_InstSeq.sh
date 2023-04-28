@@ -1,5 +1,7 @@
 #!/bin/bash
 
+HOME=/home/ics
+
 PYTHONBIN=$HOME/miniconda3/envs/igos2n/bin/python
 
 source ~/.bash_profile

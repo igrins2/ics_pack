@@ -182,7 +182,7 @@ class uploader(threading.Thread):
             self.db.child("BasicHK").push(entry)
         
             msg = "%s %s" % (HK_REQ_UPLOAD_STS, self.iam)   
-            self.producer.send_message(self.iam+'.q', msg)
+            self.publish_to_queue(msg)
 
             return True
         
@@ -199,6 +199,13 @@ class uploader(threading.Thread):
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
         self.producer.connect_to_server()
         self.producer.define_producer()
+        
+        
+    def publish_to_queue(self, msg):
+        self.producer.send_message(self.iam+'.q', msg)
+        
+        msg = "%s ->" % msg
+        self.log.send(self.iam, INFO, msg)
         
         
     def connect_to_server_q(self):
@@ -230,7 +237,7 @@ class uploader(threading.Thread):
     
     def callback_tmc1(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "tc1 -> : %s" % cmd
+        msg = "<- [TC1] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -249,7 +256,7 @@ class uploader(threading.Thread):
             
     def callback_tmc2(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "tc2 -> : %s" % cmd
+        msg = "<- [TC2] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
      
@@ -268,7 +275,7 @@ class uploader(threading.Thread):
         
     def callback_tmc3(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "tc3 -> : %s" % cmd
+        msg = "<- [TC3] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -285,7 +292,7 @@ class uploader(threading.Thread):
     
     def callback_tm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "tm -> : %s" % cmd
+        msg = "<- [TM] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -304,7 +311,7 @@ class uploader(threading.Thread):
        
     def callback_vm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "vm -> : %s" % cmd
+        msg = "<- [VM] %s" % cmd
         if len(cmd) < 80:
             self.log.send(self.iam, INFO, msg)
         param = cmd.split()
@@ -325,7 +332,7 @@ class uploader(threading.Thread):
         cmd = body.decode()
         param = cmd.split()
         
-        msg = "hk gui -> : %s" % cmd
+        msg = "<- [HKP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
         if param[0] == HK_REQ_UPLOAD_DB:
@@ -346,7 +353,7 @@ class uploader(threading.Thread):
     
     
     def get_setp(self):
-        self.producer.send_message(self.iam+'.q', HK_REQ_GETSETPOINT)
+        self.publish_to_queue(HK_REQ_GETSETPOINT)
         
         
     def publish_dewar_list(self):
@@ -369,7 +376,7 @@ class uploader(threading.Thread):
         
         str_log = list(map(str, hk_entries))  
         msg = "%s %s" % (UPLOAD_Q, str_log)
-        self.producer.send_message(self.iam+'.q', msg)
+        self.publish_to_queue(msg)
         
         
     def uploade_to_GEA(self):

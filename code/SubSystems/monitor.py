@@ -21,16 +21,15 @@ from Libs.logger import *
 
 class monitor(threading.Thread) :
     
-    def __init__(self, comport):  
+    def __init__(self, idx):  
         
         self.iam = ""
-        self.comport = comport
-        if self.comport == "10004":
+        if idx == '4':
             self.iam = "tm"
-        elif self.comport == "10005":
+        elif idx == '5':
             self.iam = "vm"
             
-        self.log = LOG(WORKING_DIR + "IGRINS", "HW")
+        self.log = LOG(WORKING_DIR + "IGRINS", self.iam)
         self.log.send(self.iam, INFO, "start")  
         
         # load ini file
@@ -47,7 +46,7 @@ class monitor(threading.Thread) :
         
         self.hk_sub_ex = cfg.get(MAIN, 'hk_exchange')     
         self.hk_sub_q = cfg.get(MAIN, 'hk_routing_key')
-        self.sub_hk_q = self.iam+'.q'
+        self.sub_q = self.iam+'.q'
         
         self.Period = int(cfg.get(HK,'hk-monitor-intv'))
                 
@@ -56,6 +55,7 @@ class monitor(threading.Thread) :
             self.ip = "localhost"
         else:
             self.ip = cfg.get(HK, "device-server-ip")
+        self.comport = cfg.get(HK, self.iam + "-port")
                 
         self.comSocket = None
         self.comStatus = False
@@ -103,7 +103,7 @@ class monitor(threading.Thread) :
 
             
         msg = "%s %d" % (HK_REQ_COM_STS, self.comStatus)   
-        self.producer.send_message(self.sub_hk_q, msg)        
+        self.publish_to_queue(msg)    
                  
     
     def re_connect_to_component(self):
@@ -206,7 +206,7 @@ class monitor(threading.Thread) :
                     
         elif self.iam == "vm":
             msg = "%s %s" % (HK_REQ_GETVALUE, vm)
-        self.producer.send_message(self.sub_hk_q, msg)  
+        self.publish_to_queue(msg) 
 
         ti.sleep(self.Period)
         threading.Thread(target=self.start_monitoring).start()
@@ -219,6 +219,13 @@ class monitor(threading.Thread) :
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
         self.producer.connect_to_server()
         self.producer.define_producer()
+        
+        
+    def publish_to_queue(self, msg):
+        self.producer.send_message(self.sub_q, msg)
+        
+        msg = "%s ->" % msg
+        self.log.send(self.iam, INFO, msg)
         
         
     #-------------------------------
@@ -236,7 +243,10 @@ class monitor(threading.Thread) :
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
-                              
+                
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+                      
         if param[0] == HK_REQ_MANUAL_CMD:       
             if self.iam != param[1]:
                 return     
@@ -246,7 +256,7 @@ class monitor(threading.Thread) :
             cmd = cmd[:-1] + "\r\n"
             value = self.socket_send(cmd)
             msg = "%s %s" % (param[0], value) 
-            self.producer.send_message(self.sub_hk_q, msg) 
+            self.publish_to_queue(msg)
             
  
             

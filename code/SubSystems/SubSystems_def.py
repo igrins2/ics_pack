@@ -15,10 +15,10 @@ PDU_IDX = 8
 TM_CNT = 8
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
-import os
-
-dir = os.getcwd().split("/")
-WORKING_DIR = "/" + dir[1] + "/" + dir[2] + "/"
+#import os
+#dir = os.getcwd().split("/")
+#WORKING_DIR = "/" + dir[1] + "/" + dir[2] + "/"
+WORKING_DIR = "/home/ics/"
         
 MAIN = "MAIN"
 HK = "HK"
@@ -37,10 +37,8 @@ TMC2 = 1
 TMC3 = 2
 TM = 3
 VM = 4
-
-LT = 6
-UT = 7
-
+PDU = 5
+UPLOADER = 6
 # ---------------------------
 ON = "on"
 OFF = "off"

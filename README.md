@@ -69,12 +69,27 @@ firewall-cmd --reload
 
 
 5. Start software
+
+$ sudo systemctl daemon-reload
+
 if simulation:
-	$ sh ../ics_pack/run_ics.sh simul
-	$ sh ../ics_pack/run_ics.sh sub
+   $ sh ../ics_pack/run_ics.sh simul
 else:
-	$ sudo systemctl subsystem.service
-	$ sudo systemctl InstSeq.service
+   $ sudo systemctl start subsystem.service
+   $ sudo systemctl start InstSeq.service
+
+$ sudo systemctl status subsystem.service
+or
+$ sudo systemctl status InstSeq.service
+-> if some failure, 
+   $ sudo systemctl stop InstSeq.service
+   $ sudo systemctl stop subsystem.service
+   $ sudo systemctl reset-failed (or $ setenforce 0)
+
+after checking "ls -lh" in /ics_pack/installation/run_InstSeq.sh
+=> sudo chmod 744 run_InstSeq.sh
+after checking "ls -lh" in /ics_pack/installation/run_subsystem.sh
+=> sudo chmod 744 run_subsystem.sh
 
 if for observer:
 	$ sh ../ics_pack/run_ics.sh obs

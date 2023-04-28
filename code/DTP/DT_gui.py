@@ -402,6 +402,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.producer[ENG_TOOLS] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_main_ex)      
         self.producer[ENG_TOOLS].connect_to_server()
         self.producer[ENG_TOOLS].define_producer()
+        
+        
+    #def publish_to_queue(self):
+        
     
          
     #-------------------------------
@@ -421,7 +425,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # rev <- main        
     def callback_main(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "EngTools -> : %s" % cmd
+        msg = "<- [EngTools] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()     
         
@@ -469,7 +473,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # rev <- sub        
     def callback_pdu(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "pdu -> : %s" % cmd
+        msg = "<- [PDU] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         self.param_sub[PDU] = cmd
         
@@ -485,7 +489,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def callback_lt(self, ch, method, properties, body):
         cmd = body.decode() 
-        msg = "lt -> : %s" % cmd
+        msg = "<- [LT] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
         self.param_sub[LT] = cmd
@@ -506,7 +510,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def callback_ut(self, ch, method, properties, body):
         cmd = body.decode()   
-        msg = "ut -> : %s" % cmd
+        msg = "<- [UT] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
         self.param_sub[UT] = cmd
@@ -557,21 +561,21 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # rev <- DCSs
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "svc -> : %s" % cmd
+        msg = "<- [DCSS] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         self.param_dcs[SVC] = cmd
         
     
     def callback_h(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "h -> : %s" % cmd
+        msg = "<- [DCSH] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         self.param_dcs[H] = cmd
         
     
     def callback_k(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "k -> : %s" % cmd
+        msg = "<- [DCSK] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         self.param_dcs[K] = cmd
         

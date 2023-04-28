@@ -112,6 +112,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.EngTools_ex)      
         self.producer.connect_to_server()
         self.producer.define_producer()
+        
+        
+    def publish_to_queue(self, msg):
+        self.producer.send_message(self.EngTools_q, msg)
+        
+        msg = "%s ->" % msg
+        self.log.send(self.iam, INFO, msg)
     
          
     #-------------------------------
@@ -130,7 +137,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_hk(self, ch, method, properties, body):
         
         cmd = body.decode()
-        msg = "hk gui -> : %s" % cmd
+        msg = "<- [HKP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -164,7 +171,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_dt(self, ch, method, properties, body):
         
         cmd = body.decode()
-        msg = "dt gui -> : %s" % cmd
+        msg = "<- [DTP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -192,7 +199,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         if self.producer:                               
             msg = "%s %s %d" % (ALIVE, DT, self.simulation)
-            self.producer.send_message(self.EngTools_q, msg)  
+            self.publish_to_queue(msg)
         
         
     def run_HKP(self):
@@ -213,7 +220,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.radio_real.setEnabled(False)
         
         msg = "%s %s %d" % (ALIVE, DT, self.simulation)
-        self.producer.send_message(self.EngTools_q, msg)     
+        self.publish_to_queue(msg)
         
     
 

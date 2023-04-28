@@ -21,12 +21,10 @@ from Libs.logger import *
 
 class temp_ctrl(threading.Thread):
     
-    def __init__(self, comport):
-                       
-        self.comport = comport
-        self.iam = "tmc%d" % (int(self.comport)-10000)               
-    
-        self.log = LOG(WORKING_DIR + "IGRINS", "HW")
+    def __init__(self, idx):               
+            
+        self.iam = "tmc%s" % idx        
+        self.log = LOG(WORKING_DIR + "IGRINS", self.iam)
         self.log.send(self.iam, INFO, "start")    
      
         # load ini file
@@ -43,7 +41,7 @@ class temp_ctrl(threading.Thread):
         
         self.hk_sub_ex = cfg.get(MAIN, "hk_exchange")     
         self.hk_sub_q = cfg.get(MAIN, "hk_routing_key")
-        self.sub_hk_q = self.iam+'.q'
+        self.sub_q = self.iam+'.q'
         
         Period = int(cfg.get(HK,'hk-monitor-intv'))
         
@@ -51,7 +49,8 @@ class temp_ctrl(threading.Thread):
         if simul:
             self.ip = "localhost"
         else:   
-            self.ip = cfg.get(HK, "device-server-ip")
+            self.ip = cfg.get(HK, "device-server-ip")            
+        self.comport = cfg.get(HK, self.iam + "-port")
          
         self.setpoint = [DEFAULT_VALUE, DEFAULT_VALUE]
                 
@@ -101,10 +100,9 @@ class temp_ctrl(threading.Thread):
             self.log.send(self.iam, ERROR, msg)
                         
             self.re_connect_to_component()
-            
-            
+                        
         msg = "%s %d" % (HK_REQ_COM_STS, self.comStatus)   
-        self.producer.send_message(self.sub_hk_q, msg) 
+        self.publish_to_queue(msg)
               
     
     def re_connect_to_component(self):
@@ -219,7 +217,7 @@ class temp_ctrl(threading.Thread):
             msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, value[0], value[1], heat[0], heat[1]) 
         else:
             msg = "%s %s %s %s" % (HK_REQ_GETVALUE, value[0], value[1], heat[1]) 
-        self.producer.send_message(self.sub_hk_q, msg)
+        self.publish_to_queue(msg)
 
         threading.Thread(target=self.start_monitoring).start()
 
@@ -232,6 +230,13 @@ class temp_ctrl(threading.Thread):
         self.producer.connect_to_server()
         self.producer.define_producer()
         
+    
+    def publish_to_queue(self, msg):
+        self.producer.send_message(self.sub_q, msg)
+        
+        msg = "%s ->" % msg
+        self.log.send(self.iam, INFO, msg)
+                   
                    
     #-------------------------------
     # consumer from hk
@@ -248,6 +253,9 @@ class temp_ctrl(threading.Thread):
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+        
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                             
         if param[0] == HK_REQ_GETSETPOINT:           
             #self.pause = True
@@ -261,7 +269,7 @@ class temp_ctrl(threading.Thread):
                 msg = "%s %s %s" % (HK_REQ_GETSETPOINT, self.setpoint[0], self.setpoint[1]) 
             else:
                 msg = "%s %s" % (HK_REQ_GETSETPOINT, self.setpoint[1])
-            self.producer.send_message(self.sub_hk_q, msg)
+            self.publish_to_queue(msg)
             
             #self.pause = False
             #self.start_monitoring()            
@@ -278,7 +286,7 @@ class temp_ctrl(threading.Thread):
             cmd = cmd[:-1] + "\r\n"
             value = self.socket_send(cmd)
             msg = "%s %s" % (param[0], value) 
-            self.producer.send_message(self.sub_hk_q, msg)  
+            self.publish_to_queue(msg)
             
             #self.pause = False
             self.start_monitoring() 
@@ -299,6 +307,9 @@ class temp_ctrl(threading.Thread):
     def callback_uploader(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+        
+        msg = "<- [DB uploader] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                             
         if param[0] == HK_REQ_GETSETPOINT:   
             #self.pause = True
@@ -312,7 +323,7 @@ class temp_ctrl(threading.Thread):
                 msg = "%s %s %s" % (HK_REQ_GETSETPOINT, self.setpoint[0], self.setpoint[1]) 
             else:
                 msg = "%s %s" % (HK_REQ_GETSETPOINT, self.setpoint[1])
-            self.producer.send_message(self.sub_hk_q, msg)
+            self.publish_to_queue(msg)
             
             #self.pause = False
             #self.start_monitoring() 

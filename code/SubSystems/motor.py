@@ -21,13 +21,10 @@ from Libs.logger import *
 
 class motor(threading.Thread) :
     
-    def __init__(self, motor, port):
+    def __init__(self, motor):
         
-        self.iam = motor  
-        self.port = port 
-        #self.iam = "%s(%d)" % (self.motor, int(self.port)-10000)
-        
-        self.log = LOG(WORKING_DIR + "IGRINS", "HW")    
+        self.iam = motor          
+        self.log = LOG(WORKING_DIR + "IGRINS", self.iam)    
         self.log.send(self.iam, INFO, "start")
         
         # load ini file
@@ -59,6 +56,7 @@ class motor(threading.Thread) :
             self.ip = "localhost"
         else:
             self.ip = self.cfg.get(HK, ip_addr)
+        self.comport = self.cfg.get(HK, self.iam + "-port")
         
         self.comSocket = None
         self.comStatus = False
@@ -94,7 +92,7 @@ class motor(threading.Thread) :
         try:            
             self.comSocket = socket(AF_INET, SOCK_STREAM)
             self.comSocket.settimeout(TOUT)
-            self.comSocket.connect((self.ip, int(self.port)))
+            self.comSocket.connect((self.ip, int(self.comport)))
             self.comStatus = True
             
             msg = "connected"
@@ -111,7 +109,7 @@ class motor(threading.Thread) :
             #(1, self.re_connect_to_component).start()
                         
         msg = "%s %d" % (HK_REQ_COM_STS, self.comStatus)   
-        self.producer.send_message(self.sub_q, msg)
+        self.publish_to_queue(msg)
                              
     
     def re_connect_to_component(self):
@@ -369,6 +367,13 @@ class motor(threading.Thread) :
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
         self.producer.connect_to_server()
         self.producer.define_producer()
+        
+        
+    def publish_to_queue(self, msg):
+        self.producer.send_message(self.sub_q, msg)
+        
+        msg = "%s ->" % msg
+        self.log.send(self.iam, INFO, msg)
     
 
     #-------------------------------
@@ -386,6 +391,9 @@ class motor(threading.Thread) :
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+        
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         self.data_processing(param)
         
@@ -405,6 +413,9 @@ class motor(threading.Thread) :
         cmd = body.decode()
         param = cmd.split()
         
+        msg = "<- [DTP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+        
         self.data_processing(param)
         
         
@@ -415,18 +426,18 @@ class motor(threading.Thread) :
                 
         if param[0] == HK_REQ_COM_STS:
             msg = "%s %d" % (param[0], self.comStatus)   
-            self.producer.send_message(self.sub_q, msg)
+            self.publish_to_queue(msg)
             
         elif param[0] == DT_REQ_INITMOTOR:
             if self.iam != param[1]:
                 return
             self.init_motor()
             msg = "%s OK" % param[0]
-            self.producer.send_message(self.sub_q, msg)
+            self.publish_to_queue(msg)
         else:
             if self.init is False:
                 msg = "%s TRY" % param[0]
-                self.producer.send_message(self.sub_q, msg)
+                self.publish_to_queue(msg)
             
             elif param[0] == DT_REQ_MOVEMOTOR:
                 if self.iam == MOTOR_LT:
@@ -436,7 +447,7 @@ class motor(threading.Thread) :
                     curpos = self.move_motor(int(param[2]))
                     
                 msg = "%s %s" % (param[0], curpos)
-                self.producer.send_message(self.sub_q, msg)
+                self.publish_to_queue(msg)
             #-----------------------------------------------------    
             # for each
             elif param[0] == DT_REQ_MOTORGO:
@@ -446,7 +457,7 @@ class motor(threading.Thread) :
                 if self.iam == MOTOR_LT:
                     curpos = "%s" % (int(curpos) * (-1))
                 msg = "%s %s" % (param[0], curpos)
-                self.producer.send_message(self.sub_q, msg)
+                self.publish_to_queue(msg)
                 
             elif param[0] == DT_REQ_MOTORBACK:
                 if self.iam != param[1]:
@@ -455,21 +466,21 @@ class motor(threading.Thread) :
                 if self.iam == MOTOR_LT:
                     curpos = "%s" % (int(curpos) * (-1))
                 msg = "%s %s" % (param[0], curpos)
-                self.producer.send_message(self.sub_q, msg)
+                self.publish_to_queue(msg)
                 
             elif param[0] == DT_REQ_SETUT:
                 if self.iam != MOTOR_UT:
                     return
                 self.setUT(int(param[2]))
                 msg = "%s OK" % param[0]
-                self.producer.send_message(self.sub_q, msg)
+                self.publish_to_queue(msg)
                 
             elif param[0] == DT_REQ_SETLT:
                 if self.iam != MOTOR_LT:
                     return
                 self.setLT(int(param[2]))
                 msg = "%s OK" % param[0]
-                self.producer.send_message(self.sub_q, msg)
+                self.publish_to_queue(msg)
 
     
 if __name__ == "__main__":

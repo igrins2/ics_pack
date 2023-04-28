@@ -25,7 +25,7 @@ class pdu(threading.Thread) :
         
         self.iam = "pdu"
         
-        self.log = LOG(WORKING_DIR + "IGRINS", "HW")    
+        self.log = LOG(WORKING_DIR + "IGRINS", self.iam)    
         self.log.send(self.iam, INFO, "start")
                         
         # load ini file
@@ -45,7 +45,7 @@ class pdu(threading.Thread) :
         self.hk_sub_q = cfg.get(MAIN, 'hk_routing_key')
         self.dt_sub_ex = cfg.get(MAIN, 'dt_exchange')     
         self.dt_sub_q = cfg.get(MAIN, 'dt_routing_key')
-        self.sub_hk_q = self.iam+'.q'
+        self.sub_q = self.iam+'.q'
                 
         self.power_str = cfg.get(HK, "pdu-list").split(',')
         self.pow_flag = [OFF for _ in range(PDU_IDX)]
@@ -106,8 +106,7 @@ class pdu(threading.Thread) :
             self.re_connect_to_component()
                         
         msg = "%s %d" % (HK_REQ_COM_STS, self.comStatus)   
-        self.producer.send_message(self.sub_hk_q, msg) 
-                 
+        self.publish_to_queue(msg)
     
     def re_connect_to_component(self):
         #self.th.cancel()
@@ -216,6 +215,13 @@ class pdu(threading.Thread) :
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
         self.producer.connect_to_server()
         self.producer.define_producer()     
+        
+        
+    def publish_to_queue(self, msg):
+        self.producer.send_message(self.sub_q, msg)
+        
+        msg = "%s ->" % msg
+        self.log.send(self.iam, INFO, msg)
            
            
     #-------------------------------
@@ -234,17 +240,18 @@ class pdu(threading.Thread) :
         cmd = body.decode()
         param = cmd.split()
         
-        #print('pdu:', cmd)
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                                                        
         if param[0] == HK_REQ_PWR_STS:
             pow_flag = self.power_status("DN0\r")
             msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-            self.producer.send_message(self.sub_hk_q, msg) 
+            self.publish_to_queue(msg)
             
         elif param[0] == HK_REQ_PWR_ONOFF_IDX:
             pow_flag = self.change_power(int(param[1]), param[2]) 
             msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-            self.producer.send_message(self.sub_hk_q, msg)  
+            self.publish_to_queue(msg)
             
         elif param[0] == HK_REQ_PWR_ONOFF:
             #print('CLI >> PDU', param)
@@ -252,7 +259,7 @@ class pdu(threading.Thread) :
                 pow_flag = self.change_power(idx+1, param[idx+1])
                 
             msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-            self.producer.send_message(self.sub_hk_q, msg) 
+            self.publish_to_queue(msg)
                 
                 
     #-------------------------------
@@ -270,6 +277,9 @@ class pdu(threading.Thread) :
     def callback_dt(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+        
+        msg = "<- [DTP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                                                        
         if param[0] == HK_REQ_PWR_STS:
             self.power_status("DN0\r")

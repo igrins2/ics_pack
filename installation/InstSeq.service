@@ -1,5 +1,5 @@
 [Unit]
-Description="subsystem Service"
+Description=InstSeq Service
 
 [Service]
 Type=simple

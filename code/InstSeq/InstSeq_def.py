@@ -11,10 +11,10 @@ Modified on Apr 18, 2023
 # -----------------------------------------------------------
 # definition: constant
 
-import os
-
-dir = os.getcwd().split("/")
-WORKING_DIR = "/" + dir[1] + "/" + dir[2] + "/"
+#import os
+#dir = os.getcwd().split("/")
+#WORKING_DIR = "/" + dir[1] + "/" + dir[2] + "/"
+WORKING_DIR = "/home/ics/"
 
 MAIN = "MAIN"
 

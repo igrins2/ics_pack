@@ -71,10 +71,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.hk_ex = self.cfg.get(MAIN, 'hk_exchange')     
         self.hk_q = self.cfg.get(MAIN, 'hk_routing_key')
-        
-        self.EngTools_ex = self.cfg.get(MAIN, "engtools_exchange")     
-        self.EngTools_q = self.cfg.get(MAIN, "engtools_routing_key")
-                
+                        
         self.sub_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu"]
         
         self.power_list = self.cfg.get(HK,'pdu-list').split(',')
@@ -171,7 +168,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.log.send(self.iam, INFO, th.name + " exit.")       
                                 
         msg = "%s %s" % (EXIT, HK)
-        self.producer.send_message(self.hk_q, msg)
+        self.publish_to_queue(msg)
     
         self.producer.channel.close()
         for i in range(COM_CNT):
@@ -277,6 +274,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_ex)      
         self.producer.connect_to_server()
         self.producer.define_producer()
+        
+        
+    def publish_to_queue(self, msg):
+        self.producer.send_message(self.hk_q, msg)
+        
+        msg = "%s ->" % msg
+        self.log.send(self.iam, INFO, msg)
          
          
     #-------------------------------
@@ -305,7 +309,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # rev <- sub 
     def callback_tmc1(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "tc1 -> : %s" % cmd
+        msg = "<- [TC1] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -331,7 +335,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
     def callback_tmc2(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "tc2 -> : %s" % cmd
+        msg = "<- [TC2] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -356,7 +360,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def callback_tmc3(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "tc3 -> : %s" % cmd
+        msg = "<- [TC3] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -379,7 +383,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     def callback_tm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "tm -> : %s" % cmd
+        msg = "<- [TM] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -397,7 +401,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     def callback_vm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "vm -> : %s" % cmd
+        msg = "<- [VM] %s" % cmd
         if len(cmd) < 80:
             self.log.send(self.iam, INFO, msg)
         param = cmd.split()
@@ -414,7 +418,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
     def callback_pdu(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "pdu -> : %s" % cmd
+        msg = "<- [PDU] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
@@ -489,12 +493,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
             msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx, OFF)
         else:
             msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx, ON)
-        self.producer.send_message(self.hk_q, msg)         
+        self.publish_to_queue(msg)
         
 
     def manual_command(self, idx):
         msg = "%s %s %s" % (HK_REQ_MANUAL_CMD, self.sub_list[idx], self.e_sendto.text())
-        self.producer.send_message(self.hk_q, msg)
+        self.publish_to_queue(msg)
         
         
     def toggle_alert(self):
@@ -520,12 +524,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if self.alarm_status_back == self.alarm_status:            
             return
         msg = "%s %s" % (HK_STATUS, self.alarm_status)
-        self.producer.send_message(self.hk_q, msg)
+        self.publish_to_queue(msg)
         self.alarm_status_back = self.alarm_status
         
        
     def startup(self):             
-        self.producer.send_message(self.hk_q, HK_REQ_PWR_STS)
+        self.publish_to_queue(HK_REQ_PWR_STS)
             
         pwr_list = [ON, ON, OFF, OFF, OFF, OFF, OFF, OFF]
         self.power_onoff(pwr_list)
@@ -548,7 +552,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.manaul_test(False)
             self.monitoring = True
             
-            self.producer.send_message(self.hk_q, HK_REQ_GETSETPOINT)
+            self.publish_to_queue(HK_REQ_GETSETPOINT)
                              
             self.log.send(self.iam, INFO, "Periodic Monitoring started")
             self.st_time = ti.time()
@@ -576,7 +580,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for i in range(PDU_IDX):
             pwr_list += args[i] + " "
         msg = "%s %s" % (HK_REQ_PWR_ONOFF, pwr_list)
-        self.producer.send_message(self.hk_q, msg)
+        self.publish_to_queue(msg)
 
         
     def LoggingFun(self):     
@@ -628,7 +632,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if upload >= self.logging_interval:            
             str_log = "    ".join([updated_datetime] + list(map(str, hk_entries)))     
             msg = "%s %s" % (HK_REQ_UPLOAD_DB, str_log)
-            self.producer.send_message(self.hk_q, msg)
+            self.publish_to_queue(msg)
             
             self.uploade_start = ti.time()
               

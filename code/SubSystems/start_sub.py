@@ -16,63 +16,61 @@ from temp_ctrl import *
 from monitor import *
 from pdu import *
 
-import Libs.SetConfig as sc
-
 import subprocess
 
-com_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu", "lt", "ut", "uploader"]
-proc_sub = [None for _ in range(len(com_list))]
+class SubSystems():
+    
+    def __init__(self):
+        self.com_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu", "uploader"]
+        self.proc_sub = [None for _ in range(len(self.com_list))]
+        
+        self.start_sub_system()
+        
+        
+    def __del__(self):
+        self.exit_sub_system()
+    
+    
+    def start_sub_system(self):                  
+        path = WORKING_DIR + "ics_pack/code/SubSystems"
+        
+        for i in range(len(self.com_list)-2):                        
+            if 0 <= i <= TMC3:
+                cmd = "%s/temp_ctrl.py" % path
+                self.proc_sub[i] = subprocess.Popen(['python', cmd, str(i+1)])
+            elif i == TM or i == VM:
+                cmd = "%s/monitor.py" % path
+                self.proc_sub[i] = subprocess.Popen(['python', cmd, str(i+1)])
 
-def start_sub_system():          
-    ini_file = WORKING_DIR + "IGRINS/Config/IGRINS.ini"
-    cfg = sc.LoadConfig(ini_file)
-    
-    simul = bool(cfg.get(MAIN, "simulation"))
-    
-    path = WORKING_DIR + "ics_pack/code/SubSystems"
-    comport = []
-    
-    for name in com_list:                
-        if name != "uploader":
-            comport.append(cfg.get(HK, name + "-port"))
-    
-    for i in range(len(com_list)-4):                        
-        if 0 <= i <= TMC3:
-            cmd = "%s/temp_ctrl.py" % path
-            proc_sub[i] = subprocess.Popen(['python', cmd, comport[i]])
-        elif i == TM or i == VM:
-            cmd = "%s/monitor.py" % path
-            proc_sub[i] = subprocess.Popen(['python', cmd, comport[i]])
+        cmd = "%s/pdu.py" % path
+        self.proc_sub[PDU] = subprocess.Popen(['python', cmd])               
 
-    cmd = "%s/pdu.py" % path
-    proc_sub[i] = subprocess.Popen(['python', cmd])               
-
-    cmd = "%s/DB_uploader.py" % path
-    proc_sub[i] = subprocess.Popen(['python', cmd]) 
+        cmd = "%s/DB_uploader.py" % path
+        self.proc_sub[UPLOADER] = subprocess.Popen(['python', cmd]) 
+        
     
-    if simul:
-        cmd = "%s/motor.py" % path
-        proc_sub[i] = subprocess.Popen(['python', cmd, com_list[LT], comport[LT]]) 
-    
-        cmd = "%s/motor.py" % path
-        proc_sub[i] = subprocess.Popen(['python', cmd, com_list[UT], comport[UT]]) 
-                
-                
-def exit_sub_system():
-    for i in range(len(com_list)):
-        if proc_sub[i] != None:
-            if proc_sub[i].poll() == None:
-                proc_sub[i].kill()
-                proc_sub[i] = None                
-                
+    def exit_sub_system(self):
+        for i in range(len(self.com_list)):
+            if self.proc_sub[i] != None:
+                if self.proc_sub[i].poll() == None:
+                    self.proc_sub[i].kill()
+                    self.proc_sub[i] = None   
 
-print( '================================================\n'+
-        '                type: "q" to exit  \n'+
-        '================================================\n')
-    
-start_sub_system()
 
-while True:
-    if input() == 'q':
-        exit_sub_system()
-        break
+if __name__ == "__main__":
+    
+    ss = SubSystems()
+    
+    #print( '================================================\n'+
+    #    '                type: "q" to exit  \n'+
+    #    '================================================\n')
+    
+    while True:
+        if ss.proc_sub[TMC1] == None and ss.proc_sub[TMC2] == None and \
+            ss.proc_sub[TMC3] == None and ss.proc_sub[TM] == None and \
+            ss.proc_sub[VM] == None and ss.proc_sub[PDU] == None and \
+            ss.proc_sub[UPLOADER] == None:
+            break
+        
+        
+        

@@ -1,5 +1,5 @@
 [Unit]
-Description="subsystem Service"
+Description=subsystem Service
 
 [Service]
 Type=simple
