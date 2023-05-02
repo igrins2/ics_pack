@@ -32,6 +32,7 @@ MODE_REAL = 1
 
 
 HK_STATUS = "HKStatus"
+DT_STATUS = "DTStatus"
 EXIT = "Exit"
 ALIVE = "Alive"
 

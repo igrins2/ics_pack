@@ -80,19 +80,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.ics_id = self.cfg.get(MAIN, 'id')
         self.ics_pwd = self.cfg.get(MAIN, 'pwd')
         
-        self.dt_main_ex = self.cfg.get(MAIN, 'gui_main_exchange')     
-        self.dt_main_q = self.cfg.get(MAIN, 'gui_main_routing_key')
-        self.main_dt_ex = self.cfg.get(MAIN, 'main_gui_exchange')
-        self.main_dt_q = self.cfg.get(MAIN, 'main_gui_routing_key')
+        self.dt_ex = self.cfg.get(MAIN, 'dt_exchange')     
+        self.dt_q = self.cfg.get(MAIN, 'dt_routing_key')
         
-        self.dt_sub_ex = self.cfg.get(MAIN, 'hk_sub_exchange')
-        self.dt_sub_q = self.cfg.get(MAIN, 'hk_sub_routing_key')
-        
-        self.dt_dcs_ex = self.cfg.get(DT, 'dt_dcs_exchange')     
-        self.dt_dcs_q = self.cfg.get(DT, 'dt_dcs_routing_key')
-        
-        self.fits_path = self.cfg.get(DT, 'fits_path')
-        
+        self.EngTools_ex = self.cfg.get(MAIN, 'engtools_exchange')
+        self.EngTools_q = self.cfg.get(MAIN, 'engtools_routing_key')
+                        
         self.com_list = ["pdu", "lt", "ut"]
         self.dcs_list = ["DCSS", "DCSH", "DCSK"]
         
@@ -116,16 +109,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.label_prog_sts[i].setText("Idle")
             self.label_prog_time[i].setText("---")
             self.label_prog_elapsed[i].setText("0.0 sec")
-            
-        self.today = ti.strftime("%04Y%02m%02d", ti.localtime())
-        self.cur_frame = [0, 0, 0]
-        
+                    
         for i in range(DCS_CNT):
             self.label_cur_num[i].setText("0 / 0")
-            self.e_path[i].setText(self.fits_path + self.today)
-            self.cur_frame[i] = self.new_seq(i)
-            filename = "%s_%04d.fits" % (self.dcs_list[i], self.cur_frame[i])
-            self.e_savefilename[i].setText(filename)
+            self.e_path[i].setText(WORKING_DIR + "IGRINS/" + self.dcs_list[i] + "/")
+            self.e_savefilename[i].setText("")
                     
         for i in range(CAL_CNT):
             self.cal_e_exptime[i].setText("1.63")
@@ -146,7 +134,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.dcs_ready = [False for _ in range(DCS_CNT)]
         self.acquiring = [False for _ in range(DCS_CNT)]
                 
-        self.producer = [None for _ in range(SERV_CONNECT_CNT)]
+        self.producer = None
+        self.consumer_EngTools = None
+        self.consumer_sub = [None for _ in range(COM_CNT)]
+        self.consumer_dcs = [None for _ in range(DCS_CNT)]
         
         self.img = [None for _ in range(DCS_CNT)]
         
@@ -187,14 +178,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.param_sub = ["" for _ in range(COM_CNT)]  #pdu, lt, ut
         self.param_dcs = ["" for _ in range(DCS_CNT)]   #h, k, s
         
-        # connect to server
-        self.connect_to_server_main_ex()
-        self.connect_to_server_gui_q()
-    
-        self.connect_to_server_hk_ex()
-        self.connect_to_server_sub_q()
+        self.alarm_status = ALM_OK
         
-        self.connect_to_server_dt_ex()
+        # connect to server
+        self.connect_to_server_ex()
+        
+        self.connect_to_server_EngTools_q()
+        self.connect_to_server_sub_q()  #motors, pdu
         self.connect_to_server_dcs_q() 
                     
         self.show_sub_timer = QTimer(self)
@@ -206,8 +196,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.show_dcs_timer.timeout.connect(self.dcs_data_processing)     
         self.show_dcs_timer.start()           
         
-        self.alive_check()       
-        
+        msg = "%s %s" % (DT_STATUS, self.alarm_status)
+        self.producer.send_message(self.dt_q, msg)
+                    
         
     def closeEvent(self, event: QCloseEvent) -> None:   
         
@@ -232,13 +223,15 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for th in threading.enumerate():
             self.log.send(self.iam, INFO, th.name + " exit.")
                                                     
-        for i in range(SERV_CONNECT_CNT):                
-            if i == ENG_TOOLS:
-                msg = "%s %s" % (EXIT, DT)
-                self.producer[ENG_TOOLS].send_message(self.dt_main_q, msg)
-            
-            if self.producer[i] != None:
-                self.producer[i].__del__()
+        msg = "%s %s" % (EXIT, DT)
+        self.producer.send_message(self.dt_q, msg)
+
+        self.producer.channel.close()
+        self.consumer_EngTools.channel.close()
+        for idx in range(COM_CNT):
+            self.consumer_sub[idx].channel.close()
+        for idx in range(DCS_CNT):
+            self.consumer_dcs[idx].channel.close()
 
         self.log.send(self.iam, DEBUG, "Closed!") 
                 
@@ -279,10 +272,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
         self.bt_init = [self.bt_init_SVC, self.bt_init_H, self.bt_init_K]
         self.chk_ds9 = [self.chk_ds9_svc, self.chk_ds9_H, self.chk_ds9_K]
-        self.chk_autosave = [self.checkBox_autosave_svc, self.checkBox_autosave_H, self.checkBox_autosave_K]
-        
-        self.bt_save = [self.bt_save_svc, self.bt_save_H, self.bt_save_K]
-        self.bt_path = [self.bt_path_svc, self.bt_path_H, self.bt_path_K]
                     
         self.e_path = [self.e_path_svc, self.e_path_H, self.e_path_K]
         self.e_savefilename = [self.e_savefilename_svc, self.e_savefilename_H, self.e_savefilename_K]
@@ -295,11 +284,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.e_repeat[i].setEnabled(False)
             
             self.chk_ds9[i].setEnabled(False)
-            self.chk_autosave[i].setEnabled(False)
             
             self.bt_init[i].setEnabled(False)
-            self.bt_save[i].setEnabled(False)
-            self.bt_path[i].setEnabled(False)
             
             self.e_path[i].setEnabled(False)
             self.e_savefilename[i].setEnabled(False)               
@@ -322,18 +308,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.e_FS_number[K].editingFinished.connect(lambda: self.judge_param(K)) 
         self.e_repeat[K].editingFinished.connect(lambda: self.change_name(K)) 
         
-        self.bt_init[SVC].clicked.connect(lambda: self.initialize2(SVC))    
-        self.bt_save[SVC].clicked.connect(lambda: self.save_fits(SVC))
-        self.bt_path[SVC].clicked.connect(lambda: self.open_path(SVC))
-        
-        self.bt_init[H].clicked.connect(lambda: self.initialize2(H))    
-        self.bt_save[H].clicked.connect(lambda: self.save_fits(H))
-        self.bt_path[H].clicked.connect(lambda: self.open_path(H))
-        
-        self.bt_init[K].clicked.connect(lambda: self.initialize2(K))    
-        self.bt_save[K].clicked.connect(lambda: self.save_fits(K))
-        self.bt_path[K].clicked.connect(lambda: self.open_path(K))
-            
+        self.bt_init[SVC].clicked.connect(lambda: self.initialize2(SVC))            
+        self.bt_init[H].clicked.connect(lambda: self.initialize2(H))            
+        self.bt_init[K].clicked.connect(lambda: self.initialize2(K))                
             
         #------------------
         #calibration
@@ -382,95 +359,72 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.bt_lt_motor_init.setEnabled(False)
         self.bt_ut_motor_init.setEnabled(False)  
-        
-        
-    def alive_check(self):
-        if self.simulation != NONE_MODE:
-            return
-
-        if self.producer[ENG_TOOLS] != None:
-            msg = "%s %s" % (ALIVE, DT)
-            self.producer[ENG_TOOLS].send_message(self.dt_main_q, msg) 
-        
-        threading.Timer(0.5, self.alive_check).start()
+    
         
         
     #-------------------------------
-    # dt -> main
-    def connect_to_server_main_ex(self):
+    # dt publisher
+    def connect_to_server_ex(self):
         # RabbitMQ connect  
-        self.producer[ENG_TOOLS] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_main_ex)      
-        self.producer[ENG_TOOLS].connect_to_server()
-        self.producer[ENG_TOOLS].define_producer()
+        self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_ex)      
+        self.producer.connect_to_server()
+        self.producer.define_producer()
         
         
-    #def publish_to_queue(self):
+    def publish_to_queue(self, msg):
+        self.producer.send_message(self.dt_q, msg)
+        
+        msg = "%s ->" % msg
+        self.log.send(self.iam, INFO, msg)
         
     
-         
     #-------------------------------
-    # main -> dt
-    def connect_to_server_gui_q(self):
+    # EngTools queue
+    def connect_to_server_EngTools_q(self):
         # RabbitMQ connect
-        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.main_dt_ex)      
-        consumer.connect_to_server()
-        consumer.define_consumer(self.main_dt_q, self.callback_main)       
+        self.consumer_EngTools = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.EngTools_ex)      
+        self.consumer_EngTools.connect_to_server()
+        self.consumer_EngTools.define_consumer(self.EngTools_q, self.callback_EngTools)       
         
-        th = threading.Thread(target=consumer.start_consumer)
+        th = threading.Thread(target=self.consumer_EngTools.start_consumer)
         th.daemon = True
         th.start()
         
         
-    #-------------------------------
-    # rev <- main        
-    def callback_main(self, ch, method, properties, body):
+    def callback_EngTools(self, ch, method, properties, body):
         cmd = body.decode()
         msg = "<- [EngTools] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()     
         
-        if param[0] == ALIVE and param[1] == self.iam:
-            self.simulation = bool(int(param[2]))   
+        if param[0] == ALIVE:
+            self.simulation = bool(int(param[1]))   
             
             msg = "%s %s %d" % (CMD_INIT2_DONE, "all", self.simulation)
-            self.producer[DCS].send_message(self.dt_dcs_q, msg)
+            self.producer.send_message(self.dt_dcs_q, msg)
     
-                 
-
-
+       
     #-------------------------------
-    # dt -> sub: use hk ex
-    def connect_to_server_hk_ex(self):
-        # RabbitMQ connect  
-        self.producer[HK_SUB] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_sub_ex)      
-        self.producer[HK_SUB].connect_to_server()
-        self.producer[HK_SUB].define_producer()
-    
-         
-    #-------------------------------
-    # sub -> dt: use hk q
+    # sub queue
     def connect_to_server_sub_q(self):
         # RabbitMQ connect
         sub_dt_ex = [self.com_list[i]+'.ex' for i in range(COM_CNT)]
-        consumer = [None for _ in range(COM_CNT)]
         for idx in range(COM_CNT):
-            consumer[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, sub_dt_ex[idx])      
-            consumer[idx].connect_to_server()
+            self.consumer_sub[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, sub_dt_ex[idx])      
+            self.consumer_sub[idx].connect_to_server()
             
-        consumer[PDU].define_consumer(self.com_list[PDU]+'.q', self.callback_pdu)       
-        consumer[LT].define_consumer(self.com_list[LT]+'.q', self.callback_lt)
-        consumer[UT].define_consumer(self.com_list[UT]+'.q', self.callback_ut)
+        self.consumer_sub[PDU].define_consumer(self.com_list[PDU]+'.q', self.callback_pdu)       
+        self.consumer_sub[LT].define_consumer(self.com_list[LT]+'.q', self.callback_lt)
+        self.consumer_sub[UT].define_consumer(self.com_list[UT]+'.q', self.callback_ut)
         
         for idx in range(COM_CNT):
-            th = threading.Thread(target=consumer[idx].start_consumer)
+            th = threading.Thread(target=self.consumer_sub[idx].start_consumer)
             th.daemon = True
             th.start()
             
-        self.producer[HK_SUB].send_message(self.dt_sub_q, HK_REQ_PWR_STS)
+        self.producer.send_message(self.dt_q, HK_REQ_PWR_STS)
                     
     
-    #-------------------------------
-    # rev <- sub        
     def callback_pdu(self, ch, method, properties, body):
         cmd = body.decode()
         msg = "<- [PDU] %s" % cmd
@@ -528,37 +482,26 @@ class MainWindow(Ui_Dialog, QMainWindow):
         elif param[0] == DT_REQ_SETUT:
             pass
 
-    
+            
     #-------------------------------
-    # dt -> dcs    
-    def connect_to_server_dt_ex(self):
-        # RabbitMQ connect  
-        self.producer[DCS] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_dcs_ex)      
-        self.producer[DCS].connect_to_server()
-        self.producer[DCS].define_producer()
-        
-    #-------------------------------
-    # dcs -> dt
+    # dcs queue
     def connect_to_server_dcs_q(self):
         # RabbitMQ connect
         dcs_dt_ex = [self.dcs_list[i]+'.ex' for i in range(DCS_CNT)]
-        consumer = [None for _ in range(DCS_CNT)]
         for idx in range(DCS_CNT):
-            consumer[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, dcs_dt_ex[idx])
-            consumer[idx].connect_to_server()
+            self.consumer_dcs[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, dcs_dt_ex[idx])
+            self.consumer_dcs[idx].connect_to_server()
         
-        consumer[SVC].define_consumer(self.dcs_list[SVC]+'.q', self.callback_svc)  
-        consumer[H].define_consumer(self.dcs_list[H]+'.q', self.callback_h)
-        consumer[K].define_consumer(self.dcs_list[K]+'.q', self.callback_k)   
+        self.consumer_dcs[SVC].define_consumer(self.dcs_list[SVC]+'.q', self.callback_svc)  
+        self.consumer_dcs[H].define_consumer(self.dcs_list[H]+'.q', self.callback_h)
+        self.consumer_dcs[K].define_consumer(self.dcs_list[K]+'.q', self.callback_k)   
         
         for idx in range(DCS_CNT):
-            th = threading.Thread(target=consumer[idx].start_consumer)
+            th = threading.Thread(target=self.consumer_dcs[idx].start_consumer)
             th.daemon = True
             th.start()
             
     
-    #-------------------------------
-    # rev <- DCSs
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()
         msg = "<- [DCSS] %s" % cmd
@@ -786,10 +729,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             if self.chk_ds9[dc_idx].isChecked():
                 ds9 = WORKING_DIR + 'IGRINS/ds9'
                 subprocess.Popen([ds9, filepath])
-                
-            if self.chk_autosave[dc_idx].isChecked():
-                self.save_fits(dc_idx)
-            
+                            
             self.reload_img(dc_idx)
         
         except:
@@ -956,9 +896,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
         return max_seq
     
     
-    def new_seq(self, dc_idx):
-        return self.last_seq(dc_idx) + 1
-                                
     #---------------------------------
     # button 
     
@@ -1152,20 +1089,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.mode = SINGLE_MODE
         self.QWidgetBtnColor(self.bt_take_image, "black", "white")
         self.stop_clicked = False
-        
-    
-    def save_fits(self, dc_idx):
-        
-        fpath = "%s" % self.e_path[dc_idx].text()
-        self.log.createFolder(fpath)
-        
-        self.cur_frame[dc_idx] = self.new_seq(dc_idx)
-        filename = "%s_%04d.fits" % (self.dcs_list[dc_idx], self.cur_frame[dc_idx])
-        self.e_savefilename[dc_idx].setText(filename)
-        
-        fpath += "/%s" % filename
-        fits.writeto(fpath, self.img[dc_idx], self.header[dc_idx], overwrite=True, output_verify="ignore")
-    
+            
     
     def open_path(self, dc_idx):
         loader = self.e_path[dc_idx].text()

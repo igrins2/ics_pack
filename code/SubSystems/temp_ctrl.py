@@ -223,7 +223,7 @@ class temp_ctrl(threading.Thread):
 
     
     #-------------------------------
-    # temp ctrl publish
+    # temp ctrl publisher
     def connect_to_server_ex(self):
         # RabbitMQ connect  
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
@@ -239,7 +239,7 @@ class temp_ctrl(threading.Thread):
                    
                    
     #-------------------------------
-    # consumer from hk
+    # hk queue
     def connect_to_server_hk_q(self):
         # RabbitMQ connect
         self.consumer_hk = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      
@@ -293,7 +293,7 @@ class temp_ctrl(threading.Thread):
             
             
     #-------------------------------
-    # consumer from uploader
+    # uploader queue
     def connect_to_server_uploader_q(self):
         # RabbitMQ connect
         self.consumer_uploader = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, "uploader.ex")      

@@ -106,7 +106,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         
     #-------------------------------
-    # publish EngTools
+    # EngTools publisher
     def connect_to_server_ex(self):
         # RabbitMQ connect  
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.EngTools_ex)      
@@ -122,7 +122,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
          
     #-------------------------------
-    # consumer from hk
+    # hk queue
     def connect_to_server_hk_q(self):
         # RabbitMQ connect
         self.consumer_hk = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_ex)      
@@ -156,7 +156,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     
     #-------------------------------
-    # consumer from dt
+    # dt queue
     def connect_to_server_dt_q(self):
         # RabbitMQ connect
         self.consumer_dt = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_ex)      
@@ -175,10 +175,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
-        if param[0] == HK_STATUS:
+        if param[0] == DT_STATUS:
             self.label_stsDTP.setText(param[1])                
             self.bt_runDTP.setEnabled(False)
-            self.label_stsDTP.setText("STARTED")
+            
+            msg = "%s %d" % (ALIVE, self.simulation)
+            self.publish_to_queue(msg)
 
         elif param[0] == EXIT:                     
             self.proc[DTP] = None   
@@ -196,11 +198,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         
         elif self.radio_real.isChecked():
             self.simulation = False
-        
-        if self.producer:                               
-            msg = "%s %s %d" % (ALIVE, DT, self.simulation)
-            self.publish_to_queue(msg)
-        
+                
         
     def run_HKP(self):
             
@@ -217,11 +215,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.proc[DTP] = subprocess.Popen(['python', WORKING_DIR + 'ics_pack/code/DTP/DT_gui.py'])
         
         self.radio_inst_simul.setEnabled(False)
-        self.radio_real.setEnabled(False)
-        
-        msg = "%s %s %d" % (ALIVE, DT, self.simulation)
-        self.publish_to_queue(msg)
-        
+        self.radio_real.setEnabled(False)        
     
 
 if __name__ == "__main__":

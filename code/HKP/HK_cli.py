@@ -48,7 +48,7 @@ class HK_cli(threading.Thread):
     
 
     #-------------------------------
-    # hk cli publish 
+    # hk cli publisher
     def connect_to_server_ex(self):
             
         # RabbitMQ connect  
@@ -59,7 +59,7 @@ class HK_cli(threading.Thread):
 
 
     #-------------------------------
-    # consumer from sub
+    # sub queue
     def connect_to_server_sub_q(self):
             # RabbitMQ connect
             com_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu", "lt", 'ut']
@@ -81,9 +81,7 @@ class HK_cli(threading.Thread):
                 th = threading.Thread(target=self.consumer[idx].start_consumer)
                 th.start()
                 
-                
-    #-------------------------------
-    # rev <- sub 
+                 
     def callback_tmc1(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()

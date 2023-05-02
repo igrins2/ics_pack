@@ -209,7 +209,7 @@ class pdu(threading.Thread) :
             
     
     #-------------------------------
-    # pdu publish 
+    # pdu publisher
     def connect_to_server_ex(self):
         # RabbitMQ connect        
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
@@ -225,7 +225,7 @@ class pdu(threading.Thread) :
            
            
     #-------------------------------
-    # consumer from hk 
+    # hk queue
     def connect_to_server_hk_q(self):
         # RabbitMQ connect
         self.consumer_hk = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      
@@ -263,7 +263,7 @@ class pdu(threading.Thread) :
                 
                 
     #-------------------------------
-    # consumer from dt
+    # dt queue
     def connect_to_server_dt_q(self):
         # RabbitMQ connect
         self.consumer_dt = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_sub_ex)      

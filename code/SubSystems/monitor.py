@@ -213,7 +213,7 @@ class monitor(threading.Thread) :
     
     
     #-------------------------------
-    # monitor publish   
+    # monitor publisher   
     def connect_to_server_ex(self):
         # RabbitMQ connect        
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
@@ -229,7 +229,7 @@ class monitor(threading.Thread) :
         
         
     #-------------------------------
-    # consumer from hk
+    # hk queue
     def connect_to_server_hk_q(self):
         # RabbitMQ connect
         self.consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_sub_ex)      

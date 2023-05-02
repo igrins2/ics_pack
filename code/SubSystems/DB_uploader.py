@@ -193,7 +193,7 @@ class uploader(threading.Thread):
         
         
     #-------------------------------
-    # sub -> hk    
+    # DB uploader publisher 
     def connect_to_server_ex(self):
         # RabbitMQ connect        
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.iam+'.ex')      
@@ -207,7 +207,9 @@ class uploader(threading.Thread):
         msg = "%s ->" % msg
         self.log.send(self.iam, INFO, msg)
         
-        
+    
+    #-------------------------------    
+    # sub queue
     def connect_to_server_q(self):
         # RabbitMQ connect       
         com_list = ["tmc1", "tmc2", "tmc3", "tm", "vm"]

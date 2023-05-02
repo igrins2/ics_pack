@@ -268,7 +268,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     
     #-------------------------------
-    # hk publish
+    # hk publisher
     def connect_to_server_ex(self):
         # RabbitMQ connect  
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_ex)      
@@ -284,7 +284,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
          
          
     #-------------------------------
-    # consumer from sub
+    # sub queue
     def connect_to_server_sub_q(self):
         # RabbitMQ connect
         sub_hk_ex = [self.sub_list[i]+'.ex' for i in range(COM_CNT)]
@@ -305,8 +305,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
             th.start()
                     
                 
-    #-------------------------------
-    # rev <- sub 
     def callback_tmc1(self, ch, method, properties, body):
         cmd = body.decode()
         msg = "<- [TC1] %s" % cmd

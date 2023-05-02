@@ -64,10 +64,10 @@ TM_1 = 6
 
 DEFAULT_VALUE = "-999"
 
-ALM_ERR = "ERROR"
-ALM_OK = "GOOD"
-ALM_WARN = "WARN"
-ALM_FAT = "FATAL"
+ALM_ERR = "ALARM ERROR"
+ALM_OK = "ALARM GOOD"
+ALM_WARN = "ALARM WARN"
+ALM_FAT = "ALARM FATAL"
 
 # ---------------------------
 # motor

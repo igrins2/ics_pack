@@ -77,7 +77,7 @@ class Inst_Seq(threading.Thread):
         
     
     #--------------------------------------------------------
-    # Publish Inst. Sequencer
+    # Inst. Sequencer Publisher
     def connect_to_server_ex(self):
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.InstSeq_ex)      
         self.producer.connect_to_server()
@@ -92,7 +92,7 @@ class Inst_Seq(threading.Thread):
         
     
     #--------------------------------------------------------
-    # consumer from ObsApp
+    # ObsApp queue
     def connect_to_server_ObsApp_q(self):
         self.consumer_ObsApp = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.ObsApp_ex)      
         self.consumer_ObsApp.connect_to_server()
@@ -114,7 +114,7 @@ class Inst_Seq(threading.Thread):
         
                       
     #--------------------------------------------------------
-    # consumer from dcs
+    # dcs queue
     def connect_to_server_dcs_q(self):
         # RabbitMQ connect
         dcs_InstSeq_ex = [self.dcs_list[i]+'.ex' for i in range(DCS_CNT)]

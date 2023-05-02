@@ -26,6 +26,11 @@ INFO = "INFO"
 WARNING = "WARNING"
 ERROR = "ERROR"
 
+ALM_ERR = "ALARM ERROR"
+ALM_OK = "ALARM GOOD"
+ALM_WARN = "ALARM WARN"
+ALM_FAT = "ALARM FATAL"
+
 SIMUL_MODE = 1
 REAL_MODE = 0
 NONE_MODE = -1
@@ -33,11 +38,6 @@ NONE_MODE = -1
 PDU_IDX = 8
 
 FOWLER_MODE = 3
-
-SERV_CONNECT_CNT = 3 #EngTools / DCS / hk Sub
-ENG_TOOLS = 0
-DCS = 1
-HK_SUB = 2
 
 DCS_CNT = 3
 SVC = 0
@@ -109,6 +109,8 @@ DT_REQ_SETLT = "SetLT"          #motor
 
 EXIT = "Exit"
 ALIVE = "Alive" # from EngTools
+
+DT_STATUS = "DTStatus"
 
 CMD_INIT2_DONE = "Initialize2_Done" # to DCS
 CMD_INITIALIZE2_ICS = "Initialize2_ics" 
