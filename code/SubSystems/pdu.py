@@ -218,6 +218,9 @@ class pdu(threading.Thread) :
         
         
     def publish_to_queue(self, msg):
+        if self.producer == None:
+            return
+        
         self.producer.send_message(self.sub_q, msg)
         
         msg = "%s ->" % msg
@@ -239,9 +242,6 @@ class pdu(threading.Thread) :
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
-        
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
                                                        
         if param[0] == HK_REQ_PWR_STS:
             pow_flag = self.power_status("DN0\r")
@@ -260,6 +260,12 @@ class pdu(threading.Thread) :
                 
             msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
             self.publish_to_queue(msg)
+            
+        else:
+            return
+        
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                 
                 
     #-------------------------------
@@ -277,15 +283,18 @@ class pdu(threading.Thread) :
     def callback_dt(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
-        
-        msg = "<- [DTP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
                                                        
         if param[0] == HK_REQ_PWR_STS:
             self.power_status("DN0\r")
             
         elif param[0] == HK_REQ_PWR_ONOFF_IDX:
             self.change_power(int(param[1]), param[2]) 
+            
+        else:
+            return
+        
+        msg = "<- [DTP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                         
             
 if __name__ == "__main__":

@@ -202,6 +202,9 @@ class uploader(threading.Thread):
         
         
     def publish_to_queue(self, msg):
+        if self.producer == None:
+            return
+        
         self.producer.send_message(self.iam+'.q', msg)
         
         msg = "%s ->" % msg
@@ -239,8 +242,6 @@ class uploader(threading.Thread):
     
     def callback_tmc1(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [TC1] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_REQ_GETVALUE:
@@ -253,13 +254,15 @@ class uploader(threading.Thread):
             self.hk_list[HK_BENCH_SP] = self.judge_value(param[1])
             self.hk_list[HK_GRATING_SP] = self.judge_value(param[2])
             
-        #print(self.hk_list)
-            
+        else:
+            return
+        
+        msg = "<- [TC1] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+                        
             
     def callback_tmc2(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [TC2] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
      
         if param[0] == HK_REQ_GETVALUE:
@@ -271,14 +274,16 @@ class uploader(threading.Thread):
         elif param[0] == HK_REQ_GETSETPOINT:
             self.hk_list[HK_DETS_SP] = self.judge_value(param[1])
             self.hk_list[HK_DETK_SP] = self.judge_value(param[2])
-        
-        #print(self.hk_list)
             
+        else:
+            return
+        
+        msg = "<- [TC2] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+                    
         
     def callback_tmc3(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [TC3] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_REQ_GETVALUE:
@@ -289,13 +294,15 @@ class uploader(threading.Thread):
         elif param[0] == HK_REQ_GETSETPOINT:
             self.hk_list[HK_DETH_SP] = self.judge_value(param[1])
             
-        #print(self.hk_list)
+        else:
+            return
         
+        msg = "<- [TC3] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+                    
     
     def callback_tm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [TM] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_REQ_GETVALUE:
@@ -308,14 +315,15 @@ class uploader(threading.Thread):
             self.hk_list[HK_SHIELDTOP] = self.judge_value(param[7])
             self.hk_list[HK_AIR] = self.judge_value(param[8])
             
-            #print(self.hk_list)
-                
+        else:
+            return
+        
+        msg = "<- [TM] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+                            
        
     def callback_vm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [VM] %s" % cmd
-        if len(cmd) < 80:
-            self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_REQ_GETVALUE:
@@ -327,15 +335,16 @@ class uploader(threading.Thread):
             
             self.hk_list[HK_VACUUM] = dpvalue
             
-            #print(self.hk_list)
+        else:
+            return
+        
+        msg = "<- [VM] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
             
             
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
-        
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
 
         if param[0] == HK_REQ_UPLOAD_DB:
             db = param[1:]
@@ -344,6 +353,12 @@ class uploader(threading.Thread):
             else:
                 #from HKP
                 self.start_upload_to_firebase(db)
+                
+        else:
+            return
+        
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                 
                 
     def judge_value(self, input):

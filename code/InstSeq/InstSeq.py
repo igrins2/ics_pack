@@ -85,6 +85,9 @@ class Inst_Seq(threading.Thread):
             
             
     def publish_to_queue(self, msg):
+        if self.producer == None:
+            return
+        
         self.producer.send_message(self.InstSeq_q, msg)
         
         msg = "%s ->" % msg
@@ -104,13 +107,17 @@ class Inst_Seq(threading.Thread):
     
     def callback_ObsApp(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [ObsApp] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
     
         param = cmd.split()
         
         if param[0] == EXIT:
-            self.__del__()          
+            self.__del__()  
+            
+        else:
+            return
+        
+        msg = "<- [ObsApp] %s" % cmd
+        self.log.send(self.iam, INFO, msg)        
         
                       
     #--------------------------------------------------------
@@ -134,9 +141,6 @@ class Inst_Seq(threading.Thread):
             
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()        
-        msg = "<- [DCSS] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-
         param = cmd.split()
         
         if param[0] == CMD_INIT2_DONE or param[1] == CMD_INITIALIZE2_ICS:
@@ -151,13 +155,16 @@ class Inst_Seq(threading.Thread):
             
         elif param[0] == CMD_STOPACQUISITION:
             pass
+        
+        else:
+            return
+        
+        msg = "<- [DCSS] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                    
     
     def callback_h(self, ch, method, properties, body):
         cmd = body.decode()        
-        msg = "<- [DCSH] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-
         param = cmd.split()
         
         if param[0] == CMD_INIT2_DONE or param[1] == CMD_INITIALIZE2_ICS:
@@ -172,13 +179,17 @@ class Inst_Seq(threading.Thread):
             
         elif param[0] == CMD_STOPACQUISITION:
             pass
+        
+        else:
+            return
+        
+        msg = "<- [DCSH] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+
                     
                     
     def callback_k(self, ch, method, properties, body):
         cmd = body.decode()        
-        msg = "<- [DCSK] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-
         param = cmd.split()
         
         if param[0] == CMD_INIT2_DONE or param[1] == CMD_INITIALIZE2_ICS:
@@ -193,6 +204,12 @@ class Inst_Seq(threading.Thread):
             
         elif param[0] == CMD_STOPACQUISITION:
             pass
+        
+        else:
+            return
+        
+        msg = "<- [DCSK] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
             
 
     #-------------------------------

@@ -222,6 +222,9 @@ class monitor(threading.Thread) :
         
         
     def publish_to_queue(self, msg):
+        if self.producer == None:
+            return
+        
         self.producer.send_message(self.sub_q, msg)
         
         msg = "%s ->" % msg
@@ -243,9 +246,6 @@ class monitor(threading.Thread) :
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
-                
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
                       
         if param[0] == HK_REQ_MANUAL_CMD:       
             if self.iam != param[1]:
@@ -257,6 +257,12 @@ class monitor(threading.Thread) :
             value = self.socket_send(cmd)
             msg = "%s %s" % (param[0], value) 
             self.publish_to_queue(msg)
+            
+        else:
+            return
+        
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
             
  
             

@@ -32,7 +32,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def __init__(self):
         super().__init__()
         
-        self.setFixedSize(281, 184)
+        self.setFixedSize(268, 165)
                     
         self.iam = "EngTools"
         
@@ -115,6 +115,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         
     def publish_to_queue(self, msg):
+        if self.producer == None:
+            return
+        
         self.producer.send_message(self.EngTools_q, msg)
         
         msg = "%s ->" % msg
@@ -137,12 +140,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_hk(self, ch, method, properties, body):
         
         cmd = body.decode()
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_STATUS:
-            self.label_stsHKP.setText(param[1])
+            self.label_stsHKP.setText(param[2])
             self.bt_runHKP.setEnabled(False)
             
         elif param[0] == EXIT:                     
@@ -153,6 +154,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
             if self.bt_runHKP.isEnabled() and self.bt_runDTP.isEnabled():
                 self.radio_inst_simul.setEnabled(True)
                 self.radio_real.setEnabled(True)  
+                
+        else:
+            return
+        
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
     
     
     #-------------------------------
@@ -171,12 +178,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_dt(self, ch, method, properties, body):
         
         cmd = body.decode()
-        msg = "<- [DTP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == DT_STATUS:
-            self.label_stsDTP.setText(param[1])                
+            self.label_stsDTP.setText(param[2])                
             self.bt_runDTP.setEnabled(False)
             
             msg = "%s %d" % (ALIVE, self.simulation)
@@ -190,6 +195,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
             if self.bt_runHKP.isEnabled() and self.bt_runDTP.isEnabled():
                 self.radio_inst_simul.setEnabled(True)
                 self.radio_real.setEnabled(True)
+                
+        else:
+            return
+        
+        msg = "<- [DTP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
             
     
     def set_mode(self):                    
@@ -207,6 +218,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.radio_inst_simul.setEnabled(False)
         self.radio_real.setEnabled(False)
+        self.label_stsHKP.setText("STARTED")
         
            
     def run_DTP(self):
@@ -215,7 +227,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.proc[DTP] = subprocess.Popen(['python', WORKING_DIR + 'ics_pack/code/DTP/DT_gui.py'])
         
         self.radio_inst_simul.setEnabled(False)
-        self.radio_real.setEnabled(False)        
+        self.radio_real.setEnabled(False)  
+        self.label_stsDTP.setText("STARTED")      
     
 
 if __name__ == "__main__":

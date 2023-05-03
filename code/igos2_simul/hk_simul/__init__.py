@@ -81,7 +81,7 @@ class MTR(object):
         
         elif data == "ZS":
             self._zs = True
-            return str(self._zs)
+            return "0"
         
         elif data == "O=0":
             self._velocity = 0
@@ -307,7 +307,7 @@ class HouseKeepingHandlerBase(socketserver.BaseRequestHandler):
             data = res.decode()
             # print("data received %s: [%s]" % (self.hks_name, data))
             print("data received %s: [%s] %d" % (self.hks_name, data, len(data)))
-
+            
         print("empty data received. closing the loop")
 
 

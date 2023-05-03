@@ -8,6 +8,7 @@ Modified on Apr 18, 2023
 @author: hilee
 """
 
+from pickletools import read_unicodestring1
 import sys, os
 from matplotlib.figure import Figure
 
@@ -85,7 +86,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.EngTools_ex = self.cfg.get(MAIN, 'engtools_exchange')
         self.EngTools_q = self.cfg.get(MAIN, 'engtools_routing_key')
-                        
+
+        self.motor_utpos = self.cfg.get(HK, "ut-pos").split(",")                        
+        self.motor_ltpos = self.cfg.get(HK, "lt-pos").split(",")
+
         self.com_list = ["pdu", "lt", "ut"]
         self.dcs_list = ["DCSS", "DCSH", "DCSK"]
         
@@ -122,9 +126,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.e_utpos.setText("---")
         self.e_ltpos.setText("---")
         
+        self.sts_ut_pos[0].setText(self.motor_utpos[0])
+        self.sts_ut_pos[1].setText(self.motor_utpos[1])
+        
+        self.sts_lt_pos[0].setText(self.motor_ltpos[0])
+        self.sts_lt_pos[1].setText(self.motor_ltpos[1])
+        self.sts_lt_pos[2].setText(self.motor_ltpos[2])
+        self.sts_lt_pos[3].setText(self.motor_ltpos[3])
+        
         self.e_movinginterval.setText("1")        
         
-        self.simulation = NONE_MODE     #from EngTools
+        self.simulation = False     #from EngTools
         
         self.mode = SINGLE_MODE
         self.continuous = False
@@ -197,7 +209,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.show_dcs_timer.start()           
         
         msg = "%s %s" % (DT_STATUS, self.alarm_status)
-        self.producer.send_message(self.dt_q, msg)
+        self.publish_to_queue(msg)
                     
         
     def closeEvent(self, event: QCloseEvent) -> None:   
@@ -223,8 +235,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for th in threading.enumerate():
             self.log.send(self.iam, INFO, th.name + " exit.")
                                                     
-        msg = "%s %s" % (EXIT, DT)
-        self.producer.send_message(self.dt_q, msg)
+        self.publish_to_queue(EXIT)
 
         self.producer.channel.close()
         self.consumer_EngTools.channel.close()
@@ -323,6 +334,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.cal_e_repeat = [self.e_dark_repeat, self.e_flaton_repeat, self.e_flatoff_repeat, self.e_ThAr_repeat, self.e_pinholeflat_repeat, self.e_pinholeThAr_repeat, self.e_USAFon_repeat, self.e_USAFoff_repeat, self.e_parking_repeat]
         
+        self.sts_ut_pos = [self.sts_ut_pos1, self.sts_ut_pos2]
+        self.sts_lt_pos = [self.sts_lt_pos1, self.sts_lt_pos2, self.sts_lt_pos3, self.sts_lt_pos4]
+        
+        self.bt_ut_move_to = [self.bt_ut_move_to_0, self.bt_ut_move_to_1]
+        self.bt_lt_move_to = [self.bt_lt_move_to_0, self.bt_lt_move_to_1, self.bt_lt_move_to_2, self.bt_lt_move_to_3]
+        
         self.chk_whole.clicked.connect(self.cal_whole_check)
         self.bt_run.clicked.connect(self.cal_run)
         
@@ -343,6 +360,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.bt_utpos_prev.clicked.connect(lambda: self.move_motor_delta(UT, PREV))
         self.bt_utpos_next.clicked.connect(lambda: self.move_motor_delta(UT, NEXT))
         
+        self.bt_ut_move_to_0.clicked.connect(lambda: self.move_motor(UT, 0))
+        self.bt_ut_move_to_1.clicked.connect(lambda: self.move_motor(UT, 1))
+        
         self.bt_utpos_set1.clicked.connect(lambda: self.motor_pos_set(UT, 0))
         self.bt_utpos_set2.clicked.connect(lambda: self.motor_pos_set(UT, 1))
         
@@ -353,6 +373,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.bt_ltpos_set2.clicked.connect(lambda: self.motor_pos_set(LT, 1))
         self.bt_ltpos_set3.clicked.connect(lambda: self.motor_pos_set(LT, 2))
         self.bt_ltpos_set4.clicked.connect(lambda: self.motor_pos_set(LT, 3))
+        
+        self.bt_lt_move_to_0.clicked.connect(lambda: self.move_motor(LT, 0))
+        self.bt_lt_move_to_1.clicked.connect(lambda: self.move_motor(LT, 1))
+        self.bt_lt_move_to_2.clicked.connect(lambda: self.move_motor(LT, 2))
+        self.bt_lt_move_to_3.clicked.connect(lambda: self.move_motor(LT, 3))
         
         self.protect_btn_ut(False)
         self.protect_btn_lt(False)     
@@ -372,6 +397,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         
     def publish_to_queue(self, msg):
+        if self.producer == None:
+            return
+        
         self.producer.send_message(self.dt_q, msg)
         
         msg = "%s ->" % msg
@@ -393,15 +421,18 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def callback_EngTools(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [EngTools] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()     
         
         if param[0] == ALIVE:
             self.simulation = bool(int(param[1]))   
             
             msg = "%s %s %d" % (CMD_INIT2_DONE, "all", self.simulation)
-            self.producer.send_message(self.dt_dcs_q, msg)
+            self.publish_to_queue(msg)
+        else:
+            return
+        
+        msg = "<- [EngTools] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
     
        
     #-------------------------------
@@ -422,13 +453,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
             th.daemon = True
             th.start()
             
-        self.producer.send_message(self.dt_q, HK_REQ_PWR_STS)
+        self.publish_to_queue(HK_REQ_PWR_STS)
                     
     
     def callback_pdu(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [PDU] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         self.param_sub[PDU] = cmd
         
         param = cmd.split()
@@ -440,12 +469,15 @@ class MainWindow(Ui_Dialog, QMainWindow):
             for i in range(PDU_IDX):
                 self.power_status[i] = param[i+1]
                 
+        else:
+            return
+            
+        msg = "<- [PDU] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+                
         
     def callback_lt(self, ch, method, properties, body):
-        cmd = body.decode() 
-        msg = "<- [LT] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-        
+        cmd = body.decode()         
         self.param_sub[LT] = cmd
         
         param = cmd.split()       
@@ -458,15 +490,15 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 msg = "%s - need to initialize" % param[1]
                 self.log.send(self.iam, INFO, msg)  
         
-        elif param[0] == DT_REQ_SETLT:
-            pass
+        else:
+            return
         
+        msg = "<- [LT] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+                
         
     def callback_ut(self, ch, method, properties, body):
-        cmd = body.decode()   
-        msg = "<- [UT] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-        
+        cmd = body.decode()           
         self.param_sub[UT] = cmd
         
         param = cmd.split()     
@@ -479,9 +511,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 msg = "%s - need to initialize" % param[1]
                 self.log.send(self.iam, INFO, msg)
 
-        elif param[0] == DT_REQ_SETUT:
-            pass
-
+        else:
+            return
+        
+        msg = "<- [UT] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+        
             
     #-------------------------------
     # dcs queue
@@ -626,7 +661,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.dcs_ready[dc_idx] = False
         self.QWidgetBtnColor(self.bt_init[dc_idx], "yellow", "blue")
         msg = "%s %s %d" % (CMD_INITIALIZE2_ICS, self.dcs_list[dc_idx], self.simulation)
-        self.producer[DCS].send_message(self.dt_dcs_q, msg)
+        self.publish_to_queue(msg)
             
         
     def set_fs_param(self, dc_idx):     
@@ -671,7 +706,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             msg = "%s %s %d %.3f 1 %d 1 %.3f 1" % (CMD_SETFSPARAM_ICS, self.dcs_list[dc_idx], self.simulation, _exptime, _FS_number, _fowlerTime)
         else:
             msg = "%s %s %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation)
-        self.producer[DCS].send_message(self.dt_dcs_q, msg)
+        self.publish_to_queue(msg)
 
 
         self.acquiring[dc_idx] = True        
@@ -683,8 +718,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.elapsed_timer[dc_idx].stop()
                 
         msg = "%s %s %d" % (CMD_STOPACQUISITION, self.dcs_list[dc_idx], self.simulation)
-        self.producer[DCS].send_message(self.dt_dcs_q, msg)
-    
+        self.publish_to_queue(msg)    
         
     
     def load_data(self, dc_idx, folder_name):
@@ -774,10 +808,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.e_repeat[dc_idx].setEnabled(enable)
         
         self.chk_ds9[dc_idx].setEnabled(enable)
-        self.chk_autosave[dc_idx].setEnabled(enable)
-        
-        self.bt_save[dc_idx].setEnabled(enable)
-        self.bt_path[dc_idx].setEnabled(enable)
         
         self.e_path[dc_idx].setEnabled(enable)
         self.e_savefilename[dc_idx].setEnabled(enable)        
@@ -833,6 +863,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.bt_utpos_set1.setEnabled(enable)
         self.bt_utpos_set2.setEnabled(enable)
         
+        for i in range(2):
+            self.bt_ut_move_to[i].setEnabled(enable)
+        
     
     def protect_btn_lt(self, enable):
         self.bt_ltpos_prev.setEnabled(enable)
@@ -843,6 +876,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.bt_ltpos_set2.setEnabled(enable)
         self.bt_ltpos_set3.setEnabled(enable)
         self.bt_ltpos_set4.setEnabled(enable)
+        
+        for i in range(4):
+            self.bt_lt_move_to[i].setEnabled(enable)
         
     
     def cal_exposure(self):
@@ -1099,10 +1135,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     
     def open_calilbration(self):
-        
-        if self.simulation == NONE_MODE:
-            return
-        
+                
         if self.chk_open_calibration.isChecked():
             self.setFixedSize(1315, 700)
             self.setGeometry(0, 0, 1315, 700)
@@ -1115,14 +1148,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if self.power_status[MOTOR] == OFF:
             self.power_onoff(MOTOR, ON)
                 
+        cmd = "%sics_pack/code/SubSystems/motor.py" % WORKING_DIR
         if self.proc_sub[LT] == None:
-            port = self.cfg.get(HK, self.com_list[LT] + "-port")
-            cmd = "%sworkspace/ics/HKP/motor.py" % WORKING_DIR
-            self.proc_sub[LT] = subprocess.Popen(['python', cmd, self.com_list[LT], port, str(int(self.simulation))])          
+            self.proc_sub[LT] = subprocess.Popen(['python', cmd, self.com_list[LT]])          
         if self.proc_sub[UT] == None:
-            port = self.cfg.get(HK, self.com_list[UT] + "-port")
-            cmd = "%sworkspace/ics/HKP/motor.py" % WORKING_DIR
-            self.proc_sub[UT] = subprocess.Popen(['python', cmd, self.com_list[UT], port, str(int(self.simulation))]) 
+            self.proc_sub[UT] = subprocess.Popen(['python', cmd, self.com_list[UT]]) 
         
 
 
@@ -1186,7 +1216,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     
     def power_onoff(self, idx, onoff):
         msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx, onoff)
-        self.producer[HK_SUB].send_message(self.dt_sub_q, msg) 
+        self.publish_to_queue(msg)
 
 
     def func_lamp(self, idx, off=False):  
@@ -1206,7 +1236,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.lt_moved = False
         
         msg = "%s %d %d" % (DT_REQ_MOVEMOTOR, MOTOR_LT_POS[idx], MOTOR_UT_POS[idx])
-        self.producer[HK_SUB].send_message(self.dt_sub_q, msg)
+        self.publish_to_queue(msg)
                         
         
     def motor_init(self, motor):
@@ -1220,8 +1250,24 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.bt_lt_motor_init.setEnabled(False)
             
         msg = "%s %s" % (DT_REQ_INITMOTOR, self.com_list[motor])
-        self.producer[HK_SUB].send_message(self.dt_sub_q, msg)
+        self.publish_to_queue(msg)
             
+    
+    def move_motor(self, motor, pos): #motor-UT/LT, position number
+        if motor == UT:
+            self.ut_moved = False
+            self.protect_btn_ut(False)
+            self.QWidgetBtnColor(self.bt_ut_move_to[pos], "yellow", "blue")
+        elif motor == LT:
+            self.lt_moved = False
+            self.protect_btn_lt(False)
+            self.QWidgetBtnColor(self.bt_lt_move_to[pos], "yellow", "blue")
+            
+        msg = "%s %s %d" % (DT_REQ_MOVEMOTOR, self.com_list[motor], pos)
+        
+                
+        self.publish_to_queue(msg)
+        
 
     def move_motor_delta(self, motor, direction): #motor-UT/LT, direction-prev, next
         if motor == UT:
@@ -1248,7 +1294,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 
             self.protect_btn_lt(False)
                 
-        self.producer[HK_SUB].send_message(self.dt_sub_q, msg)
+        self.publish_to_queue(msg)
                 
     
     def motor_pos_set(self, motor, position): #motor-UT/LT, direction-UT(0/1), LT(0-3)
@@ -1257,7 +1303,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         elif motor == LT:
             msg = "%s %d" % (DT_REQ_SETLT, position)
             
-        self.producer[HK_SUB].send_message(self.dt_sub_q, msg)
+        self.publish_to_queue(msg)
     
     
     
@@ -1278,15 +1324,20 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     
             elif param[0] == DT_REQ_MOVEMOTOR:
                 self.lt_moved = True
-                self.e_ltpos.setText(param[1])
+                self.protect_btn_lt(True)
+                self.e_ltpos.setText(param[2])
                 
-                if self.ut_moved and self.lt_moved:
-                    self.func_lamp(self.cal_cur)
-                    ti.sleep(1)
+                self.QWidgetBtnColor(self.bt_lt_move_to[int(param[1])], "black")
+
+                                
+                #if self.ut_moved and self.lt_moved:
+                #    self.func_lamp(self.cal_cur)
+                #    ti.sleep(1)
                     
-                    self.cal_exposure()
+                #    self.cal_exposure()
                     
             elif param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
+                self.lt_moved = True
                 self.protect_btn_lt(True)
                 self.e_ltpos.setText(param[1])
                 
@@ -1307,15 +1358,19 @@ class MainWindow(Ui_Dialog, QMainWindow):
                                 
             elif param[0] == DT_REQ_MOVEMOTOR:
                 self.ut_moved = True
-                self.e_utpos.setText(param[1])
+                self.protect_btn_ut(True)
+                self.e_utpos.setText(param[2])
                 
-                if self.ut_moved and self.lt_moved:
-                    self.func_lamp(self.cal_cur)
-                    ti.sleep(1)
+                self.QWidgetBtnColor(self.bt_ut_move_to[int(param[1])], "black")
+                
+                #if self.ut_moved and self.lt_moved:
+                #    self.func_lamp(self.cal_cur)
+                #    ti.sleep(1)
                     
-                    self.cal_exposure()
+                #    self.cal_exposure()
             
             elif param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
+                self.ut_moved = True
                 self.protect_btn_ut(True)
                 self.e_utpos.setText(param[1])
                 

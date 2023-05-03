@@ -14,7 +14,7 @@ import time as ti
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
-from HKP.HK_def import *
+from SubSystems_def import *
 import Libs.SetConfig as sc
 from Libs.MsgMiddleware import *
 from Libs.logger import *
@@ -51,8 +51,8 @@ class motor(threading.Thread) :
         
         ip_addr = "%s-ip" % self.iam
         
-        simul = bool(self.cfg.get(MAIN, "simulation"))
-        if simul:
+        self.simul = bool(self.cfg.get(MAIN, "simulation"))
+        if self.simul:
             self.ip = "localhost"
         else:
             self.ip = self.cfg.get(HK, ip_addr)
@@ -215,9 +215,12 @@ class motor(threading.Thread) :
             res = self.comSocket.recv(REBUFSIZE)
             res = res.decode()
             res = res[:-1]
+            if self.simul:
+                tmp = res.split("\r")
+                res = tmp[-1]
             self.log.send(self.iam, INFO, "ReceivedFromMotor: " + res)
         else:
-            res = ""
+            res = ""       
             
         return res
         
@@ -370,6 +373,9 @@ class motor(threading.Thread) :
         
         
     def publish_to_queue(self, msg):
+        if self.producer == None:
+            return
+        
         self.producer.send_message(self.sub_q, msg)
         
         msg = "%s ->" % msg
@@ -380,48 +386,41 @@ class motor(threading.Thread) :
     # hk queue
     def connect_to_server_hk_q(self):
         # RabbitMQ connect
-        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_ex)      
-        consumer.connect_to_server()
-        consumer.define_consumer(self.hk_q, self.callback_hk)
+        self.consumer_hk = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.hk_ex)      
+        self.consumer_hk.connect_to_server()
+        self.consumer_hk.define_consumer(self.hk_q, self.callback_hk)
         
-        th = threading.Thread(target=consumer.start_consumer)
+        th = threading.Thread(target=self.consumer_hk.start_consumer)
         th.start()
         
         
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
-        param = cmd.split()
         
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-        
-        self.data_processing(param)
+        self.data_processing(cmd, True)
         
         
     #-------------------------------
     # dt queue
     def connect_to_server_dt_q(self):
         # RabbitMQ connect
-        consumer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_ex)      
-        consumer.connect_to_server()
-        consumer.define_consumer(self.dt_q, self.callback_dt)
+        self.consumer_dt = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.dt_ex)      
+        self.consumer_dt.connect_to_server()
+        self.consumer_dt.define_consumer(self.dt_q, self.callback_dt)
         
-        th = threading.Thread(target=consumer.start_consumer)
+        th = threading.Thread(target=self.consumer_dt.start_consumer)
         th.start()
 
     
     def callback_dt(self, ch, method, properties, body):
         cmd = body.decode()
+        
+        self.data_processing(cmd)
+        
+        
+    def data_processing(self, cmd, hkp=False):    
         param = cmd.split()
         
-        msg = "<- [DTP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-        
-        self.data_processing(param)
-        
-        
-    def data_processing(self, param):    
-                    
         if len(param) < 2:
             return
                 
@@ -441,13 +440,15 @@ class motor(threading.Thread) :
                 self.publish_to_queue(msg)
             
             elif param[0] == DT_REQ_MOVEMOTOR:
+                if self.iam != param[1]:
+                    return
                 if self.iam == MOTOR_LT:
-                    curpos = self.move_motor(int(param[1]))
+                    curpos = self.move_motor(int(param[2]))
                     curpos = "%s" % (int(curpos) * (-1))
                 elif self.iam == MOTOR_UT:
                     curpos = self.move_motor(int(param[2]))
                     
-                msg = "%s %s" % (param[0], curpos)
+                msg = "%s %s %s" % (param[0], param[2], curpos)
                 self.publish_to_queue(msg)
             #-----------------------------------------------------    
             # for each
@@ -472,22 +473,31 @@ class motor(threading.Thread) :
             elif param[0] == DT_REQ_SETUT:
                 if self.iam != MOTOR_UT:
                     return
-                self.setUT(int(param[2]))
+                self.setUT(int(param[1]))
                 msg = "%s OK" % param[0]
                 self.publish_to_queue(msg)
                 
             elif param[0] == DT_REQ_SETLT:
                 if self.iam != MOTOR_LT:
                     return
-                self.setLT(int(param[2]))
+                self.setLT(int(param[1]))
                 msg = "%s OK" % param[0]
                 self.publish_to_queue(msg)
+                
+            else:
+                return
+        
+        if hkp:
+            msg = "<- [HKP] %s" % cmd
+            self.log.send(self.iam, INFO, msg)
+        else:
+            msg = "<- [DTP] %s" % cmd
+            self.log.send(self.iam, INFO, msg)
 
     
 if __name__ == "__main__":
 
-
-    proc = motor(sys.argv[1], sys.argv[2])
+    proc = motor(sys.argv[1])
         
     proc.connect_to_server_ex()
     proc.connect_to_server_hk_q()
@@ -495,16 +505,9 @@ if __name__ == "__main__":
         
     proc.connect_to_component()
     '''
-    #proc.init_motor()
-    #proc.move_motor(1)
     
-    #proc.move_motor_delta(True, 50)    
-    #proc.move_motor_delta(False, 50)
-
-    #proc.setUT(1)
-    
-    proc = motor("lt", "10006")
-    #proc = motor("ut", "10007")
+    #proc = motor("lt")
+    proc = motor("ut")
     
     proc.connect_to_component()
     
@@ -512,7 +515,7 @@ if __name__ == "__main__":
     
     proc.init_motor()
     print("--------------------------------")
-    proc.move_motor(3)
+    proc.move_motor(1)
     
     duration = ti.time() - st
     print(duration)

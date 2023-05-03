@@ -232,6 +232,9 @@ class temp_ctrl(threading.Thread):
         
     
     def publish_to_queue(self, msg):
+        if self.producer == None:
+            return
+        
         self.producer.send_message(self.sub_q, msg)
         
         msg = "%s ->" % msg
@@ -253,9 +256,6 @@ class temp_ctrl(threading.Thread):
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
-        
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
                             
         if param[0] == HK_REQ_GETSETPOINT:           
             #self.pause = True
@@ -291,6 +291,12 @@ class temp_ctrl(threading.Thread):
             #self.pause = False
             self.start_monitoring() 
             
+        else:
+            return
+        
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+            
             
     #-------------------------------
     # uploader queue
@@ -307,9 +313,6 @@ class temp_ctrl(threading.Thread):
     def callback_uploader(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
-        
-        msg = "<- [DB uploader] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
                             
         if param[0] == HK_REQ_GETSETPOINT:   
             #self.pause = True
@@ -327,6 +330,12 @@ class temp_ctrl(threading.Thread):
             
             #self.pause = False
             #self.start_monitoring() 
+        
+        else:
+            return
+        
+        msg = "<- [DB uploader] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                                             
 
 if __name__ == "__main__":

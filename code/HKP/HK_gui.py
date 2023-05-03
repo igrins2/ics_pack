@@ -167,8 +167,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for th in threading.enumerate():
             self.log.send(self.iam, INFO, th.name + " exit.")       
                                 
-        msg = "%s %s" % (EXIT, HK)
-        self.publish_to_queue(msg)
+        self.publish_to_queue(EXIT)
     
         self.producer.channel.close()
         for i in range(COM_CNT):
@@ -277,6 +276,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         
     def publish_to_queue(self, msg):
+        if self.producer == None:
+            return
+        
         self.producer.send_message(self.hk_q, msg)
         
         msg = "%s ->" % msg
@@ -307,8 +309,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 
     def callback_tmc1(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [TC1] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_REQ_COM_STS:
@@ -329,12 +329,16 @@ class MainWindow(Ui_Dialog, QMainWindow):
             res = "[TC1] %s" % param[1]
             self.e_recv.setText(res)
             
+        else:
+            return
+        
+        msg = "<- [TC1] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+            
             
             
     def callback_tmc2(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [TC2] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_REQ_COM_STS:
@@ -355,11 +359,15 @@ class MainWindow(Ui_Dialog, QMainWindow):
             res = "[TC2] %s" % param[1]
             self.e_recv.setText(res)
             
+        else:
+            return
+        
+        msg = "<- [TC2] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+            
         
     def callback_tmc3(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [TC3] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_REQ_COM_STS:
@@ -377,12 +385,16 @@ class MainWindow(Ui_Dialog, QMainWindow):
         elif param[0] == HK_REQ_MANUAL_CMD:
             res = "[TC3] %s" % param[1]
             self.e_recv.setText(res)
+            
+        else:
+            return
+        
+        msg = "<- [TC3] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                     
     
     def callback_tm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [TM] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_REQ_COM_STS:
@@ -395,13 +407,16 @@ class MainWindow(Ui_Dialog, QMainWindow):
         elif param[0] == HK_REQ_MANUAL_CMD:
             res = "[TM] %s" % param[1]
             self.e_recv.setText(res)
+            
+        else:
+            return
+        
+        msg = "<- [TM] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                 
     
     def callback_vm(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [VM] %s" % cmd
-        if len(cmd) < 80:
-            self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_REQ_COM_STS:
@@ -412,12 +427,16 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.dpvalue = DEFAULT_VALUE
             else:
                 self.dpvalue = param[1]
+                
+        else:
+            return
+        
+        msg = "<- [VM] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
             
             
     def callback_pdu(self, ch, method, properties, body):
         cmd = body.decode()
-        msg = "<- [PDU] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
         param = cmd.split()
         
         if param[0] == HK_REQ_COM_STS:
@@ -426,6 +445,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
         elif param[0] == HK_REQ_PWR_STS:
             for i in range(PDU_IDX):
                 self.power_status[i] = param[i+1]
+                
+        else:
+            return
+        
+        msg = "<- [PDU] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
             
         
     #-------------------------------

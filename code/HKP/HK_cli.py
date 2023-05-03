@@ -24,6 +24,7 @@ import Libs.SetConfig as sc
 from Libs.MsgMiddleware import *
 
 import threading
+import subprocess
 class HK_cli(threading.Thread):
     def __init__(self):
         
@@ -38,13 +39,32 @@ class HK_cli(threading.Thread):
         self.hk_ex = cfg.get(MAIN, "hk_exchange")     
         self.hk_q = cfg.get(MAIN, "hk_routing_key")
         
+        self.com_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu", "lt", 'ut']
+        
         self.producer = None
         self.consumer = [None for _ in range(COM_CNT+2)]
         
+        self.proc_motor = [None, None]  
+        cmd = "%sics_pack/code/SubSystems/motor.py" % WORKING_DIR
+        if self.proc_motor[LT-6] == None:
+            self.proc_motor[LT-6] = subprocess.Popen(['python', cmd, self.com_list[LT]])          
+        if self.proc_motor[UT-6] == None:
+            self.proc_motor[UT-6] = subprocess.Popen(['python', cmd, self.com_list[UT]])
+        
         
     def __del__(self):
+        
+        for i in range(2):
+            if self.proc_motor[i] != None:
+                self.proc_motor[i].terminate()
+                print(self.proc_motor[i].pid, "exit")
+        
         for th in threading.enumerate():
             print(th.name + " exit.")     
+            
+        self.producer.channel.close()
+        for idx in range(COM_CNT+2):
+            self.consumer[idx].channel.close()
     
 
     #-------------------------------
@@ -62,20 +82,19 @@ class HK_cli(threading.Thread):
     # sub queue
     def connect_to_server_sub_q(self):
             # RabbitMQ connect
-            com_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu", "lt", 'ut']
-            sub_hk_ex = [com_list[i]+'.ex' for i in range(COM_CNT+2)]
+            sub_hk_ex = [self.com_list[i]+'.ex' for i in range(COM_CNT+2)]
             for idx in range(COM_CNT+2):
                 self.consumer[idx] = MsgMiddleware(HK, self.ics_ip_addr, self.ics_id, self.ics_pwd, sub_hk_ex[idx])      
                 self.consumer[idx].connect_to_server()
                 
-            self.consumer[TMC1].define_consumer(com_list[TMC1]+'.q', self.callback_tmc1)       
-            self.consumer[TMC2].define_consumer(com_list[TMC2]+'.q', self.callback_tmc2)
-            self.consumer[TMC3].define_consumer(com_list[TMC3]+'.q', self.callback_tmc3)
-            self.consumer[TM].define_consumer(com_list[TM]+'.q', self.callback_tm)
-            self.consumer[VM].define_consumer(com_list[VM]+'.q', self.callback_vm)
-            self.consumer[PDU].define_consumer(com_list[PDU]+'.q', self.callback_pdu)
-            self.consumer[LT].define_consumer(com_list[LT-1]+'.q', self.callback_lt)
-            self.consumer[UT].define_consumer(com_list[UT-1]+'.q', self.callback_ut)
+            self.consumer[TMC1].define_consumer(self.com_list[TMC1]+'.q', self.callback_tmc1)       
+            self.consumer[TMC2].define_consumer(self.com_list[TMC2]+'.q', self.callback_tmc2)
+            self.consumer[TMC3].define_consumer(self.com_list[TMC3]+'.q', self.callback_tmc3)
+            self.consumer[TM].define_consumer(self.com_list[TM]+'.q', self.callback_tm)
+            self.consumer[VM].define_consumer(self.com_list[VM]+'.q', self.callback_vm)
+            self.consumer[PDU].define_consumer(self.com_list[PDU]+'.q', self.callback_pdu)
+            self.consumer[LT].define_consumer(self.com_list[LT-1]+'.q', self.callback_lt)
+            self.consumer[UT].define_consumer(self.com_list[UT-1]+'.q', self.callback_ut)
             
             for idx in range(COM_CNT+1):
                 th = threading.Thread(target=self.consumer[idx].start_consumer)
@@ -226,7 +245,7 @@ class HK_cli(threading.Thread):
                         self.show_errmsg(_args)
                     elif args[1] == "-h" or args[1] == "--help":
                         self.show_subfunc(args[0], _args, "index:int(1~3), port:int(1~2)")   
-                    elif len(args) < 3:
+                    elif len(args) != 3:
                         self.show_errmsg(_args)         
                     elif (1 <= int(args[1]) <= 3) is not True:    
                         print("Please input 1~3 for index.")
@@ -253,7 +272,7 @@ class HK_cli(threading.Thread):
                         self.show_errmsg(_args)
                     elif args[1] == "-h" or args[1] == "--help":
                         self.show_subfunc(args[0], _args, "index:int(1~4), port:int(index 1~3:A/B, index 4:0~8)")
-                    elif len(args) < 3:
+                    elif len(args) != 3:
                         self.show_errmsg(_args)  
                     elif (1 <= int(args[1]) <= 4) is not True:    
                         print("Please input 1~4 for index.")
@@ -290,7 +309,7 @@ class HK_cli(threading.Thread):
                         self.show_errmsg(_args)
                     elif args[1] == "-h" or args[1] == "--help":
                         self.show_subfunc(args[0], _args, "index:int(1:MACIE 5V, 2:VM 24V, 3:Motor 24V, 4:TH lamp 24V, 5:HC lamp 24V, 0:all), onoff:on/off")
-                    elif len(args) < 3:
+                    elif len(args) != 3:
                         self.show_errmsg(_args)
                     elif (0 <= int(args[1]) <= 8) is not True:
                         print("Please input a number 1~8 or 0(all).")
@@ -321,7 +340,7 @@ class HK_cli(threading.Thread):
                         self.show_errmsg(_args)
                     elif args[1] == "-h" or args[1] == "--help":
                         self.show_subfunc(args[0], _args, "motor:ut/lt")
-                    elif len(args) < 2:
+                    elif len(args) != 2:
                         self.show_errmsg(_args)
                     elif (args[1] == MOTOR_UT or args[1] == MOTOR_LT) is not True:
                         self.show_errmsg(_args)
@@ -339,7 +358,7 @@ class HK_cli(threading.Thread):
                         self.show_errmsg(_args)
                     elif args[1] == "-h" or args[1] == "--help":
                         self.show_subfunc(args[0], _args, "motor:ut/lt, posnum:int(ut:0/1, lt:0-3)")
-                    elif len(args) < 3:
+                    elif len(args) != 3:
                         self.show_errmsg(_args)
                     elif (args[1] == MOTOR_UT or args[1] == MOTOR_LT) is not True:
                         self.show_errmsg(_args)
@@ -361,7 +380,7 @@ class HK_cli(threading.Thread):
                         self.show_errmsg(_args) 
                     elif args[1] == "-h" or args[1] == "--help":
                         self.show_subfunc(args[0], _args, "motor:ut/lt, delta:int")   
-                    elif len(args) < 3:
+                    elif len(args) != 3:
                         self.show_errmsg(_args)     
                     elif (args[1] == MOTOR_UT or args[1] == MOTOR_LT) is not True:
                         self.show_errmsg(_args)

@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'EngToolslUCdlZ.ui'
+## Form generated from reading UI file 'EngToolsvEIIAJ.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.3.0
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -22,30 +22,25 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
             Dialog.setObjectName(u"Dialog")
-        Dialog.resize(281, 184)
-        sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(Dialog.sizePolicy().hasHeightForWidth())
-        Dialog.setSizePolicy(sizePolicy)
+        Dialog.resize(268, 165)
         self.bt_runHKP = QPushButton(Dialog)
         self.bt_runHKP.setObjectName(u"bt_runHKP")
-        self.bt_runHKP.setGeometry(QRect(30, 60, 131, 41))
+        self.bt_runHKP.setGeometry(QRect(10, 60, 131, 41))
         font = QFont()
         font.setPointSize(12)
         font.setBold(True)
         self.bt_runHKP.setFont(font)
         self.bt_runDTP = QPushButton(Dialog)
         self.bt_runDTP.setObjectName(u"bt_runDTP")
-        self.bt_runDTP.setGeometry(QRect(30, 110, 131, 41))
+        self.bt_runDTP.setGeometry(QRect(10, 110, 131, 41))
         self.bt_runDTP.setFont(font)
         self.label_stsHKP = QLabel(Dialog)
         self.label_stsHKP.setObjectName(u"label_stsHKP")
-        self.label_stsHKP.setGeometry(QRect(180, 70, 71, 19))
+        self.label_stsHKP.setGeometry(QRect(150, 70, 121, 20))
         self.label_stsHKP.setAlignment(Qt.AlignCenter)
         self.label_stsDTP = QLabel(Dialog)
         self.label_stsDTP.setObjectName(u"label_stsDTP")
-        self.label_stsDTP.setGeometry(QRect(180, 120, 71, 19))
+        self.label_stsDTP.setGeometry(QRect(150, 120, 121, 20))
         self.label_stsDTP.setAlignment(Qt.AlignCenter)
         self.radio_inst_simul = QRadioButton(Dialog)
         self.radio_inst_simul.setObjectName(u"radio_inst_simul")
