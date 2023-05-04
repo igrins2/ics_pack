@@ -354,6 +354,9 @@
       <bold>true</bold>
      </font>
     </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QLineEdit" name="e_path_H">
     <property name="geometry">
@@ -369,6 +372,9 @@
       <pointsize>9</pointsize>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QLabel" name="label_56">
@@ -881,6 +887,9 @@
       <bold>true</bold>
      </font>
     </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QLineEdit" name="e_path_K">
     <property name="geometry">
@@ -896,6 +905,9 @@
       <pointsize>9</pointsize>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QLabel" name="label_59">
@@ -2787,6 +2799,9 @@
       <bold>true</bold>
      </font>
     </property>
+    <property name="readOnly">
+     <bool>true</bool>
+    </property>
    </widget>
    <widget class="QCheckBox" name="chk_ds9_svc">
     <property name="geometry">
@@ -2821,6 +2836,9 @@
       <pointsize>9</pointsize>
       <bold>true</bold>
      </font>
+    </property>
+    <property name="readOnly">
+     <bool>true</bool>
     </property>
    </widget>
    <widget class="QLabel" name="label_55">

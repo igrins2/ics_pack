@@ -285,10 +285,14 @@ class pdu(threading.Thread) :
         param = cmd.split()
                                                        
         if param[0] == HK_REQ_PWR_STS:
-            self.power_status("DN0\r")
+            pow_flag = self.power_status("DN0\r")
+            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+            self.publish_to_queue(msg)
             
         elif param[0] == HK_REQ_PWR_ONOFF_IDX:
-            self.change_power(int(param[1]), param[2]) 
+            pow_flag = self.change_power(int(param[1]), param[2]) 
+            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+            self.publish_to_queue(msg)
             
         else:
             return

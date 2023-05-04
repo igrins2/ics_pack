@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'DTPrPwtOo.ui'
+## Form generated from reading UI file 'DTPAEvauM.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.4.2
 ##
@@ -125,10 +125,12 @@ class Ui_Dialog(object):
         self.e_savefilename_H.setObjectName(u"e_savefilename_H")
         self.e_savefilename_H.setGeometry(QRect(90, 570, 221, 21))
         self.e_savefilename_H.setFont(font2)
+        self.e_savefilename_H.setReadOnly(True)
         self.e_path_H = QLineEdit(self.groupBox_8)
         self.e_path_H.setObjectName(u"e_path_H")
         self.e_path_H.setGeometry(QRect(90, 547, 221, 21))
         self.e_path_H.setFont(font2)
+        self.e_path_H.setReadOnly(True)
         self.label_56 = QLabel(self.groupBox_8)
         self.label_56.setObjectName(u"label_56")
         self.label_56.setGeometry(QRect(20, 570, 61, 20))
@@ -256,10 +258,12 @@ class Ui_Dialog(object):
         self.e_savefilename_K.setObjectName(u"e_savefilename_K")
         self.e_savefilename_K.setGeometry(QRect(90, 570, 221, 21))
         self.e_savefilename_K.setFont(font2)
+        self.e_savefilename_K.setReadOnly(True)
         self.e_path_K = QLineEdit(self.groupBox_10)
         self.e_path_K.setObjectName(u"e_path_K")
         self.e_path_K.setGeometry(QRect(90, 547, 221, 21))
         self.e_path_K.setFont(font2)
+        self.e_path_K.setReadOnly(True)
         self.label_59 = QLabel(self.groupBox_10)
         self.label_59.setObjectName(u"label_59")
         self.label_59.setGeometry(QRect(20, 570, 61, 20))
@@ -720,6 +724,7 @@ class Ui_Dialog(object):
         self.e_path_svc.setObjectName(u"e_path_svc")
         self.e_path_svc.setGeometry(QRect(90, 547, 221, 21))
         self.e_path_svc.setFont(font2)
+        self.e_path_svc.setReadOnly(True)
         self.chk_ds9_svc = QCheckBox(self.groupBox_11)
         self.chk_ds9_svc.setObjectName(u"chk_ds9_svc")
         self.chk_ds9_svc.setGeometry(QRect(20, 517, 81, 21))
@@ -728,6 +733,7 @@ class Ui_Dialog(object):
         self.e_savefilename_svc.setObjectName(u"e_savefilename_svc")
         self.e_savefilename_svc.setGeometry(QRect(90, 570, 221, 21))
         self.e_savefilename_svc.setFont(font2)
+        self.e_savefilename_svc.setReadOnly(True)
         self.label_55 = QLabel(self.groupBox_11)
         self.label_55.setObjectName(u"label_55")
         self.label_55.setGeometry(QRect(20, 570, 61, 20))

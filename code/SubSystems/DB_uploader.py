@@ -70,7 +70,7 @@ class uploader(threading.Thread):
         
         self.iam = "uploader"
         
-        self.log = LOG(WORKING_DIR + "IGRINS", "HW")    
+        self.log = LOG(WORKING_DIR + "IGRINS", self.iam)    
         self.log.send(self.iam, INFO, "start")
         
         # load ini file

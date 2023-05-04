@@ -191,7 +191,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                              self.bt_pwr_onoff4, self.bt_pwr_onoff5, self.bt_pwr_onoff6, 
                              self.bt_pwr_onoff7, self.bt_pwr_onoff8]
         for i in range(PDU_IDX):
-            self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black", "white")
+            self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black")
         
         self.bt_pwr_onoff1.clicked.connect(lambda: self.power_onoff_index(1))
         self.bt_pwr_onoff2.clicked.connect(lambda: self.power_onoff_index(2))
@@ -704,7 +704,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def set_alert_status_off(self):
         self.alert_toggling = False
         self.alert_status.setText("Okay")
-        self.QWidgetLabelColor(self.alert_status, "black", "white") 
+        self.QWidgetLabelColor(self.alert_status, "black") 
 
         
     #----------------------
@@ -737,7 +737,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if state == "warm":
             self.QWidgetEditColor(self.e_vacuum, "white", "red")
         else:
-            self.QWidgetEditColor(self.e_vacuum, "black", "white")
+            self.QWidgetEditColor(self.e_vacuum, "black")
         self.e_vacuum.setText(text)
         
         
@@ -831,7 +831,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             else:
                 self.QWidgetLabelColor(self.pdulist[i], "gray")
                 self.bt_pwr_onoff[i].setText(ON)
-                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black", "white")                 
+                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black")                 
                             
           
     
