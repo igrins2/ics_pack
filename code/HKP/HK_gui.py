@@ -59,7 +59,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.log.send(self.iam, INFO, "start")
         
         self.setupUi(self)
-        self.setWindowTitle("Housekeeping Package 1.0")
+        self.setWindowTitle("Housekeeping Package 2.0")
         
         # load ini file
         self.ini_file = WORKING_DIR + "IGRINS/Config/IGRINS.ini"

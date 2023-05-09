@@ -62,9 +62,9 @@ class HK_cli(threading.Thread):
         for th in threading.enumerate():
             print(th.name + " exit.")     
             
-        self.producer.channel.close()
         for idx in range(COM_CNT+2):
             self.consumer[idx].channel.close()
+        self.producer.channel.close()
     
 
     #-------------------------------
@@ -244,7 +244,7 @@ class HK_cli(threading.Thread):
                     if len(args) < 2:
                         self.show_errmsg(_args)
                     elif args[1] == "-h" or args[1] == "--help":
-                        self.show_subfunc(args[0], _args, "index:int(1~3), port:int(1~2)")   
+                        self.show_subfunc(args[0], _args, "index:1~3, port:1~2")   
                     elif len(args) != 3:
                         self.show_errmsg(_args)         
                     elif (1 <= int(args[1]) <= 3) is not True:    
@@ -271,7 +271,7 @@ class HK_cli(threading.Thread):
                     if len(args) < 2:
                         self.show_errmsg(_args)
                     elif args[1] == "-h" or args[1] == "--help":
-                        self.show_subfunc(args[0], _args, "index:int(1~4), port:int(index 1~3:A/B, index 4:0~8)")
+                        self.show_subfunc(args[0], _args, "index:1~4, port:A or B(index:1~3)/0~8(index:4)")
                     elif len(args) != 3:
                         self.show_errmsg(_args)  
                     elif (1 <= int(args[1]) <= 4) is not True:    
@@ -308,7 +308,7 @@ class HK_cli(threading.Thread):
                     if len(args) < 2:
                         self.show_errmsg(_args)
                     elif args[1] == "-h" or args[1] == "--help":
-                        self.show_subfunc(args[0], _args, "index:int(1:MACIE 5V, 2:VM 24V, 3:Motor 24V, 4:TH lamp 24V, 5:HC lamp 24V, 0:all), onoff:on/off")
+                        self.show_subfunc(args[0], _args, "index:0(all)/1(MACIE 5V)/2(VM 24V)/3(Motor 24V)/4(TH lamp 24V)/5(HC lamp 24V), onoff:on/off")
                     elif len(args) != 3:
                         self.show_errmsg(_args)
                     elif (0 <= int(args[1]) <= 8) is not True:
@@ -357,7 +357,7 @@ class HK_cli(threading.Thread):
                     if len(args) < 2:
                         self.show_errmsg(_args)
                     elif args[1] == "-h" or args[1] == "--help":
-                        self.show_subfunc(args[0], _args, "motor:ut/lt, posnum:int(ut:0/1, lt:0-3)")
+                        self.show_subfunc(args[0], _args, "motor:ut/lt, posnum:0 or 1(motor:ut)/0-3(motor:lt)")
                     elif len(args) != 3:
                         self.show_errmsg(_args)
                     elif (args[1] == MOTOR_UT or args[1] == MOTOR_LT) is not True:
@@ -451,7 +451,8 @@ if __name__ == "__main__":
    
     hk.start()
     
-    for i in range(COM_CNT+2):
-        hk.consumer[i].channel.close()
-    hk.producer.channel.close() 
+    hk.__del__()
+    #for i in range(COM_CNT+2):
+    #    hk.consumer[i].channel.close()
+    #hk.producer.channel.close() 
     

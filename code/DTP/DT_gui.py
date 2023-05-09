@@ -54,7 +54,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.setFixedSize(1030, 700)
         self.setGeometry(0, 0, 1030, 700)
-        self.setWindowTitle("Data Taking Package 1.0")        
+        self.setWindowTitle("Data Taking Package 2.0")        
         
         # canvas
         #self.image_fig = []

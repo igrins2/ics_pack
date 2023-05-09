@@ -40,7 +40,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.log.send(self.iam, INFO, "start")
         
         self.setupUi(self)
-        self.setWindowTitle("EngTools 1.0")
+        self.setWindowTitle("EngTools 2.0")
                 
         self.init_events()
                     
