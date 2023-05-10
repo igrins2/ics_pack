@@ -34,7 +34,7 @@ cp $HOME/ics_pack/installation/ds9 $HOME/IGRINS/
 
 
 # start services
-sudo cp $HOME/ics_pack/installation/subsystems.service /etc/systemd/system/
+sudo cp $HOME/ics_pack/installation/subsystem.service /etc/systemd/system/
 sudo cp $HOME/ics_pack/installation/InstSeq.service /etc/systemd/system/
 
 
