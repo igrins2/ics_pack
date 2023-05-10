@@ -19,7 +19,7 @@ case "$1" in
             ;;
 	
 	cli)
-	    (cd HKP; $PYTHONBIN HK_cli .py)
+	    (cd HKP; $PYTHONBIN HK_cli.py)
             ;;
          
         *)

@@ -74,6 +74,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.label_stsHKP.setText("---")
         self.label_stsDTP.setText("---")
         self.radio_real.setChecked(True)
+        self.simulation = False
         
         self.connect_to_server_ex()
         self.connect_to_server_hk_q()
@@ -89,10 +90,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 
         for th in threading.enumerate():
             self.log.send(self.iam, INFO, th.name + " exit.")
-                    
-        self.producer.channel.close()
-        self.consumer_hk.channel.close()
-        self.consumer_dt.channel.close()
+
+        if self.producer != None:
+            self.producer.__del__()
+
+        #self.producer.channel.close()
+        #self.consumer_hk.channel.close()
+        #self.consumer_dt.channel.close()
                                                                 
         return super().closeEvent(event)
         

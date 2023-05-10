@@ -13,19 +13,19 @@ After setup finished, exit the current terminal, open new terminal
 
 3. Set nfs mount
 dcs: server / ics, TelOps: client
-(S-192.168.1.100, H-192.168.1.101, K-192.168.1.102)
+(S-192.168.1.11, H-192.168.1.18, K-192.168.1.15)
 
 IGRINS setting directory - $HOME/IGRINS
 
 # dnf install nfs-utils nfs4-acl-tools
 
-# showmount -e 192.168.1.100  //for dcss
+# showmount -e 192.168.1.11  //for dcss
 
-# mount -t nfs 192.168.1.100:/home/dcss/DCS/Data $HOME/IGRINS/dcss
+# mount -t nfs 192.168.1.11:/home/dcss/DCS/Data $HOME/IGRINS/dcss
 
 # mount | grep nfs
 
-# echo "192.168.1.100:/home/dcss/DCS/Data     $HOME/IGRINS/dcss  nfs     defaults 0 0">>/etc/fstab
+# echo "192.168.1.11:/home/dcss/DCS/Data     $HOME/IGRINS/dcss  nfs     defaults 0 0">>/etc/fstab
 # cat /etc/fstab
 
 
@@ -86,6 +86,7 @@ $ sudo systemctl status InstSeq.service
    $ sudo systemctl stop subsystem.service
    $ sudo systemctl reset-failed (or $ setenforce 0)
 
+
 after checking "ls -lh" in /ics_pack/installation/run_InstSeq.sh
 => sudo chmod 744 run_InstSeq.sh
 after checking "ls -lh" in /ics_pack/installation/run_subsystem.sh
@@ -98,6 +99,8 @@ elif for engineer:
 else:	
 	$ sh ../ics_pack/run_ics.sh cli
 
+# vi /etc/selinux/config
+SELINUX=disabled
 
 
 

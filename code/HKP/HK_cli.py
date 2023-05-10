@@ -62,10 +62,14 @@ class HK_cli(threading.Thread):
         for th in threading.enumerate():
             print(th.name + " exit.")     
             
-        for idx in range(COM_CNT+2):
-            self.consumer[idx].channel.close()
-        self.producer.channel.close()
-    
+        if self.producer != None:
+            self.producer.__del__()    
+        
+        #self.producer.channel.close()
+        #for idx in range(COM_CNT+2):
+        #    if self.consumer[idx] != None:
+        #        self.consumer[idx].channel.close()
+        
 
     #-------------------------------
     # hk cli publisher
@@ -96,8 +100,9 @@ class HK_cli(threading.Thread):
             self.consumer[LT].define_consumer(self.com_list[LT-1]+'.q', self.callback_lt)
             self.consumer[UT].define_consumer(self.com_list[UT-1]+'.q', self.callback_ut)
             
-            for idx in range(COM_CNT+1):
+            for idx in range(COM_CNT+2):
                 th = threading.Thread(target=self.consumer[idx].start_consumer)
+                th.daemon = True
                 th.start()
                 
                  
@@ -147,6 +152,9 @@ class HK_cli(threading.Thread):
         
         if param[0] == HK_REQ_PWR_STS:
             pwr_sts = ""
+            if param[1] == None:
+                return
+                
             for i in range(PDU_IDX):
                 pwr_sts += param[i+1] + " "
             print('[PDU]', pwr_sts)

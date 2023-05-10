@@ -14,6 +14,8 @@ import pytz
 import pyrebase
 import threading
 
+from distutils.util import strtobool
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from SubSystems_def import *
@@ -85,9 +87,9 @@ class uploader(threading.Thread):
         self.hk_sub_q = cfg.get(MAIN, "hk_routing_key")
                 
         #datetime, vacuum, temperature 14, heating power 5
-        self.hk_list = ["" for _ in range(25)]
+        self.hk_list = [DEFAULT_VALUE for _ in range(25)]
         
-        upload_interval = int(cfg.get(HK, "upload-intv"))
+        self.upload_interval = int(cfg.get(HK, "upload-intv"))
         
         firebase = self.get_firebase()
         self.db = firebase.database()
@@ -98,7 +100,7 @@ class uploader(threading.Thread):
         #self.log.send(self.iam, INFO, "Uploaded " + ti.strftime("%Y-%m-%d %H:%M:%S"))
         #-------
                 
-        self.simul = bool(cfg.get(MAIN, "simulation"))
+        self.simul = strtobool(cfg.get(MAIN, "simulation"))
         #self.connect_to_server_hk_q()
         
         self.producer = None
@@ -106,10 +108,11 @@ class uploader(threading.Thread):
         self.consumer_hk = None       
         
         # for getting setpoint from TC1~3
-        threading.Timer(3600, self.get_setp).start()
-        
+        threading.Timer(60, self.get_setp).start()
+                
         # publish queue "dewar list"
-        threading.Timer(upload_interval, self.publish_dewar_list).start()
+        threading.Timer(self.upload_interval, self.publish_dewar_list).start()
+        
         
     
     def __del__(self):
@@ -371,6 +374,8 @@ class uploader(threading.Thread):
     
     def get_setp(self):
         self.publish_to_queue(HK_REQ_GETSETPOINT)
+
+        threading.Timer(300, self.get_setp).start()
         
         
     def publish_dewar_list(self):
@@ -391,9 +396,11 @@ class uploader(threading.Thread):
                       self.hk_list[HK_SHIELDTOP],
                       self.hk_list[HK_AIR]]  
         
-        str_log = list(map(str, hk_entries))  
+        str_log = "    ".join(list(map(str, hk_entries)))     
         msg = "%s %s" % (UPLOAD_Q, str_log)
         self.publish_to_queue(msg)
+
+        threading.Timer(self.upload_interval, self.publish_dewar_list).start()
         
         
     def uploade_to_GEA(self):

@@ -169,9 +169,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
                                 
         self.publish_to_queue(EXIT)
     
-        self.producer.channel.close()
-        for i in range(COM_CNT):
-            self.consumer_sub[i].channel.close()
+        if self.producer != None:
+            self.producer.__del__()
+
+        #self.producer.channel.close()
+        #for i in range(COM_CNT):
+        #    self.consumer_sub[i].channel.close()
 
         self.log.send(self.iam, DEBUG, "Closed!") 
                 
@@ -712,7 +715,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def QShowValue(self, row, col, label, judge = True):      
         value = self.dtvalue[label]
-        if value == DEFAULT_VALUE:
+        if judge and value == DEFAULT_VALUE:
             self.monitor[row][col].setForeground(QColor("dimgray"))
             self.alarm_status = ALM_ERR
             
@@ -729,7 +732,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 elif float(self.temp_warn_lower[label]) > float(value) or float(self.temp_warn_upper[label]) < float(value):
                     self.monitor[row][col].setForeground(QColor("red"))
                     self.alarm_status = ALM_FAT
-            
+
         self.monitor[row][col].setText(value)
             
 

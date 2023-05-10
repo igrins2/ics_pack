@@ -235,12 +235,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
                                                     
         self.publish_to_queue(EXIT)
 
+        if self.producer != None:
+            self.producer.__del__()
+
+        '''    
         self.producer.channel.close()
         self.consumer_EngTools.channel.close()
         for idx in range(COM_CNT):
             self.consumer_sub[idx].channel.close()
         for idx in range(DCS_CNT):
             self.consumer_dcs[idx].channel.close()
+        '''
 
         self.log.send(self.iam, DEBUG, "Closed!") 
                 
@@ -430,8 +435,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.e_path[idx].setText(path)
                 self.e_savefilename[idx].setText("")
             
-            msg = "%s %s %d" % (CMD_INIT2_DONE, "all", self.simulation)
-            self.publish_to_queue(msg)
         else:
             return
         
@@ -539,6 +542,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
             th = threading.Thread(target=self.consumer_dcs[idx].start_consumer)
             th.daemon = True
             th.start()
+
+        msg = "%s %s %d" % (CMD_INIT2_DONE, "all", self.simulation)
+        self.publish_to_queue(msg)
             
     
     def callback_svc(self, ch, method, properties, body):
@@ -568,6 +574,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
             self.dcs_ready[dc_idx] = True
             self.bt_init_status(dc_idx)
+
+            if self.radio_HK_sync.isChecked():
+                self.set_HK_sync()
+            elif self.radio_whole_sync.isChecked():
+                self.set_whole_sync()
+            elif self.radio_SVC.isChecked():
+                self.set_svc()
+            elif self.radio_H.isChecked():
+                self.set_H()
+            elif self.radio_K.isChecked():
+                self.set_K()
             
         elif param[0] == CMD_SETFSPARAM_ICS:
             msg = "%s %s %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation)
@@ -711,7 +728,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
         else:
             msg = "%s %s %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation)
         self.publish_to_queue(msg)
-
 
         self.acquiring[dc_idx] = True        
 
@@ -1248,8 +1264,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.QWidgetBtnColor(self.bt_lt_move_to[pos], "yellow", "blue")
             
         msg = "%s %s %d" % (DT_REQ_MOVEMOTOR, self.com_list[motor], pos)
-        
-                
         self.publish_to_queue(msg)
         
 
@@ -1263,7 +1277,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 curpos = int(self.e_utpos.text()) + int(self.e_movinginterval.text())
                 self.e_utpos.setText(str(curpos))
                 msg = "%s %s %d" % (DT_REQ_MOTORGO, self.com_list[motor], curpos)
-                
             self.protect_btn_ut(False)
             
         elif motor == LT:
@@ -1277,7 +1290,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 msg = "%s %s %d" % (DT_REQ_MOTORGO, self.com_list[motor], curpos)
                 
             self.protect_btn_lt(False)
-                
         self.publish_to_queue(msg)
                 
     
@@ -1286,9 +1298,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             msg = "%s %d" % (DT_REQ_SETUT, position)
         elif motor == LT:
             msg = "%s %d" % (DT_REQ_SETLT, position)
-            
         self.publish_to_queue(msg)
-    
     
     
     #-------------------------------------

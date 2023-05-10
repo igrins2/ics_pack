@@ -12,6 +12,8 @@ from socket import *
 import threading
 import time as ti
 
+from distutils.util import strtobool
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from SubSystems_def import *
@@ -45,7 +47,7 @@ class temp_ctrl(threading.Thread):
         
         Period = int(cfg.get(HK,'hk-monitor-intv'))
         
-        simul = bool(cfg.get(MAIN, "simulation"))
+        simul = strtobool(cfg.get(MAIN, "simulation"))
         if simul:
             self.ip = "localhost"
         else:   

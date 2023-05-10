@@ -9,7 +9,7 @@ fi
 
 
 # set IGRINS file
-cp -r $HOME/ics_pack/installation/IGRINS $HOME/IGRINS
+cp -r $HOME/ics_pack/installation/IGRINS $HOME
 
 
 # install python library

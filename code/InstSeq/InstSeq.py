@@ -10,6 +10,8 @@ Modified on Apr 17, 2023
 import os, sys
 import threading
 
+from distutils.util import strtobool
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from InstSeq_def import *
@@ -45,7 +47,7 @@ class Inst_Seq(threading.Thread):
         self.consumer_ObsApp = None
         self.consumer_dcs = [None for _ in range(DCS_CNT)]
                         
-        self.simulation_mode = bool(self.cfg.get(MAIN, "simulation"))
+        self.simulation_mode = strtobool(self.cfg.get(MAIN, "simulation"))
         
         self.exptime = [0.0, 0.0]   # SVC, H_K
         self.FS_number = [0, 0]     # SVC, H_K
@@ -54,6 +56,8 @@ class Inst_Seq(threading.Thread):
         self.dcs_target = ["SVC", "H_K", "all"]     # for command
         self.dcs_ready = [False for _ in range(DCS_CNT)]
                         
+        ti.sleep(10)
+        
         self.connect_to_server_ex()
         
         self.connect_to_server_ObsApp_q()

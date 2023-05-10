@@ -12,6 +12,8 @@ from socket import *
 import threading
 import time as ti
 
+from distutils.util import strtobool
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from SubSystems_def import *
@@ -51,7 +53,7 @@ class motor(threading.Thread) :
         
         ip_addr = "%s-ip" % self.iam
         
-        self.simul = bool(self.cfg.get(MAIN, "simulation"))
+        self.simul = strtobool(self.cfg.get(MAIN, "simulation"))
         if self.simul:
             self.ip = "localhost"
         else:

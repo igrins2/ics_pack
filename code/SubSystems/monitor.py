@@ -12,6 +12,8 @@ from socket import *
 import threading
 import time as ti
 
+from distutils.util import strtobool
+
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
 from SubSystems_def import *
@@ -50,7 +52,7 @@ class monitor(threading.Thread) :
         
         self.Period = int(cfg.get(HK,'hk-monitor-intv'))
                 
-        simul = bool(cfg.get(MAIN, "simulation"))
+        simul = strtobool(cfg.get(MAIN, "simulation"))
         if simul:
             self.ip = "localhost"
         else:
@@ -227,6 +229,8 @@ class monitor(threading.Thread) :
         
         self.producer.send_message(self.sub_q, msg)
         
+        if len(msg) > 30:
+            return
         msg = "%s ->" % msg
         self.log.send(self.iam, INFO, msg)
         
