@@ -79,8 +79,6 @@ MOTOR_ERR = 100
 
 HK_REQ_COM_STS = "ComPortStatus"
 
-HK_REQ_GETSETPOINT = "GetSetPoint"  #temp_ctrl
-
 HK_REQ_GETVALUE = "GetValue"  #temp_ctrl, tm, vm
 
 HK_REQ_MANUAL_CMD = "SendManualCommand" #temp_ctrl, tm

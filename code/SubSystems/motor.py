@@ -31,34 +31,34 @@ class motor(threading.Thread) :
         
         # load ini file
         self.ini_file = WORKING_DIR + "IGRINS/Config/IGRINS.ini"
-        self.cfg = sc.LoadConfig(self.ini_file)
+        cfg = sc.LoadConfig(self.ini_file)
         
         global TOUT, CMCWTIME, REBUFSIZE
-        TOUT = int(self.cfg.get(HK, "tout"))
-        CMCWTIME = float(self.cfg.get(HK, "cmcwtime"))
-        REBUFSIZE = int(self.cfg.get(HK, "rebufsize")) 
+        TOUT = int(cfg.get(HK, "tout"))
+        CMCWTIME = float(cfg.get(HK, "cmcwtime"))
+        REBUFSIZE = int(cfg.get(HK, "rebufsize")) 
         
-        self.ics_ip_addr = self.cfg.get(MAIN, 'ip_addr')
-        self.ics_id = self.cfg.get(MAIN, 'id')
-        self.ics_pwd = self.cfg.get(MAIN, 'pwd')
+        self.ics_ip_addr = cfg.get(MAIN, 'ip_addr')
+        self.ics_id = cfg.get(MAIN, 'id')
+        self.ics_pwd = cfg.get(MAIN, 'pwd')
         
-        self.hk_ex = self.cfg.get(MAIN, 'hk_exchange')     
-        self.hk_q = self.cfg.get(MAIN, 'hk_routing_key')
-        self.dt_ex = self.cfg.get(MAIN, 'dt_exchange')     
-        self.dt_q = self.cfg.get(MAIN, 'dt_routing_key')
+        self.hk_ex = cfg.get(MAIN, 'hk_exchange')     
+        self.hk_q = cfg.get(MAIN, 'hk_routing_key')
+        self.dt_ex = cfg.get(MAIN, 'dt_exchange')     
+        self.dt_q = cfg.get(MAIN, 'dt_routing_key')
         self.sub_q = self.iam+'.q'
                 
         motor_pos = "%s-pos" % self.iam
-        self.motor_pos = self.cfg.get(HK, motor_pos).split(",")
+        self.motor_pos = cfg.get(HK, motor_pos).split(",")
         
         ip_addr = "%s-ip" % self.iam
         
-        self.simul = strtobool(self.cfg.get(MAIN, "simulation"))
+        self.simul = strtobool(cfg.get(MAIN, "simulation"))
         if self.simul:
             self.ip = "localhost"
         else:
-            self.ip = self.cfg.get(HK, ip_addr)
-        self.comport = self.cfg.get(HK, self.iam + "-port")
+            self.ip = cfg.get(HK, ip_addr)
+        self.comport = cfg.get(HK, self.iam + "-port")
         
         self.comSocket = None
         self.comStatus = False
@@ -270,7 +270,7 @@ class motor(threading.Thread) :
         cmd = ""
         desti = int(self.motor_pos[posnum])
         
-        if abs(desti) - abs(self.curpos) < MOTOR_ERR:
+        if abs(abs(desti) - abs(self.curpos)) < MOTOR_ERR:
             return self.curpos
             
         if self.iam == MOTOR_UT:
@@ -311,7 +311,7 @@ class motor(threading.Thread) :
     def move_motor_delta(self, go, delta):  
         # Set Velocity
         self.send_to_motor("ADT=40")
-        self.send_to_motor(VELOCITY_1)
+        self.send_to_motor(VELOCITY_200)
         #self.send_to_motor("GOSUB1")
 
         curpos = self.send_to_motor("RPA", True)
@@ -345,9 +345,13 @@ class motor(threading.Thread) :
 
         self.motor_pos[posnum] = res
         utpos = self.motor_pos[0] + "," + self.motor_pos[1]
-        self.cfg.set(HK, "ut-pos", utpos )
-        sc.SaveConfig(self.cfg, self.ini_file)
+
+        cfg = sc.LoadConfig(self.ini_file)
+        cfg.set(HK, "ut-pos", utpos )
+        sc.SaveConfig(cfg, self.ini_file)
         self.log.send(self.iam, INFO, "saved (" + utpos + ")")
+
+        return res
         
                 
     # CLI
@@ -360,9 +364,12 @@ class motor(threading.Thread) :
         for i in range(4):
             ltpos += self.motor_pos[i]
             ltpos += ","
-        self.cfg.set(HK, "lt-pos", ltpos)
-        sc.SaveConfig(self.cfg, self.ini_file)
-        self.log.send(self.iam, INFO, "saved (" + ltpos + ")")        
+        cfg = sc.LoadConfig(self.ini_file)
+        cfg.set(HK, "lt-pos", ltpos)
+        sc.SaveConfig(cfg, self.ini_file)
+        self.log.send(self.iam, INFO, "saved (" + ltpos + ")")     
+
+        return res   
         
     
     #-------------------------------
@@ -475,15 +482,16 @@ class motor(threading.Thread) :
             elif param[0] == DT_REQ_SETUT:
                 if self.iam != MOTOR_UT:
                     return
-                self.setUT(int(param[1]))
-                msg = "%s OK" % param[0]
+                pos = self.setUT(int(param[1]))
+                msg = "%s %s %s" % (param[0], param[1], pos)
                 self.publish_to_queue(msg)
                 
             elif param[0] == DT_REQ_SETLT:
                 if self.iam != MOTOR_LT:
                     return
-                self.setLT(int(param[1]))
-                msg = "%s OK" % param[0]
+                pos = self.setLT(int(param[1]))
+                curpos = "%s" % (int(pos) * (-1))
+                msg = "%s %s %s" % (param[0], param[1], curpos)
                 self.publish_to_queue(msg)
                 
             else:

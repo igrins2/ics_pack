@@ -164,6 +164,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.stop_clicked = False
         self.cal_stop_clicked = False
         
+        self.motor_initialized = [False, False]     #ut, lt
+
         self.cal_cur = 0
         self.ut_moved = False
         self.lt_moved = False
@@ -171,6 +173,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.power_status = [OFF for _ in range(PDU_IDX)] # motor, FLAT, THAR
         self.com_status = [True for _ in range(COM_CNT)]
            
+        self.bt_run.setEnabled(False)
         for i in range(CAL_CNT):
             self.cal_use_parsing(self.cal_chk[i], self.cal_e_exptime[i], self.cal_e_repeat[i])         
         
@@ -201,11 +204,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.show_sub_timer.setInterval(500)
         self.show_sub_timer.timeout.connect(self.sub_data_processing) 
         
-        self.show_dcs_timer = QTimer(self)
-        self.show_dcs_timer.setInterval(100)
-        self.show_dcs_timer.timeout.connect(self.dcs_data_processing)     
-        self.show_dcs_timer.start()           
-        
         msg = "%s %s" % (DT_STATUS, self.alarm_status)
         self.publish_to_queue(msg)
                     
@@ -213,7 +211,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def closeEvent(self, event: QCloseEvent) -> None:   
         
         self.show_sub_timer.stop()
-        self.show_dcs_timer.stop()
                  
         self.log.send(self.iam, DEBUG, "Closing %s : " % sys.argv[0])
         self.log.send(self.iam, DEBUG, "This may take several seconds waiting for threads to close")
@@ -400,6 +397,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if self.producer == None:
             return
         
+        ti.sleep(0.2)
         self.producer.send_message(self.dt_q, msg)
         
         msg = "%s ->" % msg
@@ -551,21 +549,26 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         msg = "<- [DCSS] %s" % cmd
         self.log.send(self.iam, INFO, msg)
-        self.param_dcs[SVC] = cmd
+        #self.param_dcs[SVC] = cmd
+
+        self.dcs_status(SVC, cmd)
         
     
     def callback_h(self, ch, method, properties, body):
         cmd = body.decode()
         msg = "<- [DCSH] %s" % cmd
         self.log.send(self.iam, INFO, msg)
-        self.param_dcs[H] = cmd
+        #self.param_dcs[H] = cmd
         
+        self.dcs_status(H, cmd)
     
     def callback_k(self, ch, method, properties, body):
         cmd = body.decode()
         msg = "<- [DCSK] %s" % cmd
         self.log.send(self.iam, INFO, msg)
-        self.param_dcs[K] = cmd
+        #self.param_dcs[K] = cmd
+
+        self.dcs_status(K, cmd)
         
         
     def dcs_status(self, dc_idx, cmd):
@@ -611,69 +614,81 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.acquiring[dc_idx] = False
             
             if self.cal_mode:
+
                 show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.cal_e_repeat[self.cal_cur].text())
                 self.label_cur_num[dc_idx].setText(show_cur_cnt)
 
                 if self.cur_cnt[dc_idx] < int(self.cal_e_repeat[self.cal_cur].text()):
-                    self.continuous = True
-                    self.bt_take_image.click()
-                
+                    if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
+                        self.continuous = True
+                        self.bt_take_image.click()
+
                 else:                                
-                    self.cur_cnt[dc_idx] = 0
-                    self.bt_run.setText("RUN")
-                    self.bt_run.setEnabled(True)
-                    self.QWidgetBtnColor(self.bt_run, "black")
-                    self.cal_stop_clicked = False      
-                    
                     self.func_lamp(self.cal_cur, OFF)
                     
                     if self.cal_stop_clicked:
+                        self.cur_cnt[dc_idx] = 0
+                        self.enable_dcs(dc_idx, True)
+
+                        if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
+                            self.cal_mode = False
+                            self.bt_run.setText("RUN")
+                            self.QWidgetBtnColor(self.bt_run, "black")
+                        
                         return             
-            
+
+                    self.cur_cnt[dc_idx] = 0
+                    self.enable_dcs(dc_idx, True)
                     if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
-                        self.cal_cur += 1
+                        self.cal_mode = False                           
                         self.cal_run_cycle()
-                
+
             else:
                 show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.e_repeat[dc_idx].text())
                 self.label_cur_num[dc_idx].setText(show_cur_cnt)
                 
                 if self.stop_clicked:
                     self.cur_cnt[dc_idx] = 0
-                    self.protect_btn(True) 
-                    self.bt_take_image.setText("Continuous")
-                    
-                    self.QWidgetBtnColor(self.bt_take_image, "black")
-                    self.stop_clicked = False
                     self.enable_dcs(dc_idx, True)
-
+                    
+                    if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
+                        self.protect_btn(True) 
+                        self.bt_take_image.setText("Continuous")
+                        self.QWidgetBtnColor(self.bt_take_image, "black")
+                        self.stop_clicked = False
+                    
                 elif self.cur_cnt[dc_idx] < int(self.e_repeat[dc_idx].text()):
-                    self.continuous = True
-                    self.bt_take_image.click()
+                    if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
+                        self.continuous = True
+                        self.bt_take_image.click()
                 
                 else:
                     self.cur_cnt[dc_idx] = 0
-                    self.protect_btn(True) 
-                                            
-                    if self.mode == CONT_MODE:
-                        self.bt_take_image.setText("Continuous")
-                    else:
-                        self.bt_take_image.setText("Take Image")
-                        
-                    self.QWidgetBtnColor(self.bt_take_image, "black")
-                    self.stop_clicked = False
                     self.enable_dcs(dc_idx, True)
+                    if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:                                                    
+                        if self.mode == CONT_MODE:
+                            self.bt_take_image.setText("Continuous")
+                        else:
+                            self.bt_take_image.setText("Take Image")
+                            
+                        self.protect_btn(True) 
+                        self.QWidgetBtnColor(self.bt_take_image, "black")
+                        self.stop_clicked = False
 
         elif param[0] == CMD_STOPACQUISITION:
             
             end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
             self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
-                        
-            self.protect_btn(True)                    
-            self.bt_take_image.setText("Take Image")  
-            self.QWidgetBtnColor(self.bt_take_image, "black")
-            self.stop_clicked = False  
+
             self.enable_dcs(dc_idx, True)
+
+            if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
+                self.protect_btn(True)                    
+                self.bt_take_image.setText("Take Image")  
+                self.QWidgetBtnColor(self.bt_take_image, "black")
+                self.stop_clicked = False  
+
+            
         
         
     #-------------------------------
@@ -763,6 +778,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     filepath = "%sIGRINS/dcsk/Fowler/%s/Result/SDCK_%s.fits" % (WORKING_DIR, folder_name, folder_name)
             
             filename = filepath.split("/")
+            path = "/"
+            for dir in filename:
+                if dir != "" and dir.find(".fits") < 0:
+                    path += dir + "/"
+            self.e_path[dc_idx].setText(path)
             self.e_savefilename[dc_idx].setText(filename[-1])
             
             frm = fits.open(filepath)
@@ -884,6 +904,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         for i in range(2):
             self.bt_ut_move_to[i].setEnabled(enable)
+            if not enable:
+                color = "silver"
+            else:
+                color = "black"
+            self.QWidgetBtnColor(self.bt_ut_move_to[i], color)
         
     
     def protect_btn_lt(self, enable):
@@ -898,6 +923,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         for i in range(4):
             self.bt_lt_move_to[i].setEnabled(enable)
+            if not enable:
+                color = "silver"
+            else:
+                color = "black"
+            self.QWidgetBtnColor(self.bt_lt_move_to[i], color)
         
     
     def cal_exposure(self):
@@ -1137,19 +1167,23 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.setFixedSize(1315, 700)
             self.setGeometry(0, 0, 1315, 700)
             self.show_sub_timer.start()
+            if self.power_status[MOTOR-1] == OFF:
+                self.power_onoff(MOTOR, ON)
+
+            cmd = "%sics_pack/code/SubSystems/motor.py" % WORKING_DIR
+            if self.proc_sub[LT] == None:
+                self.proc_sub[LT] = subprocess.Popen(['python', cmd, self.com_list[LT]])          
+            if self.proc_sub[UT] == None:
+                self.proc_sub[UT] = subprocess.Popen(['python', cmd, self.com_list[UT]])
         else:
             self.setFixedSize(1030, 700)
             self.setGeometry(0, 0, 1030, 700)
             self.show_sub_timer.stop()
-            
-        if self.power_status[MOTOR] == OFF:
-            self.power_onoff(MOTOR, ON)
+            if self.power_status[MOTOR-1] == ON:
+                self.power_onoff(MOTOR, OFF)
+
                 
-        cmd = "%sics_pack/code/SubSystems/motor.py" % WORKING_DIR
-        if self.proc_sub[LT] == None:
-            self.proc_sub[LT] = subprocess.Popen(['python', cmd, self.com_list[LT]])          
-        if self.proc_sub[UT] == None:
-            self.proc_sub[UT] = subprocess.Popen(['python', cmd, self.com_list[UT]]) 
+         
         
 
 
@@ -1168,54 +1202,74 @@ class MainWindow(Ui_Dialog, QMainWindow):
         use = chkbox.isChecked()
         exptime.setEnabled(use)
         repeat.setEnabled(use)
-        
-        if not use:
-            self.QWidgetBtnColor(self.bt_run, "gray")
+
+        run = False
+        for idx in self.cal_chk:
+            if idx.isChecked():
+                run = True
+                break
+
+        if run:
+            color = "black"
+            self.bt_run.setEnabled(True)
+        else:
+            color = "gray"
+            self.bt_run.setEnabled(False)
+        self.QWidgetBtnColor(self.bt_run, color)
         
         
     def cal_run(self):
+
+        if not self.motor_initialized[LT-1] or not self.motor_initialized[UT-1]:
+            return
+
         btn_name = self.bt_run.text()
         self.cal_stop_clicked = False
         if btn_name == "STOP":
             self.cal_stop_clicked = True
-            self.cal_mode = False
             self.cal_cur = 0
             self.bt_run.setText("RUN")
             self.QWidgetBtnColor(self.bt_run, "black") 
-            self.bt_run.setEnabled(True)                   
         elif btn_name == "RUN":
-            self.cal_mode = True
             self.cal_cur = 0
             self.bt_run.setText("STOP")
-            self.bt_run.setEnabled(False)
             self.QWidgetBtnColor(self.bt_run, "yellow", "blue")
         
             self.cal_run_cycle()   
         
             
     def cal_run_cycle(self):
-        
-        cal_cnt = 0
-        for cal_cnt in range(self.cal_cur, CAL_CNT):
+
+        self.cal_mode = True
+
+        nothing = True
+        for cal_cnt in range(self.cal_cur+1, CAL_CNT):
             if self.cal_chk[cal_cnt].isChecked():
                 self.cal_cur = cal_cnt
-                self.func_motor(cal_cnt)   #need to check
-                if cal_cnt > 0 and self.cal_chk[cal_cnt-1].isChecked():
-                    self.QWidgetCheckBoxColor(self.cal_chk[cal_cnt-1], "black")                    
-                    self.QWidgetEditColor(self.cal_e_exptime[cal_cnt-1], "black")
-                    self.QWidgetEditColor(self.cal_e_repeat[cal_cnt-1], "black")
-                self.QWidgetCheckBoxColor(self.cal_chk[cal_cnt], "blue") 
-                self.QWidgetEditColor(self.cal_e_exptime[cal_cnt], "blue")
-                self.QWidgetEditColor(self.cal_e_repeat[cal_cnt], "blue")
+                nothing = False
                 break
+
+        if nothing:
+            self.cal_cur += 1
         
-        if cal_cnt >= CAL_CNT-1 or self.cal_cur >= CAL_CNT:
-            self.QWidgetCheckBoxColor(self.cal_chk[self.cal_cur-1], "black") 
-            self.QWidgetEditColor(self.cal_e_exptime[self.cal_cur-1], "black")
-            self.QWidgetEditColor(self.cal_e_repeat[self.cal_cur-1], "black")
-            
-            #self.cal_mode = False
-            
+        cal_cnt = 0
+        for cal_cnt in range(CAL_CNT):
+            if self.cal_chk[cal_cnt].isChecked():
+                if cal_cnt == self.cal_cur:
+                    self.QWidgetCheckBoxColor(self.cal_chk[cal_cnt], "blue") 
+                    self.QWidgetEditColor(self.cal_e_exptime[cal_cnt], "blue")
+                    self.QWidgetEditColor(self.cal_e_repeat[cal_cnt], "blue")
+                    self.func_motor(cal_cnt)   #need to check
+                    break
+                else:
+                    self.QWidgetCheckBoxColor(self.cal_chk[cal_cnt], "black")                    
+                    self.QWidgetEditColor(self.cal_e_exptime[cal_cnt], "black")
+                    self.QWidgetEditColor(self.cal_e_repeat[cal_cnt], "black")
+        
+        if nothing:
+            self.bt_run.setText("RUN")
+            self.QWidgetBtnColor(self.bt_run, "black")
+                        
                     
     def power_onoff(self, idx, onoff):
         msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx, onoff)
@@ -1272,28 +1326,33 @@ class MainWindow(Ui_Dialog, QMainWindow):
             if direction == PREV:
                 curpos = int(self.e_utpos.text()) - int(self.e_movinginterval.text())
                 self.e_utpos.setText(str(curpos))
-                msg = "%s %s %d" % (DT_REQ_MOTORBACK, self.com_list[motor], curpos)
+                msg = "%s %s %s" % (DT_REQ_MOTORBACK, self.com_list[motor], self.e_movinginterval.text())
             else:
                 curpos = int(self.e_utpos.text()) + int(self.e_movinginterval.text())
                 self.e_utpos.setText(str(curpos))
-                msg = "%s %s %d" % (DT_REQ_MOTORGO, self.com_list[motor], curpos)
+                msg = "%s %s %s" % (DT_REQ_MOTORGO, self.com_list[motor], self.e_movinginterval.text())
             self.protect_btn_ut(False)
             
         elif motor == LT:
             if direction == PREV:
                 curpos = int(self.e_ltpos.text()) - int(self.e_movinginterval.text())
                 self.e_ltpos.setText(str(curpos))
-                msg = "%s %s %d" % (DT_REQ_MOTORBACK, self.com_list[motor], curpos)
+                msg = "%s %s %s" % (DT_REQ_MOTORBACK, self.com_list[motor], self.e_movinginterval.text())
             else:
                 curpos = int(self.e_ltpos.text()) + int(self.e_movinginterval.text())
                 self.e_ltpos.setText(str(curpos))
-                msg = "%s %s %d" % (DT_REQ_MOTORGO, self.com_list[motor], curpos)
+                msg = "%s %s %s" % (DT_REQ_MOTORGO, self.com_list[motor], self.e_movinginterval.text())
                 
             self.protect_btn_lt(False)
         self.publish_to_queue(msg)
                 
     
     def motor_pos_set(self, motor, position): #motor-UT/LT, direction-UT(0/1), LT(0-3)
+        msg = "Do you really want to modify the position %s value?" % str(position)
+        reply = QMessageBox.question(self, WARNING, msg, QMessageBox.Yes | QMessageBox.No)
+        if reply == QMessageBox.No:
+            return
+        
         if motor == UT:
             msg = "%s %d" % (DT_REQ_SETUT, position)
         elif motor == LT:
@@ -1315,6 +1374,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     self.protect_btn_lt(True)
                     self.e_ltpos.setText("0")
                     self.QWidgetBtnColor(self.bt_lt_motor_init, "white", "green")
+                    self.motor_initialized[LT-1] = True
                     
             elif param[0] == DT_REQ_MOVEMOTOR:
                 self.lt_moved = True
@@ -1334,6 +1394,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.lt_moved = True
                 self.protect_btn_lt(True)
                 self.e_ltpos.setText(param[1])
+
+            elif param[0] == DT_REQ_SETLT:
+                self.e_ltpos.setText(param[2])
+                self.sts_lt_pos[int(param[1])].setText(param[2])
+
                 
             self.param_sub[LT] = ""
                     
@@ -1349,6 +1414,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     self.protect_btn_ut(True)
                     self.e_utpos.setText("0")                
                     self.QWidgetBtnColor(self.bt_ut_motor_init, "white", "green")
+                    self.motor_initialized[UT-1] = True
                                 
             elif param[0] == DT_REQ_MOVEMOTOR:
                 self.ut_moved = True
@@ -1368,6 +1434,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.ut_moved = True
                 self.protect_btn_ut(True)
                 self.e_utpos.setText(param[1])
+
+            elif param[0] == DT_REQ_SETUT:
+                self.e_utpos.setText(param[2])
+                self.sts_ut_pos[int(param[1])].setText(param[2])
                 
             self.param_sub[UT] = ""
             

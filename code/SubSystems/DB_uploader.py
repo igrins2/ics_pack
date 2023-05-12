@@ -106,10 +106,7 @@ class uploader(threading.Thread):
         self.producer = None
         self.consumer = [None for _ in range(COM_CNT)]
         self.consumer_hk = None       
-        
-        # for getting setpoint from TC1~3
-        threading.Timer(60, self.get_setp).start()
-                
+                        
         # publish queue "dewar list"
         threading.Timer(self.upload_interval, self.publish_dewar_list).start()
         
@@ -252,10 +249,8 @@ class uploader(threading.Thread):
             self.hk_list[HK_GRATING] = self.judge_value(param[2])
             self.hk_list[HK_BENCH_HEATING] = self.judge_value(param[3])
             self.hk_list[HK_GRATING_HEATING] = self.judge_value(param[4])
-        
-        elif param[0] == HK_REQ_GETSETPOINT:
-            self.hk_list[HK_BENCH_SP] = self.judge_value(param[1])
-            self.hk_list[HK_GRATING_SP] = self.judge_value(param[2])
+            self.hk_list[HK_BENCH_SP] = self.judge_value(param[5])
+            self.hk_list[HK_GRATING_SP] = self.judge_value(param[6])
             
         else:
             return
@@ -273,10 +268,8 @@ class uploader(threading.Thread):
             self.hk_list[HK_DETK] = self.judge_value(param[2])
             self.hk_list[HK_DETS_HEATING] = self.judge_value(param[3])
             self.hk_list[HK_DETK_HEATING] = self.judge_value(param[4])
-            
-        elif param[0] == HK_REQ_GETSETPOINT:
-            self.hk_list[HK_DETS_SP] = self.judge_value(param[1])
-            self.hk_list[HK_DETK_SP] = self.judge_value(param[2])
+            self.hk_list[HK_DETS_SP] = self.judge_value(param[5])
+            self.hk_list[HK_DETK_SP] = self.judge_value(param[6])
             
         else:
             return
@@ -293,9 +286,7 @@ class uploader(threading.Thread):
             self.hk_list[HK_CAMH] = self.judge_value(param[1])
             self.hk_list[HK_DETH] = self.judge_value(param[2])
             self.hk_list[HK_DETH_HEATING] = self.judge_value(param[3])
-            
-        elif param[0] == HK_REQ_GETSETPOINT:
-            self.hk_list[HK_DETH_SP] = self.judge_value(param[1])
+            self.hk_list[HK_DETH_SP] = self.judge_value(param[4])
             
         else:
             return
@@ -356,7 +347,7 @@ class uploader(threading.Thread):
             else:
                 #from HKP
                 self.start_upload_to_firebase(db)
-                
+    
         else:
             return
         
@@ -371,12 +362,7 @@ class uploader(threading.Thread):
             value = input
         return value
     
-    
-    def get_setp(self):
-        self.publish_to_queue(HK_REQ_GETSETPOINT)
-
-        threading.Timer(300, self.get_setp).start()
-        
+            
         
     def publish_dewar_list(self):
         

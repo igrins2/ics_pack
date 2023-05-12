@@ -116,7 +116,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.temp_warn_upper[k] = hk_list[4]
             
         self.dtvalue = dict()        
-        self.set_point = ["-999" for _ in range(5)]   #set point
+        self.set_point = [DEFAULT_VALUE for _ in range(5)]   #set point
         
         self.dpvalue = DEFAULT_VALUE
         for key in label_list:
@@ -149,6 +149,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.show_timer = QTimer(self)
         self.show_timer.setInterval(self.Period/2 * 1000)
         self.show_timer.timeout.connect(self.sub_data_processing)
+
+        # every 1hour save
+        self.save_setpoint()
         
         self.startup()
         
@@ -196,14 +199,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for i in range(PDU_IDX):
             self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black")
         
-        self.bt_pwr_onoff1.clicked.connect(lambda: self.power_onoff_index(1))
-        self.bt_pwr_onoff2.clicked.connect(lambda: self.power_onoff_index(2))
-        self.bt_pwr_onoff3.clicked.connect(lambda: self.power_onoff_index(3))
-        self.bt_pwr_onoff4.clicked.connect(lambda: self.power_onoff_index(4))
-        self.bt_pwr_onoff5.clicked.connect(lambda: self.power_onoff_index(5))
-        self.bt_pwr_onoff6.clicked.connect(lambda: self.power_onoff_index(6))
-        self.bt_pwr_onoff7.clicked.connect(lambda: self.power_onoff_index(7))
-        self.bt_pwr_onoff8.clicked.connect(lambda: self.power_onoff_index(8))       
+        self.bt_pwr_onoff1.clicked.connect(lambda: self.power_onoff_index(0))
+        self.bt_pwr_onoff2.clicked.connect(lambda: self.power_onoff_index(1))
+        self.bt_pwr_onoff3.clicked.connect(lambda: self.power_onoff_index(2))
+        self.bt_pwr_onoff4.clicked.connect(lambda: self.power_onoff_index(3))
+        self.bt_pwr_onoff5.clicked.connect(lambda: self.power_onoff_index(4))
+        self.bt_pwr_onoff6.clicked.connect(lambda: self.power_onoff_index(5))
+        self.bt_pwr_onoff7.clicked.connect(lambda: self.power_onoff_index(6))
+        self.bt_pwr_onoff8.clicked.connect(lambda: self.power_onoff_index(7))       
         
         self.chk_manual_test.clicked.connect(self.Periodic)
         self.chk_manual_test.setChecked(False)
@@ -316,17 +319,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         if param[0] == HK_REQ_COM_STS:
             self.com_status[TMC1] = bool(int(param[1]))            
-            
-        elif param[0] == HK_REQ_GETSETPOINT:
-            self.set_point[0] = self.judge_value(param[1])
-            self.set_point[1] = self.judge_value(param[2])
-            self.save_setpoint(self.set_point)
-        
+                    
         elif param[0] == HK_REQ_GETVALUE:
             self.dtvalue[label_list[TMC1_A]] = self.judge_value(param[1])
             self.dtvalue[label_list[TMC1_B]] = self.judge_value(param[2])
             self.heatlabel[label_list[TMC1_A]] = self.judge_value(param[3])
             self.heatlabel[label_list[TMC1_B]] = self.judge_value(param[4])
+            self.set_point[0] = self.judge_value(param[5])
+            self.set_point[1] = self.judge_value(param[6])
             
         elif param[0] == HK_REQ_MANUAL_CMD:
             res = "[TC1] %s" % param[1]
@@ -346,17 +346,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         if param[0] == HK_REQ_COM_STS:
             self.com_status[TMC2] = bool(int(param[1]))            
-        
-        elif param[0] == HK_REQ_GETSETPOINT:
-            self.set_point[2] = self.judge_value(param[1])
-            self.set_point[3] = self.judge_value(param[2])
-            self.save_setpoint(self.set_point)
-            
+                    
         elif param[0] == HK_REQ_GETVALUE:
             self.dtvalue[label_list[TMC2_A]] = self.judge_value(param[1])
             self.dtvalue[label_list[TMC2_B]] = self.judge_value(param[2])
             self.heatlabel[label_list[TMC2_A]] = self.judge_value(param[3])
             self.heatlabel[label_list[TMC2_B]] = self.judge_value(param[4])
+            self.set_point[2] = self.judge_value(param[5])
+            self.set_point[3] = self.judge_value(param[6])
             
         elif param[0] == HK_REQ_MANUAL_CMD:
             res = "[TC2] %s" % param[1]
@@ -375,15 +372,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         if param[0] == HK_REQ_COM_STS:
             self.com_status[TMC3] = bool(int(param[1]))            
-            
-        elif param[0] == HK_REQ_GETSETPOINT:
-            self.set_point[4] = self.judge_value(param[1])
-            self.save_setpoint(self.set_point)
-        
+                    
         elif param[0] == HK_REQ_GETVALUE:
             self.dtvalue[label_list[TMC3_A]] = self.judge_value(param[1])
             self.dtvalue[label_list[TMC3_B]] = self.judge_value(param[2])
             self.heatlabel[label_list[TMC3_B]] = self.judge_value(param[3])
+            self.set_point[4] = self.judge_value(param[4])
             
         elif param[0] == HK_REQ_MANUAL_CMD:
             res = "[TC3] %s" % param[1]
@@ -454,6 +448,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         msg = "<- [PDU] %s" % cmd
         self.log.send(self.iam, INFO, msg)
+
+        # from PDU
+        for i in range(PDU_IDX):
+            if self.power_status[i] == ON:
+                self.QWidgetLabelColor(self.pdulist[i], "red")
+                self.bt_pwr_onoff[i].setText(OFF)
+                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "white", "green")
+            else:
+                self.QWidgetLabelColor(self.pdulist[i], "gray")
+                self.bt_pwr_onoff[i].setText(ON)
+                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black")          
             
         
     #-------------------------------
@@ -492,14 +497,21 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     #-------------------------------
     # control and show 
-    def save_setpoint(self, setp):
-        for i, v in enumerate(setp):
+    def save_setpoint(self):
+        read = True
+        for i, v in enumerate(self.set_point):
+            if v == DEFAULT_VALUE:
+                read = False
+                break
             key = "setp%d" % (i+1)
             self.cfg.set(HK, key, v)
         
-        sc.SaveConfig(self.cfg, self.ini_file)   #IGRINS.ini
+        if read:
+            sc.SaveConfig(self.cfg, self.ini_file)   #IGRINS.ini
     
-   
+        threading.Timer(3600, self.save_setpoint).start()
+        
+
     def judge_value(self, input):
         if input == None:
             return ""
@@ -516,9 +528,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # button
     def power_onoff_index(self, idx):
         if self.power_status[idx] == ON:
-            msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx, OFF)
+            msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx+1, OFF)
         else:
-            msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx, ON)
+            msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx+1, ON)
         self.publish_to_queue(msg)
         
 
@@ -578,8 +590,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.manaul_test(False)
             self.monitoring = True
             
-            self.publish_to_queue(HK_REQ_GETSETPOINT)
-                             
             self.log.send(self.iam, INFO, "Periodic Monitoring started")
             self.st_time = ti.time()
             
@@ -823,18 +833,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             state = "warm"
         else:
             state = "normal"
-        self.QShowValueVM(self.dpvalue, state)
-            
-        # from PDU
-        for i in range(PDU_IDX):
-            if self.power_status[i] == ON:
-                self.QWidgetLabelColor(self.pdulist[i], "red")
-                self.bt_pwr_onoff[i].setText(OFF)
-                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "white", "green")
-            else:
-                self.QWidgetLabelColor(self.pdulist[i], "gray")
-                self.bt_pwr_onoff[i].setText(ON)
-                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black")                 
+        self.QShowValueVM(self.dpvalue, state)    
                             
           
     

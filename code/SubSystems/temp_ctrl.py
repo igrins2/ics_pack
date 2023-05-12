@@ -54,7 +54,7 @@ class temp_ctrl(threading.Thread):
             self.ip = cfg.get(HK, "device-server-ip")            
         self.comport = cfg.get(HK, self.iam + "-port")
          
-        self.setpoint = [DEFAULT_VALUE, DEFAULT_VALUE]
+        #self.setpoint = [DEFAULT_VALUE, DEFAULT_VALUE]
                 
         self.comSocket = None
         self.comStatus = False
@@ -198,6 +198,7 @@ class temp_ctrl(threading.Thread):
         
         value = [DEFAULT_VALUE, DEFAULT_VALUE]
         heat = [DEFAULT_VALUE, DEFAULT_VALUE]
+        setp = [DEFAULT_VALUE, DEFAULT_VALUE]
             
         value[0] = self.get_value("A")
         ti.sleep(self.wait_time)  
@@ -206,7 +207,15 @@ class temp_ctrl(threading.Thread):
         if self.iam != "tmc3":
             heat[0] = self.get_heating_power(1)
             ti.sleep(self.wait_time)
+            
         heat[1] = self.get_heating_power(2)
+        ti.sleep(self.wait_time)
+
+        if self.iam != "tmc3":
+            setp[0] = self.get_setpoint(1)
+            ti.sleep(self.wait_time)
+    
+        setp[1] = self.get_setpoint(2)
         ti.sleep(self.wait_time)
         
         for i in range(2):
@@ -214,11 +223,13 @@ class temp_ctrl(threading.Thread):
                 value[i] = DEFAULT_VALUE
             if heat[i] == None:
                 heat[i] = DEFAULT_VALUE
+            if setp[i] == None:
+                setp[i] = DEFAULT_VALUE
 
         if self.iam != "tmc3":
-            msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, value[0], value[1], heat[0], heat[1]) 
+            msg = "%s %s %s %s %s %s %s" % (HK_REQ_GETVALUE, value[0], value[1], heat[0], heat[1], setp[0], setp[1]) 
         else:
-            msg = "%s %s %s %s" % (HK_REQ_GETVALUE, value[0], value[1], heat[1]) 
+            msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, value[0], value[1], heat[1], setp[1]) 
         self.publish_to_queue(msg)
 
         threading.Thread(target=self.start_monitoring).start()
@@ -259,24 +270,7 @@ class temp_ctrl(threading.Thread):
         cmd = body.decode()
         param = cmd.split()
                             
-        if param[0] == HK_REQ_GETSETPOINT:           
-            #self.pause = True
-            
-            if self.iam != "tmc3":
-                self.setpoint[0] = self.get_setpoint(1)
-                ti.sleep(1)
-            self.setpoint[1] = self.get_setpoint(2)
-            
-            if self.iam != "tmc3":
-                msg = "%s %s %s" % (HK_REQ_GETSETPOINT, self.setpoint[0], self.setpoint[1]) 
-            else:
-                msg = "%s %s" % (HK_REQ_GETSETPOINT, self.setpoint[1])
-            self.publish_to_queue(msg)
-            
-            #self.pause = False
-            #self.start_monitoring()            
-                                    
-        elif param[0] == HK_REQ_MANUAL_CMD:            
+        if param[0] == HK_REQ_MANUAL_CMD:            
             if self.iam != param[1]:
                 return
             
@@ -299,47 +293,7 @@ class temp_ctrl(threading.Thread):
         msg = "<- [HKP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
             
-            
-    #-------------------------------
-    # uploader queue
-    def connect_to_server_uploader_q(self):
-        # RabbitMQ connect
-        self.consumer_uploader = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, "uploader.ex")      
-        self.consumer_uploader.connect_to_server()
-        self.consumer_uploader.define_consumer("uploader.q", self.callback_uploader)
-        
-        th = threading.Thread(target=self.consumer_uploader.start_consumer)
-        th.start()
-
-
-    def callback_uploader(self, ch, method, properties, body):
-        cmd = body.decode()
-        param = cmd.split()
-                            
-        if param[0] == HK_REQ_GETSETPOINT:   
-            #self.pause = True
-
-            if self.iam != "tmc3":
-                self.setpoint[0] = self.get_setpoint(1)
-                ti.sleep(1)
-            self.setpoint[1] = self.get_setpoint(2)
-            
-            if self.iam != "tmc3":
-                msg = "%s %s %s" % (HK_REQ_GETSETPOINT, self.setpoint[0], self.setpoint[1]) 
-            else:
-                msg = "%s %s" % (HK_REQ_GETSETPOINT, self.setpoint[1])
-            self.publish_to_queue(msg)
-            
-            #self.pause = False
-            #self.start_monitoring() 
-        
-        else:
-            return
-        
-        msg = "<- [DB uploader] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-                                            
-
+   
 if __name__ == "__main__":
         
     proc = temp_ctrl(sys.argv[1])
@@ -347,7 +301,6 @@ if __name__ == "__main__":
     proc.connect_to_server_ex()
     
     proc.connect_to_server_hk_q()
-    proc.connect_to_server_uploader_q()
     
     proc.connect_to_component()
     proc.start_monitoring()
