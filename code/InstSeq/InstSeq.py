@@ -20,6 +20,9 @@ import Libs.SetConfig as sc
 from Libs.MsgMiddleware import *
 from Libs.logger import *
 
+import cppyy
+
+
 class Inst_Seq(threading.Thread):
     
     def __init__(self):

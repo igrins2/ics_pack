@@ -27,6 +27,8 @@ pip install astropy
 pip install pyside6
 pip install PyQt5
 pip install pika
+conda install -c conda-forge cppyy
+python -m pip install cppyy
 
 
 # ds9

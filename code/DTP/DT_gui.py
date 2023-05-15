@@ -58,14 +58,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         # canvas
         #self.image_fig = []
-        self.image_ax = []
-        self.image_canvas = []
-        
+        self.image_ax = [None for _ in range(DCS_CNT)]
+        self.image_canvas = [None for _ in range(DCS_CNT)]
         for i in range(DCS_CNT):
             _image_fig = Figure(figsize=(4, 4), dpi=100)
-            self.image_ax.append(_image_fig.add_subplot(111))
+            self.image_ax[i] = _image_fig.add_subplot(111)
             _image_fig.subplots_adjust(left=0.01,right=0.99,bottom=0.01,top=0.99) 
-            self.image_canvas.append(FigureCanvas(_image_fig))
+            self.image_canvas[i] = FigureCanvas(_image_fig)
         
         vbox_svc = QVBoxLayout(self.frame_svc)
         vbox_svc.addWidget(self.image_canvas[SVC])
@@ -73,6 +72,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         vbox_H.addWidget(self.image_canvas[H])
         vbox_K = QVBoxLayout(self.frame_K)
         vbox_K.addWidget(self.image_canvas[K])
+
+        for i in range(DCS_CNT):
+            self.clean_ax(self.image_ax[i])
                 
         # load ini file
         self.cfg = sc.LoadConfig(WORKING_DIR + "IGRINS/Config/IGRINS.ini")
@@ -137,7 +139,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.simulation = False     #from EngTools
         
         self.mode = SINGLE_MODE
-        self.continuous = False
+        #self.continuous = False
         
         self.cal_mode = False
 
@@ -600,7 +602,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
             self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
                         
-            #self.prog_timer[dc_idx].stop()
+            self.prog_timer[dc_idx].stop()
             self.cur_prog_step[dc_idx] = 100
             self.progressBar[dc_idx].setValue(self.cur_prog_step[dc_idx])           
 
@@ -620,7 +622,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
                 if self.cur_cnt[dc_idx] < int(self.cal_e_repeat[self.cal_cur].text()):
                     if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                        self.continuous = True
+                        #self.continuous = True
+                        #self.set_fs_param(dc_idx)
                         self.bt_take_image.click()
 
                 else:                                
@@ -647,7 +650,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.e_repeat[dc_idx].text())
                 self.label_cur_num[dc_idx].setText(show_cur_cnt)
                 
-                if self.stop_clicked:
+                if self.mode == CONT_MODE and self.stop_clicked:
                     self.cur_cnt[dc_idx] = 0
                     self.enable_dcs(dc_idx, True)
                     
@@ -658,9 +661,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         self.stop_clicked = False
                     
                 elif self.cur_cnt[dc_idx] < int(self.e_repeat[dc_idx].text()):
-                    if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                        self.continuous = True
-                        self.bt_take_image.click()
+                    #if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
+                    #self.continuous = True
+                    #self.set_fs_param(dc_idx)
+                    self.bt_take_image.click()
                 
                 else:
                     self.cur_cnt[dc_idx] = 0
@@ -674,7 +678,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         self.protect_btn(True) 
                         self.QWidgetBtnColor(self.bt_take_image, "black")
                         self.stop_clicked = False
-
+    
         elif param[0] == CMD_STOPACQUISITION:
             
             end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
@@ -687,6 +691,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.bt_take_image.setText("Take Image")  
                 self.QWidgetBtnColor(self.bt_take_image, "black")
                 self.stop_clicked = False  
+        
 
             
         
@@ -751,9 +756,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if self.cur_prog_step[dc_idx] > 0:
             self.prog_timer[dc_idx].stop()
             self.elapsed_timer[dc_idx].stop()
+
+        self.acquiring[dc_idx] = False
                 
         msg = "%s %s %d" % (CMD_STOPACQUISITION, self.dcs_list[dc_idx], self.simulation)
-        self.publish_to_queue(msg)    
+        self.publish_to_queue(msg)
         
     
     def load_data(self, dc_idx, folder_name):
@@ -839,6 +846,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
         except:
             self.img[dc_idx] = None
             self.log.send(self.iam, WARNING, "No image")
+
+
+    def clean_ax(self, ax, ticks_off = True):
+        ax.cla()
+        if ticks_off:
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+
+            ax.set_frame_on(False)
+            ax.set_xticks([])
+            ax.set_yticks([])
                         
             
     def enable_dcs(self, dc_idx, enable):
@@ -1063,18 +1081,19 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.QWidgetBtnColor(self.bt_init[idx], "black", "gray")
         
         
+    # click: when to start or when to stop
     def btn_click(self):
         if self.mode == CONT_MODE:
-            if self.continuous:
-                self.single_exposure()
-                self.continuous = False
+            #if self.continuous:
+            #    self.continuous = False
+            
+            btn_name = self.bt_take_image.text()
+            self.stop_clicked = False
+            if btn_name == "Stop":
+                self.stop_clicked = True
             else:
-                btn_name = self.bt_take_image.text()
-                self.stop_clicked = False
-                if btn_name == "Stop":
-                    self.stop_clicked = True
-                else:
-                    self.single_exposure()
+                self.single_exposure()
+                #??????
         else:
             btn_name = self.bt_take_image.text()
             self.stop_clicked = False
