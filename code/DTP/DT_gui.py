@@ -139,7 +139,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.simulation = False     #from EngTools
         
         self.mode = SINGLE_MODE
-        #self.continuous = False
+        self.continuous = [False for _ in range(DCS_CNT)]
+        self.cont_cur_band = None
         
         self.cal_mode = False
 
@@ -615,32 +616,31 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
             self.acquiring[dc_idx] = False
             
+            # cal mode debugging!!!!!!!!
             if self.cal_mode:
-
                 show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.cal_e_repeat[self.cal_cur].text())
                 self.label_cur_num[dc_idx].setText(show_cur_cnt)
 
                 if self.cur_cnt[dc_idx] < int(self.cal_e_repeat[self.cal_cur].text()):
                     if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                        #self.continuous = True
-                        #self.set_fs_param(dc_idx)
-                        self.bt_take_image.click()
+                        self.cal_exposure()
 
                 else:                                
                     self.func_lamp(self.cal_cur, OFF)
                     
                     if self.cal_stop_clicked:
-                        self.cur_cnt[dc_idx] = 0
                         self.enable_dcs(dc_idx, True)
 
                         if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
                             self.cal_mode = False
                             self.bt_run.setText("RUN")
                             self.QWidgetBtnColor(self.bt_run, "black")
+
+                            for i in range(DCS_CNT):
+                                self.cur_cnt[i] = 0
                         
                         return             
 
-                    self.cur_cnt[dc_idx] = 0
                     self.enable_dcs(dc_idx, True)
                     if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
                         self.cal_mode = False                           
@@ -651,7 +651,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.label_cur_num[dc_idx].setText(show_cur_cnt)
                 
                 if self.mode == CONT_MODE and self.stop_clicked:
-                    self.cur_cnt[dc_idx] = 0
                     self.enable_dcs(dc_idx, True)
                     
                     if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
@@ -659,16 +658,18 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         self.bt_take_image.setText("Continuous")
                         self.QWidgetBtnColor(self.bt_take_image, "black")
                         self.stop_clicked = False
+
+                        for i in range(DCS_CNT):
+                            self.cur_cnt[i] = 0
                     
                 elif self.cur_cnt[dc_idx] < int(self.e_repeat[dc_idx].text()):
-                    #if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                    #self.continuous = True
-                    #self.set_fs_param(dc_idx)
+                    self.continuous[dc_idx] = True
+                    self.cont_cur_band = dc_idx
                     self.bt_take_image.click()
                 
                 else:
-                    self.cur_cnt[dc_idx] = 0
                     self.enable_dcs(dc_idx, True)
+
                     if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:                                                    
                         if self.mode == CONT_MODE:
                             self.bt_take_image.setText("Continuous")
@@ -678,6 +679,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         self.protect_btn(True) 
                         self.QWidgetBtnColor(self.bt_take_image, "black")
                         self.stop_clicked = False
+
+                        for i in range(DCS_CNT):
+                            self.cur_cnt[i] = 0
     
         elif param[0] == CMD_STOPACQUISITION:
             
@@ -1084,16 +1088,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # click: when to start or when to stop
     def btn_click(self):
         if self.mode == CONT_MODE:
-            #if self.continuous:
-            #    self.continuous = False
-            
-            btn_name = self.bt_take_image.text()
-            self.stop_clicked = False
-            if btn_name == "Stop":
-                self.stop_clicked = True
+            # start debugging !!!!!!!!!!!!!!!!!!!!!!!
+            if self.continuous[H] or self.continuous[K] or self.continuous[SVC]:
+                self.continuous[self.cont_cur_band] = False
+                self.set_fs_param(self.cont_cur_band)
             else:
-                self.single_exposure()
-                #??????
+                btn_name = self.bt_take_image.text()
+                self.stop_clicked = False
+                if btn_name == "Stop":
+                    self.stop_clicked = True
+                else:
+                    self.single_exposure()
         else:
             btn_name = self.bt_take_image.text()
             self.stop_clicked = False
@@ -1114,14 +1119,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.bt_take_image.setText("Abort")
                     
         if self.radio_HK_sync.isChecked() or self.radio_whole_sync.isChecked() or self.radio_H.isChecked():
-            self.set_fs_param(H)            
+            self.set_fs_param(H)
         if self.radio_HK_sync.isChecked() or self.radio_whole_sync.isChecked() or self.radio_K.isChecked():
             self.set_fs_param(K)
         if self.radio_whole_sync.isChecked() or self.radio_SVC.isChecked():
-            self.set_fs_param(SVC)
+            self.set_fs_param(SVC)  
         
         self.protect_btn(False)
-                    
+                            
     
     def abort_acquisition(self):        
         if self.radio_HK_sync.isChecked() or self.radio_whole_sync.isChecked() or self.radio_H.isChecked():
