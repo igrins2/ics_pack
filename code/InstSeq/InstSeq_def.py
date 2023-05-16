@@ -56,9 +56,6 @@ CMD_REQ_TEMP = "ReqTempInfo"    #from DCS
 CMD_SIMULATION = "Simulation"
 SUB_STATUS = "SubStatus"
 EXIT = "Exit"
-ALIVE = "Alive"
-READY = "Ready"
-SHOW_TCS_INFO = "ShowTCSInfo"
 
 CMD_INIT2_DONE = "Initialize2_Done" # to DCS
 CMD_INITIALIZE2_ICS = "Initialize2_ics"
@@ -66,4 +63,6 @@ CMD_SETFSPARAM_ICS = "SetFSParam_ics"
 CMD_ACQUIRERAMP_ICS = "ACQUIRERAMP_ics"
 CMD_STOPACQUISITION = "STOPACQUISITION"
 
-CMD_COMPLETED = "Completed"
+SHOW_TCS_INFO = "ShowTCSInfo"
+
+#CMD_COMPLETED = "Completed"
