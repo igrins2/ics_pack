@@ -140,7 +140,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.mode = SINGLE_MODE
         self.continuous = [False for _ in range(DCS_CNT)]
-        self.cont_cur_band = None
         
         self.cal_mode = False
 
@@ -664,9 +663,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     
                 elif self.cur_cnt[dc_idx] < int(self.e_repeat[dc_idx].text()):
                     self.continuous[dc_idx] = True
-                    self.cont_cur_band = dc_idx
                     self.bt_take_image.click()
-                
+
                 else:
                     self.enable_dcs(dc_idx, True)
 
@@ -689,6 +687,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
 
             self.enable_dcs(dc_idx, True)
+
+            self.acquiring[dc_idx] = False
 
             if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
                 self.protect_btn(True)                    
@@ -761,7 +761,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.prog_timer[dc_idx].stop()
             self.elapsed_timer[dc_idx].stop()
 
-        self.acquiring[dc_idx] = False
+        #self.acquiring[dc_idx] = False
                 
         msg = "%s %s %d" % (CMD_STOPACQUISITION, self.dcs_list[dc_idx], self.simulation)
         self.publish_to_queue(msg)
@@ -1087,27 +1087,31 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     # click: when to start or when to stop
     def btn_click(self):
-        if self.mode == CONT_MODE:
-            # start debugging !!!!!!!!!!!!!!!!!!!!!!!
-            if self.continuous[H] or self.continuous[K] or self.continuous[SVC]:
-                self.continuous[self.cont_cur_band] = False
-                self.set_fs_param(self.cont_cur_band)
+        btn_name = self.bt_take_image.text()
+        if self.mode == CONT_MODE:                
+            if self.continuous[H] and not self.continuous[K] and not self.continuous[SVC]:
+                self.set_fs_param(H)
+                self.continuous[H] = False
+            elif not self.continuous[H] and self.continuous[K] and not self.continuous[SVC]:
+                self.set_fs_param(K)
+                self.continuous[K] = False
+            elif not self.continuous[H] and not self.continuous[K] and self.continuous[SVC]:
+                self.set_fs_param(SVC)
+                self.continuous[SVC] = False
             else:
-                btn_name = self.bt_take_image.text()
                 self.stop_clicked = False
                 if btn_name == "Stop":
                     self.stop_clicked = True
                 else:
                     self.single_exposure()
         else:
-            btn_name = self.bt_take_image.text()
             self.stop_clicked = False
-            if btn_name == "Stop":
-                self.stop_clicked = True
-            elif btn_name == "Abort":
+            if btn_name == "Abort":
                 self.abort_acquisition()
             else:
                 self.single_exposure()
+                
+        
             
         
     def single_exposure(self):    

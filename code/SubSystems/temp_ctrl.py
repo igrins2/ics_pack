@@ -2,7 +2,7 @@
 """
 Created on Nov 8, 2022
 
-Modified on Apr 17, 2023
+Modified on May 17, 2023
 
 @author: hilee
 """
@@ -64,7 +64,7 @@ class temp_ctrl(threading.Thread):
         
         #self.pause = False
         
-        self.wait_time = float(Period/4)
+        self.wait_time = float(Period/6)
                 
         
     def __del__(self):
@@ -149,38 +149,45 @@ class temp_ctrl(threading.Thread):
         if self.comStatus is False:
             return
 
-        try:    
+        def send_to(cmd):
             #send     
             self.comSocket.send(cmd.encode())
             
             log = "send >>> %s" % cmd[:-2]
             self.log.send(self.iam, INFO, log)
-                    
+
+        def recv_from(again = False) :
             #rev
             res0 = self.comSocket.recv(REBUFSIZE)
             info = res0.decode()
                     
-            log = "recv <<< %s" % info[:-2]
-            self.log.send(self.iam, INFO, log)   
+            if again:
+                log = "recv <<< %s (again)" % info[:-2]
+            else:
+                log = "recv <<< %s" % info[:-2]
+            self.log.send(self.iam, INFO, log)
+
+            return info
+
+        try:    
+            send_to(cmd)
+            info = recv_from()
             
             if info.find('\r\n') < 0 or info.find('+') < 0:                
-                for i in range(5):
+                for _ in range(5):
                     try:
-                        res0 = self.comSocket.recv(REBUFSIZE)
-                        info_buffer = res0.decode()
-
-                        log = "recv <<< %s (again)" % info_buffer[:-2]
-                        self.log.send(self.iam, INFO, log)
-
+                        info_buffer = recv_from(True)
                         if info_buffer.find('\r\n') >= 0:
                             break
                     except:
                         continue
+                
+                ti.sleep(self.wait_time)
 
-                return DEFAULT_VALUE
+                send_to(cmd)
+                info = recv_from()
 
-            else:
-                return info[:-2]
+            return info[:-2]
             
         except:
 
@@ -204,17 +211,16 @@ class temp_ctrl(threading.Thread):
         ti.sleep(self.wait_time)  
         value[1] = self.get_value("B")     
         ti.sleep(self.wait_time)
+
         if self.iam != "tmc3":
             heat[0] = self.get_heating_power(1)
-            ti.sleep(self.wait_time)
-            
+            ti.sleep(self.wait_time) 
         heat[1] = self.get_heating_power(2)
         ti.sleep(self.wait_time)
 
         if self.iam != "tmc3":
             setp[0] = self.get_setpoint(1)
             ti.sleep(self.wait_time)
-    
         setp[1] = self.get_setpoint(2)
         ti.sleep(self.wait_time)
         
