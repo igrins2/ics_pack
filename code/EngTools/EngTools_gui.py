@@ -91,12 +91,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for th in threading.enumerate():
             self.log.send(self.iam, INFO, th.name + " exit.")
 
+
         if self.producer != None:
             self.producer.__del__()
-
-        #self.producer.channel.close()
-        #self.consumer_hk.channel.close()
-        #self.consumer_dt.channel.close()
+            self.producer = None
+        
+        self.consumer_hk = None
+        self.consumer_dt = None
                                                                 
         return super().closeEvent(event)
         

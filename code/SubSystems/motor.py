@@ -81,10 +81,12 @@ class motor(threading.Thread) :
             self.log.send(self.iam, INFO, th.name + " exit.")
             
         self.close_component()
-                    
-        self.producer.channel.close()
-        self.consumer_hk.channel.close()
-        self.consumer_dt.channel.close()
+
+        if self.producer != None:
+            self.producer.__del__()    
+            self.producer = None            
+        self.consumer_hk = None
+        self.consumer_dt = None
 
         self.log.send(self.iam, DEBUG, "Closed!")                 
             

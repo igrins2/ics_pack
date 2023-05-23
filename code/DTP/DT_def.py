@@ -92,7 +92,7 @@ FRAME_Y = 2048
 HK_REQ_COM_STS = "ComPortStatus"
 
 HK_REQ_PWR_STS = "PowerStatus"  #pdu
-HK_REQ_PWR_ONOFF_IDX = "PowerOnOffIndex" #pdu
+HK_REQ_PWR_ONOFF = "PowerOnOff" #pdu
 
 DT_REQ_INITMOTOR = "InitMotor"  #motor  
 DT_REQ_MOVEMOTOR = "MoveMotor"  #motor

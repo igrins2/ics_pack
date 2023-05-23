@@ -119,10 +119,12 @@ class uploader(threading.Thread):
         for th in threading.enumerate():
             self.log.send(self.iam, INFO, th.name + " exit.")
             
-        self.producer.channel.close()
+        if self.producer != None:
+            self.producer.__del__()    
+            self.producer = None
         for i in range(COM_CNT):
-            self.consumer[i].channel.close()
-        self.consumer_hk.channel.close()
+            self.consumer[i] = None
+        self.consumer_hk = None
 
         self.log.send(self.iam, DEBUG, "Closed!")
                                     

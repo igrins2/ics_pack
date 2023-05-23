@@ -78,10 +78,12 @@ class pdu(threading.Thread) :
             
         self.close_component()
         
-        self.producer.channel.close()
-        self.consumer_hk.channel.close()
-        self.consumer_dt.channel.close()
-
+        if self.producer != None:
+            self.producer.__del__()    
+            self.producer = None
+        self.consumer_hk = None
+        self.consumer_dt = None
+        
         self.log.send(self.iam, DEBUG, "Closed!")                    
             
                     
@@ -290,8 +292,15 @@ class pdu(threading.Thread) :
             msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
             self.publish_to_queue(msg)
             
-        elif param[0] == HK_REQ_PWR_ONOFF_IDX:
-            pow_flag = self.change_power(int(param[1]), param[2]) 
+        #elif param[0] == HK_REQ_PWR_ONOFF_IDX:
+        #    pow_flag = self.change_power(int(param[1]), param[2]) 
+        #    msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+        #    self.publish_to_queue(msg)
+
+        elif param[0] == HK_REQ_PWR_ONOFF:
+            for idx in range(PDU_IDX):
+                pow_flag = self.change_power(idx+1, param[idx+1])
+                
             msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
             self.publish_to_queue(msg)
             

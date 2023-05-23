@@ -62,13 +62,13 @@ class HK_cli(threading.Thread):
         for th in threading.enumerate():
             print(th.name + " exit.")     
             
+        
         if self.producer != None:
             self.producer.__del__()    
+            self.producer = None
         
-        #self.producer.channel.close()
-        #for idx in range(COM_CNT+2):
-        #    if self.consumer[idx] != None:
-        #        self.consumer[idx].channel.close()
+        for idx in range(COM_CNT+2):
+            self.consumer[idx] = None
         
 
     #-------------------------------
@@ -460,7 +460,4 @@ if __name__ == "__main__":
     hk.start()
     
     hk.__del__()
-    #for i in range(COM_CNT+2):
-    #    hk.consumer[i].channel.close()
-    #hk.producer.channel.close() 
     

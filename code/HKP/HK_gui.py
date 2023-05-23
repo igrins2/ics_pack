@@ -128,8 +128,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.heatlabel[label_list[i]] = DEFAULT_VALUE
                                 
         self.producer = None
-        
-        self.consumer_EngTools = None
         self.consumer_sub = [None for _ in range(COM_CNT)]
                 
         self.alarm_status = ALM_OK
@@ -151,7 +149,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.show_timer.timeout.connect(self.sub_data_processing)
 
         # every 1hour save
-        self.save_setpoint()
+        #self.save_setpoint()
         
         self.startup()
         
@@ -170,14 +168,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for th in threading.enumerate():
             self.log.send(self.iam, INFO, th.name + " exit.")       
                                 
-        self.publish_to_queue(EXIT)
-    
+        self.publish_to_queue(EXIT)    
+        
         if self.producer != None:
             self.producer.__del__()
+            self.producer = None
 
-        #self.producer.channel.close()
-        #for i in range(COM_CNT):
-        #    self.consumer_sub[i].channel.close()
+        for i in range(COM_CNT):
+            self.consumer_sub[i] = None
 
         self.log.send(self.iam, DEBUG, "Closed!") 
                 
@@ -449,16 +447,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [PDU] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
-        # from PDU
-        for i in range(PDU_IDX):
-            if self.power_status[i] == ON:
-                self.QWidgetLabelColor(self.pdulist[i], "red")
-                self.bt_pwr_onoff[i].setText(OFF)
-                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "white", "green")
-            else:
-                self.QWidgetLabelColor(self.pdulist[i], "gray")
-                self.bt_pwr_onoff[i].setText(ON)
-                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black")          
+        self.show_pdu_status()
             
         
     #-------------------------------
@@ -493,10 +482,23 @@ class MainWindow(Ui_Dialog, QMainWindow):
             clr = "red"
         self.QWidgetLabelColor(self.sts_pdu, clr) 
         
+
+    # from PDU
+    def show_pdu_status(self):
+        for i in range(PDU_IDX):
+            if self.power_status[i] == ON:
+                self.QWidgetLabelColor(self.pdulist[i], "red")
+                self.bt_pwr_onoff[i].setText(OFF)
+                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "white", "green")
+            else:
+                self.QWidgetLabelColor(self.pdulist[i], "gray")
+                self.bt_pwr_onoff[i].setText(ON)
+                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black") 
        
         
     #-------------------------------
     # control and show 
+    '''
     def save_setpoint(self):
         read = True
         for i, v in enumerate(self.set_point):
@@ -509,7 +511,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if read:
             sc.SaveConfig(self.cfg, self.ini_file)   #IGRINS.ini
     
-        threading.Timer(3600, self.save_setpoint).start()
+        #self.save_sp_timer = threading.Timer(3600, self.save_setpoint)
+        #self.save_sp_timer.start()
+    '''
         
 
     def judge_value(self, input):
@@ -833,10 +837,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
             state = "warm"
         else:
             state = "normal"
-        self.QShowValueVM(self.dpvalue, state)    
+        self.QShowValueVM(self.dpvalue, state)  
+
+        self.show_pdu_status()      
                             
-          
-    
+        
         
 if __name__ == "__main__":
     

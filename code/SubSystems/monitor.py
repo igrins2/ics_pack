@@ -76,8 +76,11 @@ class monitor(threading.Thread) :
             
         self.close_component()
         
-        self.producer.channel.close()
-        self.consumer.channel.close() 
+        if self.producer != None:
+            self.producer.__del__()    
+            self.producer = None
+
+        self.consumer = None
 
         self.log.send(self.iam, DEBUG, "Closed!")              
                     

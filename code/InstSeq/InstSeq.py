@@ -91,11 +91,14 @@ class Inst_Seq(threading.Thread):
                     
         for th in threading.enumerate():
             self.log.send(self.iam, INFO, th.name + " exit.")
-            
-        self.producer.channel.close()
-        self.consumer_ObsApp.channel.close()
+
+        if self.producer != None:
+            self.producer.__del__()    
+            self.producer = None
+
+        self.consumer_ObsApp = None
         for i in range(DCS_CNT):
-            self.consumer_dcs[i].channel.close()
+            self.consumer_dcs[i] = None
 
         self.log.send(self.iam, DEBUG, "Closed!") 
         #exit()
