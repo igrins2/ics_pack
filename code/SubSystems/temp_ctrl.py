@@ -62,6 +62,7 @@ class temp_ctrl(threading.Thread):
         self.producer = None
         self.consumer_hk, self.consumer_uploader = None, None
         
+        self.prev_cmd = ""
         #self.pause = False
         
         self.wait_time = float(Period/6)
@@ -92,7 +93,7 @@ class temp_ctrl(threading.Thread):
             self.comStatus = True
             
             msg = "connected"
-            self.log.send(self.iam, INFO, msg)            
+            self.log.send(self.iam, INFO, msg)          
             
         except:
             self.comSocket = None
@@ -128,21 +129,24 @@ class temp_ctrl(threading.Thread):
     def get_setpoint(self, port):
         cmd = "SETP? %d" % port
         cmd += "\r\n"
-        return self.socket_send(cmd)
+        return cmd
+        #return self.socket_send(cmd)
             
 
     # TMC-Heating Value
     def get_heating_power(self, port):
         cmd = "HTR? %d" % port
         cmd += "\r\n"
-        return self.socket_send(cmd)
+        return cmd
+        #return self.socket_send(cmd)
     
     
     # TMC-Monitorig
     def get_value(self, port):  
         cmd = "KRDG? " + port
         cmd += "\r\n"
-        return self.socket_send(cmd)
+        return cmd
+        #return self.socket_send(cmd)
 
 
     def socket_send(self, cmd):
@@ -203,6 +207,7 @@ class temp_ctrl(threading.Thread):
         #if self.pause:
         #    return
         
+        '''
         value = [DEFAULT_VALUE, DEFAULT_VALUE]
         heat = [DEFAULT_VALUE, DEFAULT_VALUE]
         setp = [DEFAULT_VALUE, DEFAULT_VALUE]
@@ -237,7 +242,27 @@ class temp_ctrl(threading.Thread):
         else:
             msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, value[0], value[1], heat[1], setp[1]) 
         self.publish_to_queue(msg)
-
+        '''
+        
+        # need to test!!!
+        com_len = 6
+        res = [DEFAULT_VALUE for _ in range(com_len)]
+        cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(1), self.get_heating_power(2), self.get_setpoint(1), self.get_setpoint(2)]
+        for idx in range(com_len):
+            res[idx] = self.socket_send(cmd_list[idx])
+            ti.sleep(self.wait_time)
+            if res[idx] == DEFAULT_VALUE:
+                idx -= 1
+                continue
+            elif res[idx] == None:
+                res[idx] == DEFAULT_VALUE
+        
+        if self.iam != "tmc3":
+            msg = "%s %s %s %s %s %s %s" % (HK_REQ_GETVALUE, res[0], res[1], res[2], res[3], res[4], res[5]) 
+        else:
+            msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, res[0], res[1], res[3], res[5]) 
+        self.publish_to_queue(msg)
+            
         threading.Thread(target=self.start_monitoring).start()
 
     

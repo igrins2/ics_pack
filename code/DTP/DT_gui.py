@@ -430,7 +430,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 if self.simulation:
                     path = WORKING_DIR + "IGRINS/Demo/"
                 else:
-                    path = WORKING_DIR + "IGRINS/" + self.dcs_list[idx] + "/"
+                    path = WORKING_DIR + "IGRINS/" + self.dcs_list[idx].lower() + "/"
                 
                 self.e_path[idx].setText(path)
                 self.e_savefilename[idx].setText("")
@@ -761,7 +761,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.prog_timer[dc_idx].stop()
             self.elapsed_timer[dc_idx].stop()
 
-        #self.acquiring[dc_idx] = False
+        self.acquiring[dc_idx] = True
                 
         msg = "%s %s %d" % (CMD_STOPACQUISITION, self.dcs_list[dc_idx], self.simulation)
         self.publish_to_queue(msg)
@@ -782,11 +782,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     filepath = "%sIGRINS/Demo/SDCK_demo.fits" % WORKING_DIR
             else:
                 if dc_idx == SVC:
-                    filepath = "%sIGRINS/dcss/Fowler/%s/Result/SDCS_%s.fits" % (WORKING_DIR, folder_name, folder_name)
+                    filepath = "%sIGRINS/dcss/Fowler/%s" % (WORKING_DIR, folder_name)
                 elif dc_idx == H:
-                    filepath = "%sIGRINS/dcsh/Fowler/%s/Result/SDCH_%s.fits" % (WORKING_DIR, folder_name, folder_name)
+                    filepath = "%sIGRINS/dcsh/Fowler/%s" % (WORKING_DIR, folder_name)
                 elif dc_idx == K:
-                    filepath = "%sIGRINS/dcsk/Fowler/%s/Result/SDCK_%s.fits" % (WORKING_DIR, folder_name, folder_name)
+                    filepath = "%sIGRINS/dcsk/Fowler/%s" % (WORKING_DIR, folder_name)
             
             filename = filepath.split("/")
             path = "/"

@@ -59,8 +59,8 @@ class Inst_Seq(threading.Thread):
         
         self.InstSeq_ex = self.cfg.get(MAIN, 'instseq_exchange')
         self.InstSeq_q = self.cfg.get(MAIN, 'instseq_routing_key')
-        #self.ObsApp_ex = self.cfg.get(MAIN, 'obsapp_exchange')     
-        #self.ObsApp_q = self.cfg.get(MAIN, 'obsapp_routing_key')
+        self.ObsApp_ex = self.cfg.get(MAIN, 'obsapp_exchange')     
+        self.ObsApp_q = self.cfg.get(MAIN, 'obsapp_routing_key')
          
         self.producer = None
         self.consumer_ObsApp = None
@@ -155,7 +155,7 @@ class Inst_Seq(threading.Thread):
                     
                 #from getting the TCS info. PA!
                 elif seq_cmd == giapi.command.SequenceCommand.TCS:  #temporarly
-                    msg = "%s %s" % (SHOW_TCS_INFO, PA)
+                    msg = "%s %s" % (INSTSEQ_SHOW_TCS_INFO, PA)
                     self.publish_to_queue(msg)
                     
                 else:
@@ -217,8 +217,7 @@ class Inst_Seq(threading.Thread):
         msg = "%s ->" % msg
         self.log.send(self.iam, INFO, msg)
         
-    
-    '''
+
     #--------------------------------------------------------
     # ObsApp queue
     def connect_to_server_ObsApp_q(self):
@@ -235,15 +234,24 @@ class Inst_Seq(threading.Thread):
     
         param = cmd.split()
         
+        
         if param[0] == EXIT:
-            self.__del__()  
+            pass
+            #self.__del__()  
+            
+        elif param[0] == OBSAPP_CAL_OFFSET:
+            self.send_to_SeqExec(OBSAPP_CAL_OFFSET, param[1], param[2])
+        
+        elif param[0] == OBSAPP_BUSY:
+            self.send_to_SeqExec(OBSAPP_BUSY)
+            # SeqExec retry!
             
         else:
             return
         
         msg = "<- [ObsApp] %s" % cmd
         self.log.send(self.iam, INFO, msg)        
-    '''    
+       
                       
     #--------------------------------------------------------
     # dcs queue
