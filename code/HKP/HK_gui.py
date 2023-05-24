@@ -314,6 +314,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_tmc1(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):
+            return
+
+        msg = "<- [TC1] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == HK_REQ_COM_STS:
             self.com_status[TMC1] = bool(int(param[1]))            
@@ -329,18 +335,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
         elif param[0] == HK_REQ_MANUAL_CMD:
             res = "[TC1] %s" % param[1]
             self.e_recv.setText(res)
-            
-        else:
-            return
-        
-        msg = "<- [TC1] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-            
-            
+                        
             
     def callback_tmc2(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):
+            return
+
+        msg = "<- [TC2] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == HK_REQ_COM_STS:
             self.com_status[TMC2] = bool(int(param[1]))            
@@ -356,17 +361,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
         elif param[0] == HK_REQ_MANUAL_CMD:
             res = "[TC2] %s" % param[1]
             self.e_recv.setText(res)
-            
-        else:
-            return
-        
-        msg = "<- [TC2] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-            
+                        
         
     def callback_tmc3(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):
+            return
+
+        msg = "<- [TC3] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == HK_REQ_COM_STS:
             self.com_status[TMC3] = bool(int(param[1]))            
@@ -381,17 +386,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
             res = "[TC3] %s" % param[1]
             self.e_recv.setText(res)
             
-        else:
-            return
-        
-        msg = "<- [TC3] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-                    
     
     def callback_tm(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):
+            return
         
+        msg = "<- [TM] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+
         if param[0] == HK_REQ_COM_STS:
             self.com_status[TM] = bool(int(param[1]))            
         
@@ -403,16 +408,16 @@ class MainWindow(Ui_Dialog, QMainWindow):
             res = "[TM] %s" % param[1]
             self.e_recv.setText(res)
             
-        else:
-            return
-        
-        msg = "<- [TM] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-                
     
     def callback_vm(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE):
+            return
+
+        msg = "<- [VM] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == HK_REQ_COM_STS:
             self.com_status[VM] = bool(int(param[1]))            
@@ -423,16 +428,16 @@ class MainWindow(Ui_Dialog, QMainWindow):
             else:
                 self.dpvalue = param[1]
                 
-        else:
-            return
-        
-        msg = "<- [VM] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-            
             
     def callback_pdu(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_PWR_STS):
+            return
+
+        msg = "<- [PDU] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == HK_REQ_COM_STS:
             self.com_status[PDU] = bool(int(param[1]))            
@@ -441,12 +446,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
             for i in range(PDU_IDX):
                 self.power_status[i] = param[i+1]
                 
-        else:
-            return
-        
-        msg = "<- [PDU] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-
         self.show_pdu_status()
             
         
@@ -691,17 +690,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 
         self.sendToEngTools_status()           
             
-    '''        
-    def check_temperature_danger(self):
-        # temperature of cold head #2
-        label = self.alert_label
-        temp = self.alert_temperature
-        
-        if float(self.dtvalue_from_label[label]) > temp:
-            return True
-        else:
-            return False
-    '''    
         
     def set_alert_status_on(self):            
         if not self.chk_alert.isChecked():

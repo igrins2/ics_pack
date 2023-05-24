@@ -172,6 +172,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.cal_cur = 0
         self.ut_moved = False
         self.lt_moved = False
+        self.lamp_on = False
         
         self.power_status = [OFF for _ in range(PDU_IDX)] # motor, FLAT, THAR
            
@@ -310,6 +311,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
         #------------------
         #calibration
+
+        self.chk_open_calibration.setEnabled(False)
         
         self.chk_open_calibration.clicked.connect(self.open_calilbration)
         
@@ -407,7 +410,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def callback_EngTools(self, ch, method, properties, body):
         cmd = body.decode()
-        param = cmd.split()     
+        param = cmd.split() 
+
+        if not (param[0] == ALIVE):
+            return
+
+        msg = "<- [EngTools] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == ALIVE:
             self.simulation = bool(int(param[1]))   
@@ -420,13 +429,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 
                 self.e_path[idx].setText(path)
                 self.e_savefilename[idx].setText("")
-            
-        else:
-            return
-        
-        msg = "<- [EngTools] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-    
+                            
        
     #-------------------------------
     # sub queue
@@ -452,25 +455,37 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_pdu(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
-                
+
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_PWR_STS):
+            return        
+
+        msg = "<- [PDU] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+        
         if param[0] == HK_REQ_COM_STS:
             #self.com_status[PDU] = bool(int(param[1])) 
             pass
-        
+            
         elif param[0] == HK_REQ_PWR_STS:
             for i in range(PDU_IDX):
                 self.power_status[i] = param[i+1]
-                
-        else:
-            return
-            
-        msg = "<- [PDU] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-                
+
+            if self.power_status[0] == ON and self.power_status[1] == ON:
+                self.chk_open_calibration.setEnabled(True)
+
+            if param[-1] == "done" and self.lamp_on:
+                self.bt_take_image.click()
+                    
         
     def callback_lt(self, ch, method, properties, body):
         cmd = body.decode()                 
-        param = cmd.split()       
+        param = cmd.split()     
+
+        if not (param[0] == HK_REQ_COM_STS or param[0] == DT_REQ_INITMOTOR or param[0] == DT_REQ_MOVEMOTOR or param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK or param[0] == DT_REQ_SETLT):
+            return
+
+        msg = "<- [LT] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
 
         if param[0] == HK_REQ_COM_STS:
             self.bt_lt_motor_init.setEnabled(bool(int(param[1])))
@@ -493,13 +508,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.QWidgetBtnColor(self.bt_lt_move_to[int(param[1])], "black")
 
             if self.cal_mode:
-                print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "lt: here!!!!")
+                #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "lt: here!!!!")
                 if self.ut_moved and self.lt_moved:
-                    print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "lt: self.ut_moved and self.lt_moved")
+                    #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "lt: self.ut_moved and self.lt_moved")
                     self.func_lamp(self.cal_cur)
-                    ti.sleep(1)
+                    #ti.sleep(1)
                 
-                    self.bt_take_image.click()
+                    #self.bt_take_image.click()
                 
         elif param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
             self.lt_moved = True
@@ -510,16 +525,16 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.e_ltpos.setText(param[2])
             self.sts_lt_pos[int(param[1])].setText(param[2])
                 
-        else:
-            return
-        
-        msg = "<- [LT] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-            
         
     def callback_ut(self, ch, method, properties, body):
         cmd = body.decode()           
-        param = cmd.split()     
+        param = cmd.split()   
+        
+        if not (param[0] == HK_REQ_COM_STS or param[0] == DT_REQ_INITMOTOR or param[0] == DT_REQ_MOVEMOTOR or param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK or param[0] == DT_REQ_SETUT):
+            return
+
+        msg = "<- [UT] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == HK_REQ_COM_STS:
             self.bt_ut_motor_init.setEnabled(bool(int(param[1])))
@@ -542,13 +557,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.QWidgetBtnColor(self.bt_ut_move_to[int(param[1])], "black")
             
             if self.cal_mode:
-                print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "ut: here!!!!")
+                #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "ut: here!!!!")
                 if self.ut_moved and self.lt_moved:
-                    print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "ut: self.ut_moved and self.lt_moved")
+                    #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "ut: self.ut_moved and self.lt_moved")
                     self.func_lamp(self.cal_cur)
-                    ti.sleep(1)
+                    #ti.sleep(1)
                 
-                    self.bt_take_image.click()
+                    #self.bt_take_image.click()
         
         elif param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
             self.ut_moved = True
@@ -558,13 +573,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         elif param[0] == DT_REQ_SETUT:
             self.e_utpos.setText(param[2])
             self.sts_ut_pos[int(param[1])].setText(param[2])
-                
-        else:
-            return
-        
-        msg = "<- [UT] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-            
+                                        
 
     #-------------------------------
     # dcs queue
@@ -590,6 +599,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()
+        
+        param = cmd.split()
+        if not (param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
+            return
+
         msg = "<- [DCSS] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
@@ -598,6 +612,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     def callback_h(self, ch, method, properties, body):
         cmd = body.decode()
+
+        param = cmd.split()
+        if not (param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
+            return
+
         msg = "<- [DCSH] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
@@ -605,6 +624,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     def callback_k(self, ch, method, properties, body):
         cmd = body.decode()
+
+        param = cmd.split()
+        if not (param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
+            return
+
         msg = "<- [DCSK] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
@@ -613,7 +637,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def dcs_status(self, dc_idx, cmd):
         param = cmd.split()
-        
+
         if param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
             self.dcs_ready[dc_idx] = True
             self.bt_init_status(dc_idx)
@@ -652,7 +676,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.load_data(dc_idx, param[2])
         
             self.acquiring[dc_idx] = False
-            print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "self.acquiring[dc_idx]:", dc_idx, self.acquiring[dc_idx])
+            #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "self.acquiring[dc_idx]:", dc_idx, self.acquiring[dc_idx])
             
             if self.cal_mode:
                 show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.cal_e_repeat[self.cal_cur].text())
@@ -661,18 +685,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 if self.cur_cnt[dc_idx] < int(self.cal_e_repeat[self.cal_cur].text()):
                     if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
                         self.all_acquired = True
-                        print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "repeat: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx)
+                        #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "repeat: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx)
                         self.bt_take_image.click()
 
-                else:                                
-                    self.func_lamp(self.cal_cur, OFF)
-                    
+                else:                                                    
                     if self.cal_stop_clicked:
                         self.enable_dcs(dc_idx, True)
 
                         if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:   
+                            self.func_lamp(self.cal_cur, False)
                             self.all_acquired = True
-                            print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "stop: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx) 
+                            #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "stop: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx) 
                             self.cal_mode = False
                             self.bt_run.setText("RUN")
                             self.QWidgetBtnColor(self.bt_run, "black")
@@ -688,11 +711,16 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
                     self.enable_dcs(dc_idx, True)
                     if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
+                        self.func_lamp(self.cal_cur, False)
                         self.all_acquired = True
-                        print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "next frame: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx)   
+                        #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "next frame: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx)   
                         self.cal_mode = False  
                         self.cal_cur += 1
-                        print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "next frame: self.cal_cur += 1")
+                        #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "next frame: self.cal_cur += 1")
+
+                        for i in range(DCS_CNT):
+                            self.cur_cnt[i] = 0
+
                         self.cal_run_cycle()
 
             else:
@@ -764,6 +792,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
             return
 
         self.enable_dcs(dc_idx, False)
+        
+        if self.cal_mode:
+            show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.cal_e_repeat[self.cal_cur].text())
+            self.e_repeat[dc_idx].setText(self.cal_e_repeat[self.cal_cur].text())
+            self.e_exptime[dc_idx].setText(self.cal_e_exptime[self.cal_cur].text())
         
         show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.e_repeat[dc_idx].text())
         self.label_cur_num[dc_idx].setText(show_cur_cnt)   
@@ -1243,9 +1276,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if self.chk_open_calibration.isChecked():
             self.setFixedSize(1315, 700)
             self.setGeometry(0, 0, 1315, 700)
-            if self.power_status[MOTOR-1] == OFF:
-                self.power_status[MOTOR-1] = ON
-                self.power_onoff()
+            self.power_status[MOTOR-1] = ON
+            self.power_onoff()
 
             cmd = "%sics_pack/code/SubSystems/motor.py" % WORKING_DIR
             if self.proc_sub[LT] == None:
@@ -1255,9 +1287,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         else:
             self.setFixedSize(1030, 700)
             self.setGeometry(0, 0, 1030, 700)
-            if self.power_status[MOTOR-1] == ON:
-                self.power_status[MOTOR-1] = OFF
-                self.power_onoff()
+            self.power_status[MOTOR-1] = OFF
+            self.power_onoff()
 
                 
          
@@ -1333,7 +1364,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for cal_cnt in range(CAL_CNT):
             if self.cal_chk[cal_cnt].isChecked():
                 if cal_cnt == self.cal_cur:
-                    print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "current idx:", self.cal_cur)
+                    #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "current idx:", self.cal_cur)
                     self.QWidgetCheckBoxColor(self.cal_chk[cal_cnt], "blue") 
                     self.QWidgetEditColor(self.cal_e_exptime[cal_cnt], "blue")
                     self.QWidgetEditColor(self.cal_e_repeat[cal_cnt], "blue")
@@ -1347,7 +1378,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             else:
                 if cal_cnt >= self.cal_cur:
                     self.cal_cur += 1
-                    print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "self.cal_cur += 1, in def cal_run_cycle", self.cal_cur)
+                    #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "self.cal_cur += 1, in def cal_run_cycle", self.cal_cur)
         
         if nothing:
             self.bt_run.setText("RUN")
@@ -1360,21 +1391,23 @@ class MainWindow(Ui_Dialog, QMainWindow):
             pwr_list += self.power_status[i] + " "
         msg = "%s %s" % (HK_REQ_PWR_ONOFF, pwr_list)
         self.publish_to_queue(msg)
-        print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "power:", pwr_list)
+        #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "power:", pwr_list)
 
 
 
-    def func_lamp(self, idx, off=False):        
-        
-        if off:
-            self.power_status[FLAT-1] = OFF
-        else:
+    def func_lamp(self, idx, on=True):        
+
+        self.lamp_on = on
+
+        if on:
             self.power_status[FLAT-1] = LAMP_FLAT[idx]
-        
-        if off:
-            self.power_status[THAR-1] = OFF
         else:
+            self.power_status[FLAT-1] = OFF          
+        
+        if on:
             self.power_status[THAR-1] = LAMP_THAR[idx]
+        else:
+            self.power_status[THAR-1] = OFF            
        
         self.power_onoff()
                         
@@ -1410,7 +1443,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
         msg = "%s %s %d" % (DT_REQ_MOVEMOTOR, self.com_list[motor], pos)
         self.publish_to_queue(msg)
-        print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "move_motor", motor, pos)
+        #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "move_motor", motor, pos)
         
 
     def move_motor_delta(self, motor, direction): #motor-UT/LT, direction-prev, next

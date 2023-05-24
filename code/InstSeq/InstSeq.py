@@ -234,9 +234,13 @@ class Inst_Seq(threading.Thread):
     
     def callback_ObsApp(self, ch, method, properties, body):
         cmd = body.decode()
-    
         param = cmd.split()
+
+        if not (param[0] == EXIT or param[0] == OBSAPP_CAL_OFFSET or param[0] == OBSAPP_BUSY):
+            return
         
+        msg = "<- [ObsApp] %s" % cmd
+        self.log.send(self.iam, INFO, msg)    
         
         if param[0] == EXIT:
             pass
@@ -247,13 +251,7 @@ class Inst_Seq(threading.Thread):
         
         elif param[0] == OBSAPP_BUSY:
             self.send_to_SeqExec(OBSAPP_BUSY)
-            # SeqExec retry!
-            
-        else:
-            return
-        
-        msg = "<- [ObsApp] %s" % cmd
-        self.log.send(self.iam, INFO, msg)        
+            # SeqExec retry!           
        
                       
     #--------------------------------------------------------
@@ -281,6 +279,12 @@ class Inst_Seq(threading.Thread):
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()        
         param = cmd.split()
+
+        if not (param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
+            return
+
+        msg = "<- [DCSS] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == CMD_INIT2_DONE or param[1] == CMD_INITIALIZE2_ICS:
             self.dcs_ready[SVC] = True
@@ -295,17 +299,17 @@ class Inst_Seq(threading.Thread):
             
         elif param[0] == CMD_STOPACQUISITION:
             pass
-        
-        else:
-            return
-        
-        msg = "<- [DCSS] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-                   
+                           
     
     def callback_h(self, ch, method, properties, body):
         cmd = body.decode()        
         param = cmd.split()
+
+        if not (param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
+            return
+
+        msg = "<- [DCSH] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == CMD_INIT2_DONE or param[1] == CMD_INITIALIZE2_ICS:
             self.dcs_ready[H] = True
@@ -321,18 +325,17 @@ class Inst_Seq(threading.Thread):
         elif param[0] == CMD_STOPACQUISITION:
             pass
         
-        else:
-            return
-        
-        msg = "<- [DCSH] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-
-                    
                     
     def callback_k(self, ch, method, properties, body):
         cmd = body.decode()        
         param = cmd.split()
         
+        if not (param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
+            return
+            
+        msg = "<- [DCSK] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+
         if param[0] == CMD_INIT2_DONE or param[1] == CMD_INITIALIZE2_ICS:
             self.dcs_ready[K] = True
     
@@ -347,12 +350,6 @@ class Inst_Seq(threading.Thread):
         elif param[0] == CMD_STOPACQUISITION:
             pass
         
-        else:
-            return
-        
-        msg = "<- [DCSK] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-            
 
     #-------------------------------
     # dcs command

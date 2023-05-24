@@ -246,6 +246,12 @@ class uploader(threading.Thread):
         cmd = body.decode()
         param = cmd.split()
         
+        if not (param[0] == HK_REQ_GETVALUE):
+            return
+
+        msg = "<- [TC1] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+
         if param[0] == HK_REQ_GETVALUE:
             self.hk_list[HK_BENCH] = self.judge_value(param[1])
             self.hk_list[HK_GRATING] = self.judge_value(param[2])
@@ -253,18 +259,18 @@ class uploader(threading.Thread):
             self.hk_list[HK_GRATING_HEATING] = self.judge_value(param[4])
             self.hk_list[HK_BENCH_SP] = self.judge_value(param[5])
             self.hk_list[HK_GRATING_SP] = self.judge_value(param[6])
-            
-        else:
-            return
-        
-        msg = "<- [TC1] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-                        
+                                    
             
     def callback_tmc2(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_GETVALUE):
+            return
      
+        msg = "<- [TC2] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+
         if param[0] == HK_REQ_GETVALUE:
             self.hk_list[HK_DETS] = self.judge_value(param[1])
             self.hk_list[HK_DETK] = self.judge_value(param[2])
@@ -272,17 +278,17 @@ class uploader(threading.Thread):
             self.hk_list[HK_DETK_HEATING] = self.judge_value(param[4])
             self.hk_list[HK_DETS_SP] = self.judge_value(param[5])
             self.hk_list[HK_DETK_SP] = self.judge_value(param[6])
-            
-        else:
-            return
-        
-        msg = "<- [TC2] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-                    
+                                
         
     def callback_tmc3(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_GETVALUE):
+            return
+
+        msg = "<- [TC3] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == HK_REQ_GETVALUE:
             self.hk_list[HK_CAMH] = self.judge_value(param[1])
@@ -290,16 +296,17 @@ class uploader(threading.Thread):
             self.hk_list[HK_DETH_HEATING] = self.judge_value(param[3])
             self.hk_list[HK_DETH_SP] = self.judge_value(param[4])
             
-        else:
-            return
-        
-        msg = "<- [TC3] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
                     
     
     def callback_tm(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_GETVALUE):
+            return
+
+        msg = "<- [TM] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == HK_REQ_GETVALUE:
             self.hk_list[HK_BENCHCEN] = self.judge_value(param[1])
@@ -311,17 +318,18 @@ class uploader(threading.Thread):
             self.hk_list[HK_SHIELDTOP] = self.judge_value(param[7])
             self.hk_list[HK_AIR] = self.judge_value(param[8])
             
-        else:
-            return
-        
-        msg = "<- [TM] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
                             
        
     def callback_vm(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_GETVALUE):
+            return
         
+        msg = "<- [VM] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+
         if param[0] == HK_REQ_GETVALUE:
             dpvalue = ""
             if len(param[1]) > 10 or param[1] == DEFAULT_VALUE:
@@ -330,17 +338,17 @@ class uploader(threading.Thread):
                 dpvalue = param[1]
             
             self.hk_list[HK_VACUUM] = dpvalue
-            
-        else:
-            return
-        
-        msg = "<- [VM] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-            
+                        
             
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_UPLOAD_DB):
+            return
+
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
 
         if param[0] == HK_REQ_UPLOAD_DB:
             db = param[1:]
@@ -349,13 +357,7 @@ class uploader(threading.Thread):
             else:
                 #from HKP
                 self.start_upload_to_firebase(db)
-    
-        else:
-            return
-        
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-                
+                    
                 
     def judge_value(self, input):
         if input != DEFAULT_VALUE:

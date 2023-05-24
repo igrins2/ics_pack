@@ -253,7 +253,13 @@ class monitor(threading.Thread) :
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_MANUAL_CMD):
+            return
                       
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+
         if param[0] == HK_REQ_MANUAL_CMD:       
             if self.iam != param[1]:
                 return     
@@ -265,13 +271,6 @@ class monitor(threading.Thread) :
             msg = "%s %s" % (param[0], value) 
             self.publish_to_queue(msg)
             
-        else:
-            return
-        
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-            
- 
             
 if __name__ == "__main__":
     

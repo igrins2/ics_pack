@@ -143,10 +143,15 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
 
     def callback_hk(self, ch, method, properties, body):
-        
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_STATUS or param[0] == EXIT):
+            return
         
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+
         if param[0] == HK_STATUS:
             self.label_stsHKP.setText(param[2])
             self.bt_runHKP.setEnabled(False)
@@ -159,14 +164,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             if self.bt_runHKP.isEnabled() and self.bt_runDTP.isEnabled():
                 self.radio_inst_simul.setEnabled(True)
                 self.radio_real.setEnabled(True)  
-                
-        else:
-            return
-        
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
-    
-    
+
+
     #-------------------------------
     # dt queue
     def connect_to_server_dt_q(self):
@@ -181,9 +180,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
 
     def callback_dt(self, ch, method, properties, body):
-        
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == DT_STATUS or param[0] == EXIT):
+            return
+
+        msg = "<- [DTP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
         
         if param[0] == DT_STATUS:
             self.label_stsDTP.setText(param[2])                
@@ -199,13 +203,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 
             if self.bt_runHKP.isEnabled() and self.bt_runDTP.isEnabled():
                 self.radio_inst_simul.setEnabled(True)
-                self.radio_real.setEnabled(True)
-                
-        else:
-            return
-        
-        msg = "<- [DTP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
+                self.radio_real.setEnabled(True)       
             
     
     def set_mode(self):                    

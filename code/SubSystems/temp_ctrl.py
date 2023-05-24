@@ -2,7 +2,7 @@
 """
 Created on Nov 8, 2022
 
-Modified on May 17, 2023
+Modified on May 24, 2023
 
 @author: hilee
 """
@@ -251,7 +251,8 @@ class temp_ctrl(threading.Thread):
         com_len = 6
         res = [DEFAULT_VALUE for _ in range(com_len)]
         cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(1), self.get_heating_power(2), self.get_setpoint(1), self.get_setpoint(2)]
-        for idx in range(com_len):
+        idx = 0
+        for _ in range(com_len):
             res[idx] = self.socket_send(cmd_list[idx])
             ti.sleep(self.wait_time)
             if res[idx] == DEFAULT_VALUE:
@@ -259,6 +260,7 @@ class temp_ctrl(threading.Thread):
                 continue
             elif res[idx] == None:
                 res[idx] == DEFAULT_VALUE
+            idx += 1
         
         if self.iam != "tmc3":
             msg = "%s %s %s %s %s %s %s" % (HK_REQ_GETVALUE, res[0], res[1], res[2], res[3], res[4], res[5]) 
@@ -303,6 +305,12 @@ class temp_ctrl(threading.Thread):
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_MANUAL_CMD):
+            return
+
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                             
         if param[0] == HK_REQ_MANUAL_CMD:            
             if self.iam != param[1]:
@@ -321,11 +329,6 @@ class temp_ctrl(threading.Thread):
             #self.pause = False
             self.start_monitoring() 
             
-        else:
-            return
-        
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
             
    
 if __name__ == "__main__":

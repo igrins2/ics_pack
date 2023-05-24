@@ -111,6 +111,7 @@ class pdu(threading.Thread) :
         msg = "%s %d" % (HK_REQ_COM_STS, self.comStatus)   
         self.publish_to_queue(msg)
     
+    
     def re_connect_to_component(self):
         #self.th.cancel()
         
@@ -245,6 +246,12 @@ class pdu(threading.Thread) :
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_PWR_STS or param[0] == HK_REQ_PWR_ONOFF_IDX or param[0] == HK_REQ_PWR_ONOFF):
+            return
+
+        msg = "<- [HKP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                                                        
         if param[0] == HK_REQ_PWR_STS:
             pow_flag = self.power_status("DN0\r")
@@ -264,11 +271,6 @@ class pdu(threading.Thread) :
             msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
             self.publish_to_queue(msg)
             
-        else:
-            return
-        
-        msg = "<- [HKP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
                 
                 
     #-------------------------------
@@ -286,6 +288,12 @@ class pdu(threading.Thread) :
     def callback_dt(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
+
+        if not (param[0] == HK_REQ_PWR_STS or param[0] == HK_REQ_PWR_ONOFF):
+            return
+
+        msg = "<- [DTP] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
                                                        
         if param[0] == HK_REQ_PWR_STS:
             pow_flag = self.power_status("DN0\r")
@@ -298,17 +306,20 @@ class pdu(threading.Thread) :
         #    self.publish_to_queue(msg)
 
         elif param[0] == HK_REQ_PWR_ONOFF:
+            #pow_flag = self.power_status("DN0\r")
+            #pow_sts = pow_flag.split()
+            pow_flag = ""
             for idx in range(PDU_IDX):
-                pow_flag = self.change_power(idx+1, param[idx+1])
+                pow_flag += self.pow_flag[idx]
+                pow_flag += " "
+
+            for idx in range(PDU_IDX):
+                if self.pow_flag[idx] != param[idx+1]:
+                    pow_flag = self.change_power(idx+1, param[idx+1])
                 
-            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+            msg = "%s %sdone" % (HK_REQ_PWR_STS, pow_flag)
             self.publish_to_queue(msg)
             
-        else:
-            return
-        
-        msg = "<- [DTP] %s" % cmd
-        self.log.send(self.iam, INFO, msg)
                         
             
 if __name__ == "__main__":

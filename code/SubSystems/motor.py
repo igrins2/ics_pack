@@ -434,6 +434,13 @@ class motor(threading.Thread) :
         
         if len(param) < 2:
             return
+
+        if hkp:
+            msg = "<- [HKP] %s" % cmd
+            self.log.send(self.iam, INFO, msg)
+        else:
+            msg = "<- [DTP] %s" % cmd
+            self.log.send(self.iam, INFO, msg)
                 
         if param[0] == HK_REQ_COM_STS:
             msg = "%s %d" % (param[0], self.comStatus)   
@@ -496,16 +503,6 @@ class motor(threading.Thread) :
                 msg = "%s %s %s" % (param[0], param[1], curpos)
                 self.publish_to_queue(msg)
                 
-            else:
-                return
-        
-        if hkp:
-            msg = "<- [HKP] %s" % cmd
-            self.log.send(self.iam, INFO, msg)
-        else:
-            msg = "<- [DTP] %s" % cmd
-            self.log.send(self.iam, INFO, msg)
-
     
 if __name__ == "__main__":
 
