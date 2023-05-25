@@ -247,25 +247,39 @@ class temp_ctrl(threading.Thread):
         self.publish_to_queue(msg)
         '''
         
-        # need to test!!!
-        com_len = 6
-        res = [DEFAULT_VALUE for _ in range(com_len)]
-        cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(1), self.get_heating_power(2), self.get_setpoint(1), self.get_setpoint(2)]
-        idx = 0
-        for _ in range(com_len):
-            res[idx] = self.socket_send(cmd_list[idx])
-            ti.sleep(self.wait_time)
-            if res[idx] == DEFAULT_VALUE:
-                idx -= 1
-                continue
-            elif res[idx] == None:
-                res[idx] == DEFAULT_VALUE
-            idx += 1
-        
+        # need to test!!!        
         if self.iam != "tmc3":
+            com_len = 6
+            res = [DEFAULT_VALUE for _ in range(com_len)]
+            cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(1), self.get_heating_power(2), self.get_setpoint(1), self.get_setpoint(2)]
+            idx = 0
+            for _ in range(com_len):
+                res[idx] = self.socket_send(cmd_list[idx])
+                ti.sleep(self.wait_time)
+                if res[idx] == DEFAULT_VALUE:
+                    continue
+                elif res[idx] == None:
+                    res[idx] == DEFAULT_VALUE
+                idx += 1
+            
             msg = "%s %s %s %s %s %s %s" % (HK_REQ_GETVALUE, res[0], res[1], res[2], res[3], res[4], res[5]) 
+            
         else:
-            msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, res[0], res[1], res[3], res[5]) 
+            com_len = 4
+            res = [DEFAULT_VALUE for _ in range(com_len)]
+            cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(2), self.get_setpoint(2)]
+            idx = 0
+            for _ in range(com_len):
+                res[idx] = self.socket_send(cmd_list[idx])
+                ti.sleep(self.wait_time)
+                if res[idx] == DEFAULT_VALUE:
+                    continue
+                elif res[idx] == None:
+                    res[idx] == DEFAULT_VALUE
+                idx += 1
+            
+            msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, res[0], res[1], res[2], res[3]) 
+            
         self.publish_to_queue(msg)
             
         threading.Thread(target=self.start_monitoring).start()
