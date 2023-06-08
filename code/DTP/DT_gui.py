@@ -429,6 +429,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 
                 self.e_path[idx].setText(path)
                 self.e_savefilename[idx].setText("")
+                
+            msg = "%s %s %d" % (CMD_INIT2_DONE, "all", self.simulation)
+            self.publish_to_queue(msg)
                             
        
     #-------------------------------
@@ -858,7 +861,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             filepath = ""
             if self.simulation:
                 if dc_idx == SVC:
-                    filepath = "%sIGRINS/Demo/SDCS_demo.fits" % WORKING_DIR
+                    filepath = "%sIGRINS/Demo/SDCS_demo1.fits" % WORKING_DIR
                 elif dc_idx == H:
                     filepath = "%sIGRINS/Demo/SDCH_demo.fits" % WORKING_DIR
                 elif dc_idx == K:

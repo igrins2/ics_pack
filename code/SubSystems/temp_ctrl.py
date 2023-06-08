@@ -253,7 +253,7 @@ class temp_ctrl(threading.Thread):
             res = [DEFAULT_VALUE for _ in range(com_len)]
             cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(1), self.get_heating_power(2), self.get_setpoint(1), self.get_setpoint(2)]
             idx = 0
-            for _ in range(com_len):
+            while idx < com_len:
                 res[idx] = self.socket_send(cmd_list[idx])
                 ti.sleep(self.wait_time)
                 if res[idx] == DEFAULT_VALUE:
@@ -269,7 +269,7 @@ class temp_ctrl(threading.Thread):
             res = [DEFAULT_VALUE for _ in range(com_len)]
             cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(2), self.get_setpoint(2)]
             idx = 0
-            for _ in range(com_len):
+            while idx < com_len:
                 res[idx] = self.socket_send(cmd_list[idx])
                 ti.sleep(self.wait_time)
                 if res[idx] == DEFAULT_VALUE:
