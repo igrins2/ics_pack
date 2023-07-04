@@ -207,8 +207,7 @@ class motor(threading.Thread) :
         
     
     def send_to_motor(self, cmd, ret=False):
-        if not self.comStatus:
-            return
+        if not self.comStatus:  return
         
         #time.sleep(TSLEEP)
         cmd += "\r"
@@ -384,8 +383,7 @@ class motor(threading.Thread) :
         
         
     def publish_to_queue(self, msg):
-        if self.producer == None:
-            return
+        if self.producer == None:   return
         
         self.producer.send_message(self.sub_q, msg)
         
@@ -432,8 +430,7 @@ class motor(threading.Thread) :
     def data_processing(self, cmd, hkp=False):    
         param = cmd.split()
         
-        if len(param) < 2:
-            return
+        if len(param) < 2:  return
 
         if hkp:
             msg = "<- [HKP] %s" % cmd
@@ -447,8 +444,7 @@ class motor(threading.Thread) :
             self.publish_to_queue(msg)
             
         elif param[0] == DT_REQ_INITMOTOR:
-            if self.iam != param[1]:
-                return
+            if self.iam != param[1]:    return
             self.init_motor()
             msg = "%s OK" % param[0]
             self.publish_to_queue(msg)
@@ -458,8 +454,7 @@ class motor(threading.Thread) :
                 self.publish_to_queue(msg)
             
             elif param[0] == DT_REQ_MOVEMOTOR:
-                if self.iam != param[1]:
-                    return
+                if self.iam != param[1]:    return
                 if self.iam == MOTOR_LT:
                     curpos = self.move_motor(int(param[2]))
                     curpos = "%s" % (int(curpos) * (-1))
@@ -471,8 +466,7 @@ class motor(threading.Thread) :
             #-----------------------------------------------------    
             # for each
             elif param[0] == DT_REQ_MOTORGO:
-                if self.iam != param[1]:
-                    return
+                if self.iam != param[1]:    return
                 curpos = self.move_motor_delta(True, int(param[2]))
                 if self.iam == MOTOR_LT:
                     curpos = "%s" % (int(curpos) * (-1))
@@ -480,8 +474,7 @@ class motor(threading.Thread) :
                 self.publish_to_queue(msg)
                 
             elif param[0] == DT_REQ_MOTORBACK:
-                if self.iam != param[1]:
-                    return
+                if self.iam != param[1]:    return
                 curpos = self.move_motor_delta(False, int(param[2]))
                 if self.iam == MOTOR_LT:
                     curpos = "%s" % (int(curpos) * (-1))
@@ -489,15 +482,13 @@ class motor(threading.Thread) :
                 self.publish_to_queue(msg)
                 
             elif param[0] == DT_REQ_SETUT:
-                if self.iam != MOTOR_UT:
-                    return
+                if self.iam != MOTOR_UT:    return
                 pos = self.setUT(int(param[1]))
                 msg = "%s %s %s" % (param[0], param[1], pos)
                 self.publish_to_queue(msg)
                 
             elif param[0] == DT_REQ_SETLT:
-                if self.iam != MOTOR_LT:
-                    return
+                if self.iam != MOTOR_LT:    return
                 pos = self.setLT(int(param[1]))
                 curpos = "%s" % (int(pos) * (-1))
                 msg = "%s %s %s" % (param[0], param[1], curpos)

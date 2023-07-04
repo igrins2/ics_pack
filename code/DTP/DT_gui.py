@@ -28,6 +28,7 @@ from Libs.logger import *
 import subprocess
 
 import time as ti
+import datetime
 import threading
 
 import numpy as np
@@ -52,8 +53,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.setupUi(self)
         
-        self.setFixedSize(1030, 700)
-        self.setGeometry(0, 0, 1030, 700)
+        self.setFixedSize(1030, 741)
+        self.setGeometry(0, 0, 1030, 741)
         self.setWindowTitle("Data Taking Package 2.0")        
         
         # canvas
@@ -95,6 +96,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.com_list = ["pdu", "lt", "ut"]
         self.dcs_list = ["DCSS", "DCSH", "DCSK"]
         
+        self.sel_mode = MODE_HK
+        
         self.init_events()
         
         self.bt_take_image.setText("Take Image")
@@ -123,8 +126,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.cal_e_exptime[i].setText("1.63")
             self.cal_e_repeat[i].setText("1")
         
-        self.e_utpos.setText("---")
-        self.e_ltpos.setText("---")
+        self.label_utpos.setText("---")
+        self.label_ltpos.setText("---")
         
         self.sts_ut_pos[0].setText(self.motor_utpos[0])
         self.sts_ut_pos[1].setText(self.motor_utpos[1])
@@ -160,11 +163,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.measure_T = [0 for _ in range(DCS_CNT)]
         self.header = [None for _ in range(DCS_CNT)]
         
-        self.sel_mode = MODE_HK
         self.radio_HK_sync.setChecked(True)
         self.set_HK_sync()
         
-        self.stop_clicked = False
+        #self.stop_clicked = False
         self.cal_stop_clicked = False
         
         self.motor_initialized = [False, False]     #ut, lt
@@ -269,6 +271,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.label_prog_elapsed = [self.label_prog_elapsed_svc, self.label_prog_elapsed_H, self.label_prog_elapsed_K]
         self.label_cur_num = [self.label_cur_num_svc, self.label_cur_num_H, self.label_cur_num_K]
         self.progressBar = [self.progressBar_svc, self.progressBar_H, self.progressBar_K]
+        
+        self.label_ongoing_filename = [self.label_ongoing_filename_svc, self.label_ongoing_filename_H, self.label_ongoing_filename_K]
 
         self.bt_init = [self.bt_init_SVC, self.bt_init_H, self.bt_init_K]
         self.chk_ds9 = [self.chk_ds9_svc, self.chk_ds9_H, self.chk_ds9_K]
@@ -293,11 +297,19 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.e_FS_number[SVC].editingFinished.connect(lambda: self.judge_param(SVC))
         self.e_repeat[SVC].editingFinished.connect(lambda: self.change_name(SVC))
         
+        self.e_exptime[SVC].textChanged.connect(self.sync_apply_HK())
+        self.e_FS_number[SVC].textChanged.connect(self.sync_apply_HK())
+        self.e_repeat[SVC].textChanged.connect(self.sync_apply_HK())
+        
         self.radio_exptime[H].clicked.connect(lambda: self.judge_exp_time(H)) 
         self.radio_N_fowler[H].clicked.connect(lambda: self.judge_FS_number(H))
         self.e_exptime[H].editingFinished.connect(lambda: self.judge_param(H))
         self.e_FS_number[H].editingFinished.connect(lambda: self.judge_param(H)) 
         self.e_repeat[H].editingFinished.connect(lambda: self.change_name(H))
+        
+        self.e_exptime[H].textChanged.connect(self.sync_apply_K())
+        self.e_FS_number[H].textChanged.connect(self.sync_apply_K())
+        self.e_repeat[H].textChanged.connect(self.sync_apply_K())
         
         self.radio_exptime[K].clicked.connect(lambda: self.judge_exp_time(K)) 
         self.radio_N_fowler[K].clicked.connect(lambda: self.judge_FS_number(K))
@@ -316,20 +328,21 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.chk_open_calibration.clicked.connect(self.open_calilbration)
         
-        self.cal_chk = [self.chk_dark, self.chk_flat_on, self.chk_flat_off, self.chk_ThAr, self.chk_pinhole_flat, self.chk_pinhole_ThAr, self.chk_USAF_on, self.chk_USAF_off, self.chk_parking]
+        self.cal_chk = [self.chk_dark, self.chk_flat_on, self.chk_flat_off, self.chk_ThAr_on, self.chk_ThAr_off, self.chk_pinhole_flat, self.chk_pinhole_ThAr, self.chk_pinhole_offslit, self.chk_USAF_on, self.chk_USAF_off]
         
-        self.cal_e_exptime = [self.e_dark_exptime, self.e_flaton_exptime, self.e_flatoff_exptime, self.e_ThAr_exptime, self.e_pinholeflat_exptime, self.e_pinholeThAr_exptime, self.e_USAFon_exptime, self.e_USAFoff_exptime, self.e_parking_exptime]
+        self.cal_e_exptime = [self.e_dark_exptime, self.e_flaton_exptime, self.e_flatoff_exptime, self.e_ThAr_exptime_on, self.e_ThAr_exptime_off, self.e_pinholeflat_exptime, self.e_pinholeThAr_exptime, self.e_pinholeoffslit_exptime, self.e_USAFon_exptime, self.e_USAFoff_exptime]
         
-        self.cal_e_repeat = [self.e_dark_repeat, self.e_flaton_repeat, self.e_flatoff_repeat, self.e_ThAr_repeat, self.e_pinholeflat_repeat, self.e_pinholeThAr_repeat, self.e_USAFon_repeat, self.e_USAFoff_repeat, self.e_parking_repeat]
+        self.cal_e_repeat = [self.e_dark_repeat, self.e_flaton_repeat, self.e_flatoff_repeat, self.e_ThAr_repeat_on, self.e_ThAr_repeat_off, self.e_pinholeflat_repeat, self.e_pinholeThAr_repeat, self.e_pinholeoffslit_repeat, self.e_USAFon_repeat, self.e_USAFoff_repeat]
         
         self.sts_ut_pos = [self.sts_ut_pos1, self.sts_ut_pos2]
-        self.sts_lt_pos = [self.sts_lt_pos1, self.sts_lt_pos2, self.sts_lt_pos3, self.sts_lt_pos4]
+        self.sts_lt_pos = [self.sts_lt_pos1, self.sts_lt_pos2, self.sts_lt_pos3, self.sts_lt_pos4, self.sts_lt_pos5]
         
         self.bt_ut_move_to = [self.bt_ut_move_to_0, self.bt_ut_move_to_1]
-        self.bt_lt_move_to = [self.bt_lt_move_to_0, self.bt_lt_move_to_1, self.bt_lt_move_to_2, self.bt_lt_move_to_3]
+        self.bt_lt_move_to = [self.bt_lt_move_to_0, self.bt_lt_move_to_1, self.bt_lt_move_to_2, self.bt_lt_move_to_3, self.bt_lt_move_to_4]
         
         self.chk_whole.clicked.connect(self.cal_whole_check)
         self.bt_run.clicked.connect(self.cal_run)
+        self.bt_parking.clicked.connect(self.cal_parking)
         
         self.bt_ut_motor_init.clicked.connect(lambda: self.motor_init(UT))
         self.bt_lt_motor_init.clicked.connect(lambda: self.motor_init(LT))
@@ -338,12 +351,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.chk_dark.clicked.connect(lambda: self.cal_set_enabled(0))
         self.chk_flat_on.clicked.connect(lambda: self.cal_set_enabled(1))
         self.chk_flat_off.clicked.connect(lambda: self.cal_set_enabled(2))
-        self.chk_ThAr.clicked.connect(lambda: self.cal_set_enabled(3))
-        self.chk_pinhole_flat.clicked.connect(lambda: self.cal_set_enabled(4))
-        self.chk_pinhole_ThAr.clicked.connect(lambda: self.cal_set_enabled(5))
-        self.chk_USAF_on.clicked.connect(lambda: self.cal_set_enabled(6))
-        self.chk_USAF_off.clicked.connect(lambda: self.cal_set_enabled(7))
-        self.chk_parking.clicked.connect(lambda: self.cal_set_enabled(8))
+        self.chk_ThAr_on.clicked.connect(lambda: self.cal_set_enabled(3))
+        self.chk_ThAr_off.clicked.connect(lambda: self.cal_set_enabled(4))
+        self.chk_pinhole_flat.clicked.connect(lambda: self.cal_set_enabled(5))
+        self.chk_pinhole_ThAr.clicked.connect(lambda: self.cal_set_enabled(6))
+        self.chk_pinhole_offslit.clicked.connect(lambda: self.cal_set_enabled(7))
+        self.chk_USAF_on.clicked.connect(lambda: self.cal_set_enabled(8))
+        self.chk_USAF_off.clicked.connect(lambda: self.cal_set_enabled(9))
         
         self.bt_utpos_prev.clicked.connect(lambda: self.move_motor_delta(UT, PREV))
         self.bt_utpos_next.clicked.connect(lambda: self.move_motor_delta(UT, NEXT))
@@ -361,11 +375,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.bt_ltpos_set2.clicked.connect(lambda: self.motor_pos_set(LT, 1))
         self.bt_ltpos_set3.clicked.connect(lambda: self.motor_pos_set(LT, 2))
         self.bt_ltpos_set4.clicked.connect(lambda: self.motor_pos_set(LT, 3))
+        self.bt_ltpos_set5.clicked.connect(lambda: self.motor_pos_set(LT, 4))
         
         self.bt_lt_move_to_0.clicked.connect(lambda: self.move_motor(LT, 0))
         self.bt_lt_move_to_1.clicked.connect(lambda: self.move_motor(LT, 1))
         self.bt_lt_move_to_2.clicked.connect(lambda: self.move_motor(LT, 2))
         self.bt_lt_move_to_3.clicked.connect(lambda: self.move_motor(LT, 3))
+        self.bt_lt_move_to_4.clicked.connect(lambda: self.move_motor(LT, 4))
         
         self.protect_btn_ut(False)
         self.protect_btn_lt(False)     
@@ -385,8 +401,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         
     def publish_to_queue(self, msg):
-        if self.producer == None:
-            return
+        if self.producer == None:   return
         
         ti.sleep(0.2)
         self.producer.send_message(self.dt_q, msg)
@@ -412,8 +427,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         param = cmd.split() 
 
-        if not (param[0] == ALIVE):
-            return
+        if not (param[0] == ALIVE): return
 
         msg = "<- [EngTools] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -459,8 +473,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_PWR_STS):
-            return        
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_PWR_STS):  return        
 
         msg = "<- [PDU] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -499,14 +512,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.log.send(self.iam, INFO, msg)  
             elif param[1] == "OK":
                 self.protect_btn_lt(True)
-                self.e_ltpos.setText("0")
+                self.label_ltpos.setText("0")
                 self.QWidgetBtnColor(self.bt_lt_motor_init, "white", "green")
                 self.motor_initialized[LT-1] = True
                 
         elif param[0] == DT_REQ_MOVEMOTOR:
             self.lt_moved = True
             self.protect_btn_lt(True)
-            self.e_ltpos.setText(param[2])
+            self.label_ltpos.setText(param[2])
             
             self.QWidgetBtnColor(self.bt_lt_move_to[int(param[1])], "black")
 
@@ -522,10 +535,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         elif param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
             self.lt_moved = True
             self.protect_btn_lt(True)
-            self.e_ltpos.setText(param[1])
+            self.label_ltpos.setText(param[1])
 
         elif param[0] == DT_REQ_SETLT:
-            self.e_ltpos.setText(param[2])
+            self.label_ltpos.setText(param[2])
             self.sts_lt_pos[int(param[1])].setText(param[2])
                 
         
@@ -548,14 +561,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.log.send(self.iam, INFO, msg)
             elif param[1] == "OK":
                 self.protect_btn_ut(True)
-                self.e_utpos.setText("0")                
+                self.label_utpos.setText("0")                
                 self.QWidgetBtnColor(self.bt_ut_motor_init, "white", "green")
                 self.motor_initialized[UT-1] = True
                             
         elif param[0] == DT_REQ_MOVEMOTOR:
             self.ut_moved = True
             self.protect_btn_ut(True)
-            self.e_utpos.setText(param[2])
+            self.label_utpos.setText(param[2])
             
             self.QWidgetBtnColor(self.bt_ut_move_to[int(param[1])], "black")
             
@@ -571,10 +584,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         elif param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
             self.ut_moved = True
             self.protect_btn_ut(True)
-            self.e_utpos.setText(param[1])
+            self.label_utpos.setText(param[1])
 
         elif param[0] == DT_REQ_SETUT:
-            self.e_utpos.setText(param[2])
+            self.label_utpos.setText(param[2])
             self.sts_ut_pos[int(param[1])].setText(param[2])
                                         
 
@@ -657,7 +670,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.set_K()
             
         elif param[0] == CMD_SETFSPARAM_ICS:
-            msg = "%s %s %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation)
+            next_idx = self.get_next_idx()
+            
+            msg = "%s %s %d %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation, next_idx)
             self.publish_to_queue(msg)
 
         elif param[0] == CMD_ACQUIRERAMP_ICS:                        
@@ -671,7 +686,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.cur_prog_step[dc_idx] = 100
             self.progressBar[dc_idx].setValue(self.cur_prog_step[dc_idx])           
 
-            #self.elapsed_timer[dc_idx].stop()
+            self.elapsed_timer[dc_idx].stop()
 
             self.measure_T[dc_idx] = float(param[1])
             
@@ -730,6 +745,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.e_repeat[dc_idx].text())
                 self.label_cur_num[dc_idx].setText(show_cur_cnt)
                 
+                '''
                 if self.mode == CONT_MODE and self.stop_clicked:
                     self.enable_dcs(dc_idx, True)
                     
@@ -743,7 +759,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         for i in range(DCS_CNT):
                             self.cur_cnt[i] = 0
                     
-                elif self.cur_cnt[dc_idx] < int(self.e_repeat[dc_idx].text()):
+                el
+                '''
+                if self.cur_cnt[dc_idx] < int(self.e_repeat[dc_idx].text()):
                     self.continuous[dc_idx] = True
                     self.bt_take_image.click()
 
@@ -759,7 +777,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                             
                         self.protect_btn(True) 
                         self.QWidgetBtnColor(self.bt_take_image, "black")
-                        self.stop_clicked = False
+                        #self.stop_clicked = False
 
                         for i in range(DCS_CNT):
                             self.cur_cnt[i] = 0
@@ -778,7 +796,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.protect_btn(True)                    
                 self.bt_take_image.setText("Take Image")  
                 self.QWidgetBtnColor(self.bt_take_image, "black")
-                self.stop_clicked = False  
+                #self.stop_clicked = False  
         
         
     #-------------------------------
@@ -791,8 +809,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
         
     def set_fs_param(self, dc_idx):     
-        if not self.dcs_ready[dc_idx]:
-            return
+        if not self.dcs_ready[dc_idx]:  return
 
         self.enable_dcs(dc_idx, False)
         
@@ -836,7 +853,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if self.cur_cnt[dc_idx] == 0:
             msg = "%s %s %d %.3f 1 %d 1 %.3f 1" % (CMD_SETFSPARAM_ICS, self.dcs_list[dc_idx], self.simulation, _exptime, _FS_number, _fowlerTime)
         else:
-            msg = "%s %s %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation)
+            next_idx = self.get_next_idx()
+            ongoing_filename = "SDC%s_%s_%04d" % (self.dcs_list[dc_idx][-1], self.cur_date, next_idx)
+            self.label_ongoing_filename[dc_idx].setText(ongoing_filename)
+            msg = "%s %s %d %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation, next_idx)
         self.publish_to_queue(msg)
 
         self.acquiring[dc_idx] = True        
@@ -852,6 +872,32 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "%s %s %d" % (CMD_STOPACQUISITION, self.dcs_list[dc_idx], self.simulation)
         self.publish_to_queue(msg)
         
+        
+    def get_next_idx(self):
+        
+        _t = datetime.datetime.utcnow()
+        self.cur_date = "%04d%02d%02d" % (_t.year, _t.month, _t.day)
+        
+        filepath_h = "%sIGRINS/dcsh/Fowler/%s/" % (WORKING_DIR, self.cur_date)
+        filepath_k = "%sIGRINS/dcsh/Fowler/%s/" % (WORKING_DIR, self.cur_date)
+        
+        dir_names = []
+        for names in os.listdir(filepath_h):
+            if names.find(".fits") < 0:
+                dir_names.append(names)
+        for names in os.listdir(filepath_k):
+            if names.find(".fits") < 0:
+                dir_names.append(names)
+                
+        numbers = list(map(int, dir_names))
+        
+        if len(numbers) > 0:
+            next_idx = max(numbers) + 1
+        else:
+            next_idx = 1
+            
+        return next_idx
+            
     
     def load_data(self, dc_idx, folder_name):
         
@@ -967,7 +1013,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
     def show_elapsed(self, dc_idx):
         cur_elapsed = ti.time() - self.elapsed[dc_idx]
-        if self.measure_T[dc_idx] > 0 and cur_elapsed >= self.measure_T[dc_idx] or (self.mode == SINGLE_MODE and self.stop_clicked):
+        if self.measure_T[dc_idx] > 0 and cur_elapsed >= self.measure_T[dc_idx]: # or (self.mode == SINGLE_MODE and self.stop_clicked):
             self.elapsed_timer[dc_idx].stop()
             return
         
@@ -976,7 +1022,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
 
     def show_progressbar(self, dc_idx):
-        if self.cur_prog_step[dc_idx] >= 100 or (self.mode == SINGLE_MODE and self.stop_clicked):
+        if self.cur_prog_step[dc_idx] >= 100: # or (self.mode == SINGLE_MODE and self.stop_clicked):
             self.prog_timer[dc_idx].stop()
             #self.log.send(self.iam, INFO, "progress bar end!!!")
             return
@@ -1004,7 +1050,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     def protect_btn_ut(self, enable):
         self.bt_utpos_prev.setEnabled(enable)
-        self.e_utpos.setEnabled(enable)
+        #self.label_utpos.setEnabled(enable)
         self.bt_utpos_next.setEnabled(enable)
                 
         self.bt_utpos_set1.setEnabled(enable)
@@ -1021,7 +1067,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     def protect_btn_lt(self, enable):
         self.bt_ltpos_prev.setEnabled(enable)
-        self.e_ltpos.setEnabled(enable)
+        #self.label_ltpos.setEnabled(enable)
         self.bt_ltpos_next.setEnabled(enable)
                 
         self.bt_ltpos_set1.setEnabled(enable)
@@ -1093,12 +1139,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.enable_dcs(H, True)
         if self.dcs_ready[K]:
             self.bt_init[K].setEnabled(True)
-            self.enable_dcs(K, True)
-        
         for idx in range(DCS_CNT):
             self.bt_init_status(idx)
         
         self.enable_dcs(SVC, False)
+        self.enable_dcs(K, False)
             
     
     def set_whole_sync(self):
@@ -1106,7 +1151,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for idx in range(DCS_CNT):
             if self.dcs_ready[idx]:
                 self.bt_init[idx].setEnabled(True)
-                self.enable_dcs(idx, True)
+                if idx == SVC:
+                    self.enable_dcs(idx, True)
+                else:
+                    self.enable_dcs(idx, False)
             self.bt_init_status(idx)
                     
     
@@ -1170,7 +1218,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.call_set_fs_param()
 
         else:
-            btn_name = self.bt_take_image.text()
             if self.mode == CONT_MODE:                
                 if self.continuous[H] and not self.continuous[K] and not self.continuous[SVC]:
                     self.set_fs_param(H)
@@ -1181,6 +1228,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 elif not self.continuous[H] and not self.continuous[K] and self.continuous[SVC]:
                     self.set_fs_param(SVC)
                     self.continuous[SVC] = False
+                '''
                 else:
                     self.stop_clicked = False
                     if btn_name == "Stop":
@@ -1189,19 +1237,21 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         self.single_exposure()
             else:
                 self.stop_clicked = False
-                if btn_name == "Abort":
-                    self.abort_acquisition()
-                else:
-                    self.single_exposure()
+                '''
+                     
+            if self.bt_take_image.text() == "Abort":
+                self.abort_acquisition()
+            else:
+                self.single_exposure()
                 
         
     def single_exposure(self):    
         self.QWidgetBtnColor(self.bt_take_image, "yellow", "blue")
         
-        if int(self.e_repeat[SVC].text()) > 1 or int(self.e_repeat[H].text()) > 1 or int(self.e_repeat[K].text()) > 1:
-            self.bt_take_image.setText("Stop")
-        else:
-            self.bt_take_image.setText("Abort")
+        #if int(self.e_repeat[SVC].text()) > 1 or int(self.e_repeat[H].text()) > 1 or int(self.e_repeat[K].text()) > 1:
+        #    self.bt_take_image.setText("Stop")
+        #else:
+        self.bt_take_image.setText("Abort")
                     
         self.call_set_fs_param()
         
@@ -1230,15 +1280,30 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.e_exptime[dc_idx].setEnabled(True)
         self.e_FS_number[dc_idx].setEnabled(False)
         
+        if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
+            for idx in range(2):
+                self.e_exptime[idx+1].setEnabled(True)
+                self.e_FS_number[idx+1].setEnabled(False)
+        elif dc_idx == H and self.sel_mode == MODE_HK:
+            self.e_exptime[K].setEnabled(True)
+            self.e_FS_number[K].setEnabled(False)
+        
         
     def judge_FS_number(self, dc_idx):
         self.e_exptime[dc_idx].setEnabled(False)
         self.e_FS_number[dc_idx].setEnabled(True)
         
+        if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
+            for idx in range(2):
+                self.e_exptime[idx+1].setEnabled(False)
+                self.e_FS_number[idx+1].setEnabled(True)
+        elif dc_idx == H and self.sel_mode == MODE_HK:
+            self.e_exptime[K].setEnabled(False)
+            self.e_FS_number[K].setEnabled(True)
+        
         
     def judge_param(self, dc_idx):
-        if self.e_exptime[dc_idx].text() == "" or self.e_FS_number[dc_idx].text() == "":
-            return
+        if self.e_exptime[dc_idx].text() == "" or self.e_FS_number[dc_idx].text() == "":    return
         
         # calculation fowler number & exp time
         _expTime = float(self.e_exptime[dc_idx].text())
@@ -1271,14 +1336,32 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.bt_take_image.setText("Take Image")
             self.mode = SINGLE_MODE
         self.QWidgetBtnColor(self.bt_take_image, "black")
-        self.stop_clicked = False
+        #self.stop_clicked = False
+        
+        
+    def sync_apply_HK(self):
+        if self.sel_mode != MODE_WHOLE:
+            return
+        
+        for idx in range(2):
+            self.e_exptime[idx+1].setText(self.e_exptime[SVC].text())
+            self.e_FS_number[idx+1].setText(self.e_exptime[SVC].text())
+            self.e_repeat[idx+1].setText(self.e_exptime[SVC].text())   
             
+            
+    def sync_apply_K(self):
+        if self.sel_mode != MODE_HK:
+            return
+        
+        self.e_exptime[K].setText(self.e_exptime[H].text())
+        self.e_FS_number[K].setText(self.e_exptime[H].text())
+        self.e_repeat[K].setText(self.e_exptime[H].text())
+                    
     
-    def open_calilbration(self):
-                
+    def open_calilbration(self):                
         if self.chk_open_calibration.isChecked():
-            self.setFixedSize(1315, 700)
-            self.setGeometry(0, 0, 1315, 700)
+            self.setFixedSize(1315, 741)
+            self.setGeometry(0, 0, 1315, 741)
             self.power_status[MOTOR-1] = ON
             self.power_onoff()
 
@@ -1287,11 +1370,16 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.proc_sub[LT] = subprocess.Popen(['python', cmd, self.com_list[LT]])          
             if self.proc_sub[UT] == None:
                 self.proc_sub[UT] = subprocess.Popen(['python', cmd, self.com_list[UT]])
+                
+            self.bt_take_image.setEnabled(False)
+            
         else:
-            self.setFixedSize(1030, 700)
-            self.setGeometry(0, 0, 1030, 700)
+            self.setFixedSize(1030, 741)
+            self.setGeometry(0, 0, 1030, 741)
             self.power_status[MOTOR-1] = OFF
             self.power_onoff()
+            
+            self.bt_take_image.setEnabled(True)
 
                 
          
@@ -1341,8 +1429,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def cal_run(self):
 
-        if not self.motor_initialized[LT-1] or not self.motor_initialized[UT-1]:
-            return
+        if not self.motor_initialized[LT-1] or not self.motor_initialized[UT-1]:    return
 
         btn_name = self.bt_run.text()
         self.cal_stop_clicked = False
@@ -1386,8 +1473,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if nothing:
             self.bt_run.setText("RUN")
             self.QWidgetBtnColor(self.bt_run, "black")
+            
+            
+    def cal_parking(self):
+        self.power_status[FLAT-1] = OFF
+        self.power_status[THAR-1] = OFF
+        self.power_onoff()
+        
+        self.move_motor(UT, 0)
+        self.move_motor(LT, 0)
+        
                         
-                    
     def power_onoff(self):
         pwr_list = ""
         for i in range(PDU_IDX):
@@ -1452,23 +1548,23 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def move_motor_delta(self, motor, direction): #motor-UT/LT, direction-prev, next
         if motor == UT:
             if direction == PREV:
-                curpos = int(self.e_utpos.text()) - int(self.e_movinginterval.text())
-                self.e_utpos.setText(str(curpos))
+                curpos = int(self.label_utpos.text()) - int(self.e_movinginterval.text())
+                self.label_utpos.setText(str(curpos))
                 msg = "%s %s %s" % (DT_REQ_MOTORBACK, self.com_list[motor], self.e_movinginterval.text())
             else:
-                curpos = int(self.e_utpos.text()) + int(self.e_movinginterval.text())
-                self.e_utpos.setText(str(curpos))
+                curpos = int(self.label_utpos.text()) + int(self.e_movinginterval.text())
+                self.label_utpos.setText(str(curpos))
                 msg = "%s %s %s" % (DT_REQ_MOTORGO, self.com_list[motor], self.e_movinginterval.text())
             self.protect_btn_ut(False)
             
         elif motor == LT:
             if direction == PREV:
-                curpos = int(self.e_ltpos.text()) - int(self.e_movinginterval.text())
-                self.e_ltpos.setText(str(curpos))
+                curpos = int(self.label_ltpos.text()) - int(self.e_movinginterval.text())
+                self.label_ltpos.setText(str(curpos))
                 msg = "%s %s %s" % (DT_REQ_MOTORBACK, self.com_list[motor], self.e_movinginterval.text())
             else:
-                curpos = int(self.e_ltpos.text()) + int(self.e_movinginterval.text())
-                self.e_ltpos.setText(str(curpos))
+                curpos = int(self.label_ltpos.text()) + int(self.e_movinginterval.text())
+                self.label_ltpos.setText(str(curpos))
                 msg = "%s %s %s" % (DT_REQ_MOTORGO, self.com_list[motor], self.e_movinginterval.text())
                 
             self.protect_btn_lt(False)
@@ -1478,8 +1574,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def motor_pos_set(self, motor, position): #motor-UT/LT, direction-UT(0/1), LT(0-3)
         msg = "Do you really want to modify the position %s value?" % str(position)
         reply = QMessageBox.question(self, WARNING, msg, QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.No:
-            return
+        if reply == QMessageBox.No: return
         
         if motor == UT:
             msg = "%s %d" % (DT_REQ_SETUT, position)

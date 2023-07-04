@@ -23,6 +23,7 @@ from Libs.logger import *
 
 import cppyy
 giapi_root=os.environ.get("GIAPI_ROOT")
+#giapi_root="/home/ics/giapi-gluecc"
 cppyy.add_include_path(f"{giapi_root}/install/include")
 cppyy.add_library_path(f"{giapi_root}/install/lib")
 cppyy.include("giapi/StatusUtil.h")
@@ -79,10 +80,12 @@ class Inst_Seq(threading.Thread):
         self.actRequested = {}
         self.cur_action_id = None
         
-        instDummy.InstCmdHandler.create(self._callback_giapi)
+        '''
+        self._handler = instDummy.InstCmdHandler.create(self._callback_giapi)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.DATUM, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.OBSERVE, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         print(f'Subscribing APPLY {giapi.CommandUtil.subscribeApply("ig", giapi.command.ActivitySet.SET_PRESET,self._handler)}')
+        '''
                                             
         
     def __del__(self):
@@ -133,9 +136,11 @@ class Inst_Seq(threading.Thread):
                         #det = self._dtkProd if (dc == 'k') else self._dthProd
                         #self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':1}
                         #det.sendMessage(self._routingDetPro, f"{action_id};{keys[3]};{config.getValue(k)}")   
-                        if not self.dcs_ready[H] or not self.dcs_ready[K] or not self.dcs_ready[SVC]:
-                            self.log.send(self.iam, ERROR, "DCSs do not initialized yet")
-                            self.initialize2()
+                        for idx in range(3):
+                            if not self.dcs_ready[idx]:
+                                msg = "%s do not initialized yet" % self.dcs_list[idx]
+                                self.log.send(self.iam, ERROR, msg)
+                                self.initialize2(idx)
                             return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
                         self.set_exp(_dc)
                 
@@ -147,17 +152,18 @@ class Inst_Seq(threading.Thread):
                     for idx in range(DCS_CNT):
                         self.acquiring[idx] = True
                     
-                    self.send_to_GDS(OBS_PREP)
-                    self.send_to_SeqExec(TCS_INFO)
+                    self.send_to_GDS("OBS_PREP")
+                    self.send_to_SeqExec("TCS_INFO")
                 
                     self.start_acquisition()
-                    self.send_to_GDS(OBS_STARTED)
+                    self.send_to_GDS("OBS_STARTED")
                     
                     self.send_to_GMP()
-                    #return instDummy.DataResponse(giapi.HandlerResponse.OBS_STARTED, "")
+                    return instDummy.DataResponse(giapi.HandlerResponse.OBS_STARTED, "")
                     
                 #from getting the TCS info. PA!
                 elif seq_cmd == giapi.command.SequenceCommand.TCS:  #temporarly
+                    PA = "90"
                     msg = "%s %s" % (INSTSEQ_SHOW_TCS_INFO, PA)
                     self.publish_to_queue(msg)
                     
@@ -187,15 +193,14 @@ class Inst_Seq(threading.Thread):
     # send to Gemini system
     def send_to_GDS(self, event):       
         print("send to GDS:", event)
-        
+                
         
     def send_to_SeqExec(self, req):
         print("send to SeqExec:", req)
         
         
     def send_to_GMP(self):
-        if self.acquiring[H] or self.acquiring[K] or self.acquiring[SVC]:
-            return
+        if self.acquiring[H] or self.acquiring[K] or self.acquiring[SVC]:   return
         
         print("send to GMP:", self.cur_action_id)
         
@@ -212,8 +217,7 @@ class Inst_Seq(threading.Thread):
             
             
     def publish_to_queue(self, msg):
-        if self.producer == None:
-            return
+        if self.producer == None:   return
         
         self.producer.send_message(self.InstSeq_q, msg)
         
@@ -236,8 +240,7 @@ class Inst_Seq(threading.Thread):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == EXIT or param[0] == OBSAPP_CAL_OFFSET or param[0] == OBSAPP_BUSY):
-            return
+        if not (param[0] == EXIT or param[0] == OBSAPP_CAL_OFFSET or param[0] == OBSAPP_BUSY):  return
         
         msg = "<- [ObsApp] %s" % cmd
         self.log.send(self.iam, INFO, msg)    
@@ -373,13 +376,12 @@ class Inst_Seq(threading.Thread):
         
                 
     def save_fits_cube(self):
-        if self.acquiring[H] or self.acquiring[K] or self.acquiring[SVC]:
-            return
+        if self.acquiring[H] or self.acquiring[K] or self.acquiring[SVC]:   return
         
-        self.send_to_GDS(OBS_END_ACQ)
-        self.send_to_GDS(OBS_START_DSET_WRITE)
+        self.send_to_GDS("OBS_END_ACQ")
+        self.send_to_GDS("OBS_START_DSET_WRITE")
         #save fits
-        self.send_to_GDS(OBS_END_DSET_WRITE)
+        self.send_to_GDS("OBS_END_DSET_WRITE")
         
         self.send_to_GMP()
 
@@ -394,3 +396,5 @@ if __name__ == "__main__":
         
     #proc.connect_to_server_ObsApp_q()
     proc.connect_to_server_dcs_q()
+    
+    proc.initialize2(SVC)

@@ -153,8 +153,7 @@ class temp_ctrl(threading.Thread):
 
 
     def socket_send(self, cmd):
-        if self.comStatus is False:
-            return
+        if self.comStatus is False: return
 
         def send_to(cmd):
             #send     
@@ -295,8 +294,7 @@ class temp_ctrl(threading.Thread):
         
     
     def publish_to_queue(self, msg):
-        if self.producer == None:
-            return
+        if self.producer == None:   return
         
         self.producer.send_message(self.sub_q, msg)
         
@@ -320,15 +318,13 @@ class temp_ctrl(threading.Thread):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_MANUAL_CMD):
-            return
+        if not (param[0] == HK_REQ_MANUAL_CMD): return
 
         msg = "<- [HKP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
                             
         if param[0] == HK_REQ_MANUAL_CMD:            
-            if self.iam != param[1]:
-                return
+            if self.iam != param[1]:    return
             
             #self.pause = True
             

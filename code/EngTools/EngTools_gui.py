@@ -120,8 +120,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         
     def publish_to_queue(self, msg):
-        if self.producer == None:
-            return
+        if self.producer == None:   return
         
         self.producer.send_message(self.EngTools_q, msg)
         
@@ -146,8 +145,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_STATUS or param[0] == EXIT):
-            return
+        if not (param[0] == HK_STATUS or param[0] == EXIT): return
         
         msg = "<- [HKP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -183,8 +181,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == DT_STATUS or param[0] == EXIT):
-            return
+        if not (param[0] == DT_STATUS or param[0] == EXIT): return
 
         msg = "<- [DTP] %s" % cmd
         self.log.send(self.iam, INFO, msg)

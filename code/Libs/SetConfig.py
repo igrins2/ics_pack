@@ -11,8 +11,7 @@ import configparser as cp
 
 def LoadConfig(path=None, interpolation=True):
 
-    if path == None:
-        return
+    if path == None:    return
     # load config object
 
     if interpolation:
@@ -52,8 +51,7 @@ def get_ini_files(env_name, default_file):
 
 def SaveConfig(cfg=None, path=None):
 
-    if cfg == None:
-        return
+    if cfg == None: return
 
     with open(path, "w") as cfgfile:
         cfg.write(cfgfile)

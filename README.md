@@ -121,7 +121,7 @@
 	```
 	$ sh ../ics_pack/run_ics.sh cli
 	```
-6. For starting "dc-core.service" without error automatically when system is rebooting,
+6. For starting "subsystem.service" and "InstSeq.service" without error automatically when system is rebooting,
 
 	`# vi /etc/selinux/config`
 	```

@@ -130,8 +130,7 @@ class pdu(threading.Thread) :
         
 
     def initPDU(self):
-        if not self.comStatus:
-            return 
+        if not self.comStatus:  return 
         
         try:
             cmd = "@@@@\r"
@@ -157,8 +156,7 @@ class pdu(threading.Thread) :
         
                     
     def power_status(self, cmd):
-        if not self.comStatus:
-            return      
+        if not self.comStatus:  return      
         
         try:
             self.comSocket.send(cmd.encode())
@@ -195,8 +193,7 @@ class pdu(threading.Thread) :
     def change_power(self, idx, onoff):  # definition OnOff: ON, OFF
         # this function is used when received PDU On/Off status and change status
         
-        if not self.comStatus:
-            return
+        if not self.comStatus:  return
         
         cmd = ""
         if onoff == OFF:
@@ -222,8 +219,7 @@ class pdu(threading.Thread) :
         
         
     def publish_to_queue(self, msg):
-        if self.producer == None:
-            return
+        if self.producer == None:   return
         
         self.producer.send_message(self.sub_q, msg)
         
@@ -247,8 +243,7 @@ class pdu(threading.Thread) :
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_PWR_STS or param[0] == HK_REQ_PWR_ONOFF_IDX or param[0] == HK_REQ_PWR_ONOFF):
-            return
+        if not (param[0] == HK_REQ_PWR_STS or param[0] == HK_REQ_PWR_ONOFF_IDX or param[0] == HK_REQ_PWR_ONOFF):    return
 
         msg = "<- [HKP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -289,8 +284,7 @@ class pdu(threading.Thread) :
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_PWR_STS or param[0] == HK_REQ_PWR_ONOFF):
-            return
+        if not (param[0] == HK_REQ_PWR_STS or param[0] == HK_REQ_PWR_ONOFF):    return
 
         msg = "<- [DTP] %s" % cmd
         self.log.send(self.iam, INFO, msg)

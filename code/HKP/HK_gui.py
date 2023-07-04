@@ -280,8 +280,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         
     def publish_to_queue(self, msg):
-        if self.producer == None:
-            return
+        if self.producer == None:   return
         
         self.producer.send_message(self.hk_q, msg)
         
@@ -315,8 +314,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):    return
 
         msg = "<- [TC1] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -341,8 +339,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):    return
 
         msg = "<- [TC2] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -367,8 +364,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):    return
 
         msg = "<- [TC3] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -391,8 +387,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE or param[0] == HK_REQ_MANUAL_CMD):    return
         
         msg = "<- [TM] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -413,8 +408,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE): return
 
         msg = "<- [VM] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -433,8 +427,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_PWR_STS):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_PWR_STS):  return
 
         msg = "<- [PDU] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -516,8 +509,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
 
     def judge_value(self, input):
-        if input == None:
-            return ""
+        if input == None:   return ""
         
         if input != DEFAULT_VALUE:
             value = "%.2f" % float(input)
@@ -562,8 +554,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     # start process
     
     def sendToEngTools_status(self):        
-        if self.alarm_status_back == self.alarm_status:            
-            return
+        if self.alarm_status_back == self.alarm_status: return
         msg = "%s %s" % (HK_STATUS, self.alarm_status)
         self.publish_to_queue(msg)
         self.alarm_status_back = self.alarm_status
@@ -603,11 +594,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
             
     def PeriodicFunc(self):
-        if not self.monitoring:
-            return
+        if not self.monitoring: return
         
-        if self.producer == None:
-            return
+        if self.producer == None:   return
         
         self.send_alert_if_needed()
         self.LoggingFun()
@@ -623,8 +612,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
         
     def LoggingFun(self):     
-        if self.chk_manual_test.isChecked():
-            return
+        if self.chk_manual_test.isChecked():    return
 
         fname = ti.strftime("%Y%m%d", ti.localtime())+".log"
         self.log.createFolder(self.logpath)
@@ -677,8 +665,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
               
         
     def send_alert_if_needed(self):
-        if not self.chk_alert.isChecked():
-            return 
+        if not self.chk_alert.isChecked():  return 
 
         if self.alarm_status == ALM_ERR or self.alarm_status == ALM_FAT:
             if not self.alert_toggling:
@@ -692,10 +679,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
         
     def set_alert_status_on(self):            
-        if not self.chk_alert.isChecked():
-            return
-        if self.alarm_status == ALM_OK or self.alarm_status == ALM_WARN:
-            return
+        if not self.chk_alert.isChecked():  return
+        if self.alarm_status == ALM_OK or self.alarm_status == ALM_WARN:    return
         
         clr = next(self.iter_color)
         bg = next(self.iter_bgcolor)

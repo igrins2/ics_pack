@@ -8,7 +8,7 @@ elif [[ ! -d $HOME/IGRINS ]]; then
 fi
 
 
-# set IGRINS file
+# set IGRINS directory including configuration file
 cp -r $HOME/ics_pack/installation/IGRINS $HOME
 
 
@@ -24,18 +24,25 @@ conda activate igos2n
 
 pip install numpy
 pip install astropy
-pip install pyside6
-pip install PyQt5
+pip install matplotlib
+pip install pyside6==6.4.2
+pip install PyQt6
 pip install pika
-conda install -c conda-forge cppyy
-python -m pip install cppyy
+pip install pytz
+pip install Pyrebase4
+#conda install -c conda-forge cppyy
+#python -m pip install cppyy
+STDCXX=11 MAKE_NPROCS=12 pip install cppyy==2.4.0 --verbose cppyy --no-binary=cppyy-cling
+
 
 
 # ds9
-cp $HOME/ics_pack/installation/ds9 $HOME/IGRINS/
+#cp $HOME/ics_pack/installation/ds9 $HOME/IGRINS/
 
 
 # start services
+sudo chmod 744 $HOME/ics_pack/installation/run_InstSeq.sh
+sudo chmod 744 $HOME/ics_pack/installation/run_subsystem.sh
 sudo cp $HOME/ics_pack/installation/subsystem.service /etc/systemd/system/
 sudo cp $HOME/ics_pack/installation/InstSeq.service /etc/systemd/system/
 

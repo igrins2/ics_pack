@@ -10,7 +10,7 @@ Modified on Apr 17, 2023
 
 # -----------------------------------------------------------
 # definition: constant
-COM_CNT = 5 
+COM_CNT = 6 
 PDU_IDX = 8
 TM_CNT = 8
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])

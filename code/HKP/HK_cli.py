@@ -152,8 +152,7 @@ class HK_cli(threading.Thread):
         
         if param[0] == HK_REQ_PWR_STS:
             pwr_sts = ""
-            if param[1] == None:
-                return
+            if param[1] == None:    return
                 
             for i in range(PDU_IDX):
                 pwr_sts += param[i+1] + " "

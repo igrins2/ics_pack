@@ -1,7 +1,7 @@
 """
 ... from uploader.py from IGRINS
 
-Modified on Apr 17, 2023
+Modified on June 30, 2023
 
 @author: hilee, JJLee
 """
@@ -39,32 +39,57 @@ FieldNames = [('date', str), ('time', str),
               ('shieldtop', float), ('air', float), 
               ('alert_status', str)]
 
-HK_VACUUM = 0
-HK_BENCH = 1
-HK_BENCH_HEATING = 2
-HK_GRATING = 3
-HK_GRATING_HEATING = 4
-HK_DETS = 5
-HK_DETS_HEATING = 6
-HK_DETK = 7
-HK_DETK_HEATING = 8
-HK_CAMH = 9
-HK_DETH = 10
-HK_DETH_HEATING = 11
-HK_BENCHCEN = 12
-HK_COLDHEAD1 = 13
-HK_COLDHEAD2 = 14
-HK_COLDSTOP = 15
-HK_CHARCOALBOX = 16
-HK_CAMK = 17
-HK_SHIELDTOP = 18
-HK_AIR = 19
+# string
+GEA_DATETIME        = 0
 
-HK_BENCH_SP = 20
-HK_GRATING_SP = 21
-HK_DETS_SP = 22
-HK_DETK_SP = 23
-HK_DETH_SP = 24
+#values inside dewar
+# float
+GEA_VACUUM          = 1
+GEA_BENCH           = 2
+GEA_BENCH_HEATING   = 3
+GEA_GRATING         = 4
+GEA_GRATING_HEATING = 5
+GEA_DETS            = 6
+GEA_DETS_HEATING    = 7
+GEA_DETK            = 8
+GEA_DETK_HEATING    = 9
+GEA_CAMH            = 10
+GEA_DETH            = 11
+GEA_DETH_HEATING    = 12
+GEA_BENCHCEN        = 13
+GEA_COLDHEAD1       = 14
+GEA_COLDHEAD2       = 15
+GEA_COLDSTOP        = 16
+GEA_CHARCOALBOX     = 17
+GEA_CAMK            = 18
+GEA_SHIELDTOP       = 19
+GEA_AIR             = 20
+
+# set point, float
+GEA_BENCH_SP        = 21
+GEA_GRATING_SP      = 22
+GEA_DETS_SP         = 23
+GEA_DETK_SP         = 24
+GEA_DETH_SP         = 25
+
+# pdu status, bool
+GEA_PDU1_PWR        = 26
+GEA_PDU2_PWR        = 27
+GEA_PDU3_PWR        = 28
+GEA_PDU4_PWR        = 29
+GEA_PDU5_PWR        = 30
+GEA_PDU6_PWR        = 31
+GEA_PDU7_PWR        = 32
+GEA_PDU8_PWR        = 33
+
+# com status, bool
+GEA_COM_TC1         = 34
+GEA_COM_TC2         = 35
+GEA_COM_TC3         = 36
+GEA_COM_TM          = 37
+GEA_COM_VM          = 38
+GEA_COM_PDU         = 39
+
 
 class uploader(threading.Thread):
     
@@ -86,8 +111,8 @@ class uploader(threading.Thread):
         self.hk_sub_ex = cfg.get(MAIN, "hk_exchange")     
         self.hk_sub_q = cfg.get(MAIN, "hk_routing_key")
                 
-        #datetime, vacuum, temperature 14, heating power 5
-        self.hk_list = [DEFAULT_VALUE for _ in range(25)]
+        #datetime, vacuum, temperature 14, heating power 5, set point 5, pdu status 8, com status 6
+        self.hk_list = [None for _ in range(40)]
         
         self.upload_interval = int(cfg.get(HK, "upload-intv"))
         
@@ -169,8 +194,7 @@ class uploader(threading.Thread):
 
 
     def read_item_to_upload(self, HK_list):
-        if len(HK_list) != len(FieldNames):
-            return None
+        if len(HK_list) != len(FieldNames): return None
 
         HK_dict = dict((k, t(v)) for (k, t), v in zip(FieldNames, HK_list))
 
@@ -204,8 +228,7 @@ class uploader(threading.Thread):
         
         
     def publish_to_queue(self, msg):
-        if self.producer == None:
-            return
+        if self.producer == None:   return
         
         self.producer.send_message(self.iam+'.q', msg)
         
@@ -217,7 +240,7 @@ class uploader(threading.Thread):
     # sub queue
     def connect_to_server_q(self):
         # RabbitMQ connect       
-        com_list = ["tmc1", "tmc2", "tmc3", "tm", "vm"]
+        com_list = ["tmc1", "tmc2", "tmc3", "tm", "vm", "pdu"]
         sub_hk_ex = [com_list[i]+'.ex' for i in range(COM_CNT)]
         for idx in range(COM_CNT):
             self.consumer[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, sub_hk_ex[idx])      
@@ -228,6 +251,7 @@ class uploader(threading.Thread):
         self.consumer[TMC3].define_consumer(com_list[TMC3]+'.q', self.callback_tmc3)
         self.consumer[TM].define_consumer(com_list[TM]+'.q', self.callback_tm)
         self.consumer[VM].define_consumer(com_list[VM]+'.q', self.callback_vm)    
+        self.consumer[PDU].define_consumer(com_list[PDU]+'.q', self.callback_pdu) 
         
         for idx in range(COM_CNT):
             th = threading.Thread(target=self.consumer[idx].start_consumer)
@@ -246,55 +270,61 @@ class uploader(threading.Thread):
         cmd = body.decode()
         param = cmd.split()
         
-        if not (param[0] == HK_REQ_GETVALUE):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE): return
 
         msg = "<- [TC1] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
-        if param[0] == HK_REQ_GETVALUE:
-            self.hk_list[HK_BENCH] = self.judge_value(param[1])
-            self.hk_list[HK_GRATING] = self.judge_value(param[2])
-            self.hk_list[HK_BENCH_HEATING] = self.judge_value(param[3])
-            self.hk_list[HK_GRATING_HEATING] = self.judge_value(param[4])
-            self.hk_list[HK_BENCH_SP] = self.judge_value(param[5])
-            self.hk_list[HK_GRATING_SP] = self.judge_value(param[6])
+        if param[0] == HK_REQ_COM_STS:
+            self.hk_list[GEA_COM_TC1] = bool(int(param[1]))
+        
+        elif param[0] == HK_REQ_GETVALUE:
+            self.hk_list[GEA_BENCH] = float(param[1])
+            self.hk_list[GEA_GRATING] = float(param[2])
+            self.hk_list[GEA_BENCH_HEATING] = float(param[3])
+            self.hk_list[GEA_GRATING_HEATING] = float(param[4])
+            self.hk_list[GEA_BENCH_SP] = float(param[5])
+            self.hk_list[GEA_GRATING_SP] = float(param[6])
                                     
             
     def callback_tmc2(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_GETVALUE):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE): return
      
         msg = "<- [TC2] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
-        if param[0] == HK_REQ_GETVALUE:
-            self.hk_list[HK_DETS] = self.judge_value(param[1])
-            self.hk_list[HK_DETK] = self.judge_value(param[2])
-            self.hk_list[HK_DETS_HEATING] = self.judge_value(param[3])
-            self.hk_list[HK_DETK_HEATING] = self.judge_value(param[4])
-            self.hk_list[HK_DETS_SP] = self.judge_value(param[5])
-            self.hk_list[HK_DETK_SP] = self.judge_value(param[6])
+        if param[0] == HK_REQ_COM_STS:
+            self.hk_list[GEA_COM_TC2] = bool(int(param[1]))
+        
+        elif param[0] == HK_REQ_GETVALUE:
+            self.hk_list[GEA_DETS] = float(param[1])
+            self.hk_list[GEA_DETK] = float(param[2])
+            self.hk_list[GEA_DETS_HEATING] = float(param[3])
+            self.hk_list[GEA_DETK_HEATING] = float(param[4])
+            self.hk_list[GEA_DETS_SP] = float(param[5])
+            self.hk_list[GEA_DETK_SP] = float(param[6])
                                 
         
     def callback_tmc3(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_GETVALUE):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE): return
 
         msg = "<- [TC3] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == HK_REQ_GETVALUE:
-            self.hk_list[HK_CAMH] = self.judge_value(param[1])
-            self.hk_list[HK_DETH] = self.judge_value(param[2])
-            self.hk_list[HK_DETH_HEATING] = self.judge_value(param[3])
-            self.hk_list[HK_DETH_SP] = self.judge_value(param[4])
+        if param[0] == HK_REQ_COM_STS:
+            self.hk_list[GEA_COM_TC3] = bool(int(param[1]))
+        
+        elif param[0] == HK_REQ_GETVALUE:
+            self.hk_list[GEA_CAMH] = float(param[1])
+            self.hk_list[GEA_DETH] = float(param[2])
+            self.hk_list[GEA_DETH_HEATING] = float(param[3])
+            self.hk_list[GEA_DETH_SP] = float(param[4])
             
                     
     
@@ -302,21 +332,23 @@ class uploader(threading.Thread):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_GETVALUE):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE): return
 
         msg = "<- [TM] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == HK_REQ_GETVALUE:
-            self.hk_list[HK_BENCHCEN] = self.judge_value(param[1])
-            self.hk_list[HK_COLDHEAD1] = self.judge_value(param[2])
-            self.hk_list[HK_COLDHEAD2] = self.judge_value(param[3])
-            self.hk_list[HK_COLDSTOP] = self.judge_value(param[4])
-            self.hk_list[HK_CHARCOALBOX] = self.judge_value(param[5])
-            self.hk_list[HK_CAMK] = self.judge_value(param[6])
-            self.hk_list[HK_SHIELDTOP] = self.judge_value(param[7])
-            self.hk_list[HK_AIR] = self.judge_value(param[8])
+        if param[0] == HK_REQ_COM_STS:
+            self.hk_list[GEA_COM_TM] = bool(int(param[1]))
+        
+        elif param[0] == HK_REQ_GETVALUE:
+            self.hk_list[GEA_BENCHCEN] = float(param[1])
+            self.hk_list[GEA_COLDHEAD1] = float(param[2])
+            self.hk_list[GEA_COLDHEAD2] = float(param[3])
+            self.hk_list[GEA_COLDSTOP] = float(param[4])
+            self.hk_list[GEA_CHARCOALBOX] = float(param[5])
+            self.hk_list[GEA_CAMK] = float(param[6])
+            self.hk_list[GEA_SHIELDTOP] = float(param[7])
+            self.hk_list[GEA_AIR] = float(param[8])
             
                             
        
@@ -324,28 +356,45 @@ class uploader(threading.Thread):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_GETVALUE):
-            return
+        if not (param[0] == HK_REQ_COM_STS or param[0] == HK_REQ_GETVALUE): return
         
         msg = "<- [VM] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
-        if param[0] == HK_REQ_GETVALUE:
+        if param[0] == HK_REQ_COM_STS:
+            self.hk_list[GEA_COM_VM] = bool(int(param[1]))
+        
+        elif param[0] == HK_REQ_GETVALUE:
             dpvalue = ""
             if len(param[1]) > 10 or param[1] == DEFAULT_VALUE:
-                dpvalue = DEFAULT_VALUE
+                dpvalue = float(DEFAULT_VALUE)
             else:
-                dpvalue = param[1]
+                dpvalue = float(param[1])
             
-            self.hk_list[HK_VACUUM] = dpvalue
-                        
+            self.hk_list[GEA_VACUUM] = dpvalue
+            
+            
+        
+    def callback_pdu(self, ch, method, properties, body):
+        cmd = body.decode()
+        param = cmd.split()
+                
+        msg = "<- [VM] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+        
+        if param[0] == HK_REQ_COM_STS:
+            self.hk_list[GEA_COM_PDU] = bool(int(param[1]))
+        
+        elif param[1] == HK_REQ_PWR_STS:
+            for i in range(PDU_IDX):
+                self.hk_list[GEA_PDU1_PWR+i] = bool(int(param[i+1]))
+                                
             
     def callback_hk(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
 
-        if not (param[0] == HK_REQ_UPLOAD_DB):
-            return
+        if not (param[0] == HK_REQ_UPLOAD_DB):  return
 
         msg = "<- [HKP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
@@ -358,33 +407,34 @@ class uploader(threading.Thread):
                 #from HKP
                 self.start_upload_to_firebase(db)
                     
-                
+    '''            
     def judge_value(self, input):
         if input != DEFAULT_VALUE:
             value = "%.2f" % float(input)
         else:
             value = input
         return value
+    '''
     
             
         
     def publish_dewar_list(self):
         
-        hk_entries = [self.hk_list[HK_VACUUM],
-                      self.hk_list[HK_BENCH],     self.hk_list[HK_BENCH_SP],
-                      self.hk_list[HK_GRATING],   self.hk_list[HK_GRATING_SP],
-                      self.hk_list[HK_DETS],      self.hk_list[HK_DETS_SP],
-                      self.hk_list[HK_DETK],      self.hk_list[HK_DETK_SP],
-                      self.hk_list[HK_CAMH],    
-                      self.hk_list[HK_DETH],      self.hk_list[HK_DETH_SP],
-                      self.hk_list[HK_BENCHCEN],
-                      self.hk_list[HK_COLDHEAD1],    
-                      self.hk_list[HK_COLDHEAD2],    
-                      self.hk_list[HK_COLDSTOP],
-                      self.hk_list[HK_CHARCOALBOX],    
-                      self.hk_list[HK_CAMK],  
-                      self.hk_list[HK_SHIELDTOP],
-                      self.hk_list[HK_AIR]]  
+        hk_entries = [self.hk_list[GEA_VACUUM],
+                      self.hk_list[GEA_BENCH],     self.hk_list[GEA_BENCH_SP],
+                      self.hk_list[GEA_GRATING],   self.hk_list[GEA_GRATING_SP],
+                      self.hk_list[GEA_DETS],      self.hk_list[GEA_DETS_SP],
+                      self.hk_list[GEA_DETK],      self.hk_list[GEA_DETK_SP],
+                      self.hk_list[GEA_CAMH],    
+                      self.hk_list[GEA_DETH],      self.hk_list[GEA_DETH_SP],
+                      self.hk_list[GEA_BENCHCEN],
+                      self.hk_list[GEA_COLDHEAD1],    
+                      self.hk_list[GEA_COLDHEAD2],    
+                      self.hk_list[GEA_COLDSTOP],
+                      self.hk_list[GEA_CHARCOALBOX],    
+                      self.hk_list[GEA_CAMK],  
+                      self.hk_list[GEA_SHIELDTOP],
+                      self.hk_list[GEA_AIR]]  
         
         str_log = "    ".join(list(map(str, hk_entries)))     
         msg = "%s %s" % (UPLOAD_Q, str_log)
