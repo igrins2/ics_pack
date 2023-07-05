@@ -362,9 +362,10 @@ class motor(threading.Thread) :
 
         self.motor_pos[posnum] = str(int(res)*(-1))
         ltpos = ""
-        for i in range(4):
+        for i in range(5):
             ltpos += self.motor_pos[i]
             ltpos += ","
+        ltpos = ltpos[:-1]
         cfg = sc.LoadConfig(self.ini_file)
         cfg.set(HK, "lt-pos", ltpos)
         sc.SaveConfig(cfg, self.ini_file)

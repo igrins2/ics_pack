@@ -3,7 +3,7 @@
 """
 Created on Jun 28, 2022
 
-Modified on Apr 18, 2023
+Modified on July 04, 2023
 
 @author: hilee
 """
@@ -90,8 +90,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.EngTools_ex = self.cfg.get(MAIN, 'engtools_exchange')
         self.EngTools_q = self.cfg.get(MAIN, 'engtools_routing_key')
 
-        self.motor_utpos = self.cfg.get(HK, "ut-pos").split(",")                        
-        self.motor_ltpos = self.cfg.get(HK, "lt-pos").split(",")
+        motor_utpos = self.cfg.get(HK, "ut-pos").split(",")                        
+        motor_ltpos = self.cfg.get(HK, "lt-pos").split(",")
 
         self.com_list = ["pdu", "lt", "ut"]
         self.dcs_list = ["DCSS", "DCSH", "DCSK"]
@@ -129,13 +129,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.label_utpos.setText("---")
         self.label_ltpos.setText("---")
         
-        self.sts_ut_pos[0].setText(self.motor_utpos[0])
-        self.sts_ut_pos[1].setText(self.motor_utpos[1])
+        self.sts_ut_pos[0].setText(motor_utpos[0])
+        self.sts_ut_pos[1].setText(motor_utpos[1])
         
-        self.sts_lt_pos[0].setText(self.motor_ltpos[0])
-        self.sts_lt_pos[1].setText(self.motor_ltpos[1])
-        self.sts_lt_pos[2].setText(self.motor_ltpos[2])
-        self.sts_lt_pos[3].setText(self.motor_ltpos[3])
+        self.sts_lt_pos[0].setText(motor_ltpos[0])
+        self.sts_lt_pos[1].setText(motor_ltpos[1])
+        self.sts_lt_pos[2].setText(motor_ltpos[2])
+        self.sts_lt_pos[3].setText(motor_ltpos[3])
+        self.sts_lt_pos[4].setText(motor_ltpos[4])
         
         self.e_movinginterval.setText("1")        
         
@@ -340,6 +341,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.bt_ut_move_to = [self.bt_ut_move_to_0, self.bt_ut_move_to_1]
         self.bt_lt_move_to = [self.bt_lt_move_to_0, self.bt_lt_move_to_1, self.bt_lt_move_to_2, self.bt_lt_move_to_3, self.bt_lt_move_to_4]
         
+        self.e_utpos.setHidden(True)
+        self.e_ltpos.setHidden(True)
+
         self.chk_whole.clicked.connect(self.cal_whole_check)
         self.bt_run.clicked.connect(self.cal_run)
         self.bt_parking.clicked.connect(self.cal_parking)
@@ -1074,8 +1078,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.bt_ltpos_set2.setEnabled(enable)
         self.bt_ltpos_set3.setEnabled(enable)
         self.bt_ltpos_set4.setEnabled(enable)
+        self.bt_ltpos_set5.setEnabled(enable)
         
-        for i in range(4):
+        for i in range(5):
             self.bt_lt_move_to[i].setEnabled(enable)
             if not enable:
                 color = "silver"
@@ -1571,7 +1576,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.publish_to_queue(msg)
                 
     
-    def motor_pos_set(self, motor, position): #motor-UT/LT, direction-UT(0/1), LT(0-3)
+    def motor_pos_set(self, motor, position): #motor-UT/LT, direction-UT(0/1), LT(0-4)
         msg = "Do you really want to modify the position %s value?" % str(position)
         reply = QMessageBox.question(self, WARNING, msg, QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.No: return
