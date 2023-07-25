@@ -63,7 +63,7 @@ class temp_ctrl(threading.Thread):
         self.consumer_hk, self.consumer_uploader = None, None
         
         self.prev_cmd = ""
-        #self.pause = False
+        self.pause = False
         
         self.wait_time = float(Period/6)
                 
@@ -190,8 +190,8 @@ class temp_ctrl(threading.Thread):
                 
                 ti.sleep(self.wait_time)
 
-                send_to(cmd)
-                info = recv_from()
+                #send_to(cmd)
+                #info = recv_from()
 
             return info[:-2]
             
@@ -246,6 +246,9 @@ class temp_ctrl(threading.Thread):
         self.publish_to_queue(msg)
         '''
         
+        if self.pause:
+            return
+
         # need to test!!!        
         if self.iam != "tmc3":
             com_len = 6
@@ -258,7 +261,7 @@ class temp_ctrl(threading.Thread):
                 if res[idx] == DEFAULT_VALUE:
                     continue
                 elif res[idx] == None:
-                    res[idx] == DEFAULT_VALUE
+                    res[idx] = DEFAULT_VALUE
                 idx += 1
             
             msg = "%s %s %s %s %s %s %s" % (HK_REQ_GETVALUE, res[0], res[1], res[2], res[3], res[4], res[5]) 
@@ -274,14 +277,15 @@ class temp_ctrl(threading.Thread):
                 if res[idx] == DEFAULT_VALUE:
                     continue
                 elif res[idx] == None:
-                    res[idx] == DEFAULT_VALUE
+                    res[idx] = DEFAULT_VALUE
                 idx += 1
             
             msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, res[0], res[1], res[2], res[3]) 
             
         self.publish_to_queue(msg)
             
-        threading.Thread(target=self.start_monitoring).start()
+        if not self.pause:
+            threading.Thread(target=self.start_monitoring).start()
 
     
     #-------------------------------
@@ -326,7 +330,7 @@ class temp_ctrl(threading.Thread):
         if param[0] == HK_REQ_MANUAL_CMD:            
             if self.iam != param[1]:    return
             
-            #self.pause = True
+            self.pause = True
             
             cmd = ""
             for idx in range(len(param)-2):
@@ -336,7 +340,7 @@ class temp_ctrl(threading.Thread):
             msg = "%s %s" % (param[0], value) 
             self.publish_to_queue(msg)
             
-            #self.pause = False
+            self.pause = False
             self.start_monitoring() 
             
             

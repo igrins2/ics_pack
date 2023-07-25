@@ -116,17 +116,10 @@ class uploader(threading.Thread):
         
         self.upload_interval = int(cfg.get(HK, "upload-intv"))
         
-        firebase = self.get_firebase()
-        self.db = firebase.database()
-    
-        #-------
-        #for test
-        #self.start_upload_to_firebase(self.db)
-        #self.log.send(self.iam, INFO, "Uploaded " + ti.strftime("%Y-%m-%d %H:%M:%S"))
-        #-------
-                
         self.simul = strtobool(cfg.get(MAIN, "simulation"))
-        #self.connect_to_server_hk_q()
+
+        firebase = self.get_firebase(self.simul)
+        self.db = firebase.database()
         
         self.producer = None
         self.consumer = [None for _ in range(COM_CNT)]
@@ -154,29 +147,27 @@ class uploader(threading.Thread):
         self.log.send(self.iam, DEBUG, "Closed!")
                                     
 
-    def get_firebase(self):
+    def get_firebase(self, simul):
         
-        config = {
-            "apiKey": "AIzaSyCDUZO9ejB8LzKPtGB0_5xciByJvYI4IzY",
-            "authDomain": "igrins2-hk.firebaseapp.com",
-            "databaseURL": "https://igrins2-hk-default-rtdb.firebaseio.com",
-            "storageBucket": "igrins2-hk.appspot.com",
-            "serviceAccount": WORKING_DIR + "ics_pack/code/igrins2-hk-firebase-adminsdk-qtt3q-073f6caf5b.json"
+        if simul:
+            # for test
+            config = {
+                "apiKey": "AIzaSyDSt_O0KmvB5MjrDXuGJCABAOVNp8Q3ZB8",
+                "authDomain": "hkp-db-37e0f.firebaseapp.com",
+                "databaseURL": "https://hkp-db-37e0f-default-rtdb.firebaseio.com",
+                "storageBucket": "hkp-db-37e0f.appspot.com",
+                "serviceAccount": WORKING_DIR + "ics_pack/code/hkp-db-37e0f-firebase-adminsdk-9r23k-a8a806fcb0.json"
             }
-        
-        '''
-        # for test
-        config={
-            "apiKey": "AIzaSyDSt_O0KmvB5MjrDXuGJCABAOVNp8Q3ZB8",
-            "authDomain": "hkp-db-37e0f.firebaseapp.com",
-            "databaseURL": "https://hkp-db-37e0f-default-rtdb.firebaseio.com",
-            "projectId": "hkp-db-37e0f",
-            "storageBucket": "hkp-db-37e0f.appspot.com",
-            "messagingSenderId": "1059665885507",
-            "appId": "1:1059665885507:web:c4d5dbd322c1c0ff4e17f6",
-            "measurementId": "G-450KS9WJF1"
-        }
-        '''
+        else:
+            config = {
+                "apiKey": "AIzaSyCDUZO9ejB8LzKPtGB0_5xciByJvYI4IzY",
+                "authDomain": "igrins2-hk.firebaseapp.com",
+                "databaseURL": "https://igrins2-hk-default-rtdb.firebaseio.com",
+                "storageBucket": "igrins2-hk.appspot.com",
+                "serviceAccount": WORKING_DIR + "ics_pack/code/igrins2-hk-firebase-adminsdk-qtt3q-073f6caf5b.json"
+            }
+            
+       
         firebase = pyrebase.initialize_app(config)
 
         return firebase
@@ -403,9 +394,8 @@ class uploader(threading.Thread):
             db = param[1:]
             if self.simul:
                 print("uploaded virtual firebase database...")
-            else:
-                #from HKP
-                self.start_upload_to_firebase(db)
+            
+            self.start_upload_to_firebase(db)
                     
     '''            
     def judge_value(self, input):

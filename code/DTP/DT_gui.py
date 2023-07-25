@@ -882,16 +882,18 @@ class MainWindow(Ui_Dialog, QMainWindow):
         _t = datetime.datetime.utcnow()
         self.cur_date = "%04d%02d%02d" % (_t.year, _t.month, _t.day)
         
-        filepath_h = "%sIGRINS/dcsh/Fowler/%s/" % (WORKING_DIR, self.cur_date)
-        filepath_k = "%sIGRINS/dcsh/Fowler/%s/" % (WORKING_DIR, self.cur_date)
-        
         dir_names = []
-        for names in os.listdir(filepath_h):
-            if names.find(".fits") < 0:
-                dir_names.append(names)
-        for names in os.listdir(filepath_k):
-            if names.find(".fits") < 0:
-                dir_names.append(names)
+        if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_HK or self.sel_mode == MODE_H:
+            filepath_h = "%sIGRINS/dcsh/Fowler/%s/" % (WORKING_DIR, self.cur_date)
+            for names in os.listdir(filepath_h):
+                if names.find(".fits") < 0:
+                    dir_names.append(names)
+
+        if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_HK or self.sel_mode == MODE_K:
+            filepath_k = "%sIGRINS/dcsk/Fowler/%s/" % (WORKING_DIR, self.cur_date)   
+            for names in os.listdir(filepath_k):
+                if names.find(".fits") < 0:
+                    dir_names.append(names)
                 
         numbers = list(map(int, dir_names))
         
@@ -1478,6 +1480,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if nothing:
             self.bt_run.setText("RUN")
             self.QWidgetBtnColor(self.bt_run, "black")
+            self.cal_stop_clicked = True
+            self.cal_mode = False
             
             
     def cal_parking(self):
