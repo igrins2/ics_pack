@@ -2,7 +2,7 @@
 """
 Created on Nov 9, 2022
 
-Created on Apr 17, 2023
+Created on July 26, 2023
 
 @author: hilee
 """
@@ -247,24 +247,28 @@ class pdu(threading.Thread) :
 
         msg = "<- [HKP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
-                                                       
-        if param[0] == HK_REQ_PWR_STS:
-            pow_flag = self.power_status("DN0\r")
-            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-            self.publish_to_queue(msg)
-            
-        elif param[0] == HK_REQ_PWR_ONOFF_IDX:
-            pow_flag = self.change_power(int(param[1]), param[2]) 
-            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-            self.publish_to_queue(msg)
-            
-        elif param[0] == HK_REQ_PWR_ONOFF:
-            #print('CLI >> PDU', param)
-            for idx in range(PDU_IDX):
-                pow_flag = self.change_power(idx+1, param[idx+1])
+                     
+        try:                                  
+            if param[0] == HK_REQ_PWR_STS:
+                pow_flag = self.power_status("DN0\r")
+                msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+                self.publish_to_queue(msg)
                 
-            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-            self.publish_to_queue(msg)
+            elif param[0] == HK_REQ_PWR_ONOFF_IDX:
+                pow_flag = self.change_power(int(param[1]), param[2]) 
+                msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+                self.publish_to_queue(msg)
+                
+            elif param[0] == HK_REQ_PWR_ONOFF:
+                #print('CLI >> PDU', param)
+                for idx in range(PDU_IDX):
+                    pow_flag = self.change_power(idx+1, param[idx+1])
+                    
+                msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+                self.publish_to_queue(msg)
+        
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
             
                 
                 
@@ -288,31 +292,34 @@ class pdu(threading.Thread) :
 
         msg = "<- [DTP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
-                                                       
-        if param[0] == HK_REQ_PWR_STS:
-            pow_flag = self.power_status("DN0\r")
-            msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-            self.publish_to_queue(msg)
-            
-        #elif param[0] == HK_REQ_PWR_ONOFF_IDX:
-        #    pow_flag = self.change_power(int(param[1]), param[2]) 
-        #    msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-        #    self.publish_to_queue(msg)
-
-        elif param[0] == HK_REQ_PWR_ONOFF:
-            #pow_flag = self.power_status("DN0\r")
-            #pow_sts = pow_flag.split()
-            pow_flag = ""
-            for idx in range(PDU_IDX):
-                pow_flag += self.pow_flag[idx]
-                pow_flag += " "
-
-            for idx in range(PDU_IDX):
-                if self.pow_flag[idx] != param[idx+1]:
-                    pow_flag = self.change_power(idx+1, param[idx+1])
+                                 
+        try:                      
+            if param[0] == HK_REQ_PWR_STS:
+                pow_flag = self.power_status("DN0\r")
+                msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+                self.publish_to_queue(msg)
                 
-            msg = "%s %sdone" % (HK_REQ_PWR_STS, pow_flag)
-            self.publish_to_queue(msg)
+            #elif param[0] == HK_REQ_PWR_ONOFF_IDX:
+            #    pow_flag = self.change_power(int(param[1]), param[2]) 
+            #    msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+            #    self.publish_to_queue(msg)
+
+            elif param[0] == HK_REQ_PWR_ONOFF:
+                #pow_flag = self.power_status("DN0\r")
+                #pow_sts = pow_flag.split()
+                pow_flag = ""
+                for idx in range(PDU_IDX):
+                    pow_flag += self.pow_flag[idx]
+                    pow_flag += " "
+
+                for idx in range(PDU_IDX):
+                    if self.pow_flag[idx] != param[idx+1]:
+                        pow_flag = self.change_power(idx+1, param[idx+1])
+                    
+                msg = "%s %sdone" % (HK_REQ_PWR_STS, pow_flag)
+                self.publish_to_queue(msg)
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
             
                         
             

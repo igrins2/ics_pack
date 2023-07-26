@@ -3,7 +3,7 @@
 """
 Created on Sep 17, 2021
 
-Modified on Apr 17, 2023
+Modified on July 26, 2023
 
 @author: hilee
 """
@@ -319,20 +319,24 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [TC1] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == HK_REQ_COM_STS:
-            self.com_status[TMC1] = bool(int(param[1]))            
-                    
-        elif param[0] == HK_REQ_GETVALUE:
-            self.dtvalue[label_list[TMC1_A]] = self.judge_value(param[1])
-            self.dtvalue[label_list[TMC1_B]] = self.judge_value(param[2])
-            self.heatlabel[label_list[TMC1_A]] = self.judge_value(param[3])
-            self.heatlabel[label_list[TMC1_B]] = self.judge_value(param[4])
-            self.set_point[0] = self.judge_value(param[5])
-            self.set_point[1] = self.judge_value(param[6])
-            
-        elif param[0] == HK_REQ_MANUAL_CMD:
-            res = "[TC1] %s" % param[1]
-            self.e_recv.setText(res)
+        try:
+            if param[0] == HK_REQ_COM_STS:
+                self.com_status[TMC1] = bool(int(param[1]))            
+                        
+            elif param[0] == HK_REQ_GETVALUE:
+                self.dtvalue[label_list[TMC1_A]] = self.judge_value(param[1])
+                self.dtvalue[label_list[TMC1_B]] = self.judge_value(param[2])
+                self.heatlabel[label_list[TMC1_A]] = self.judge_value(param[3])
+                self.heatlabel[label_list[TMC1_B]] = self.judge_value(param[4])
+                self.set_point[0] = self.judge_value(param[5])
+                self.set_point[1] = self.judge_value(param[6])
+                
+            elif param[0] == HK_REQ_MANUAL_CMD:
+                res = "[TC1] %s" % param[1]
+                self.e_recv.setText(res)
+                
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
                         
             
     def callback_tmc2(self, ch, method, properties, body):
@@ -344,20 +348,24 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [TC2] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == HK_REQ_COM_STS:
-            self.com_status[TMC2] = bool(int(param[1]))            
-                    
-        elif param[0] == HK_REQ_GETVALUE:
-            self.dtvalue[label_list[TMC2_A]] = self.judge_value(param[1])
-            self.dtvalue[label_list[TMC2_B]] = self.judge_value(param[2])
-            self.heatlabel[label_list[TMC2_A]] = self.judge_value(param[3])
-            self.heatlabel[label_list[TMC2_B]] = self.judge_value(param[4])
-            self.set_point[2] = self.judge_value(param[5])
-            self.set_point[3] = self.judge_value(param[6])
-            
-        elif param[0] == HK_REQ_MANUAL_CMD:
-            res = "[TC2] %s" % param[1]
-            self.e_recv.setText(res)
+        try:
+            if param[0] == HK_REQ_COM_STS:
+                self.com_status[TMC2] = bool(int(param[1]))            
+                        
+            elif param[0] == HK_REQ_GETVALUE:
+                self.dtvalue[label_list[TMC2_A]] = self.judge_value(param[1])
+                self.dtvalue[label_list[TMC2_B]] = self.judge_value(param[2])
+                self.heatlabel[label_list[TMC2_A]] = self.judge_value(param[3])
+                self.heatlabel[label_list[TMC2_B]] = self.judge_value(param[4])
+                self.set_point[2] = self.judge_value(param[5])
+                self.set_point[3] = self.judge_value(param[6])
+                
+            elif param[0] == HK_REQ_MANUAL_CMD:
+                res = "[TC2] %s" % param[1]
+                self.e_recv.setText(res)
+        
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
                         
         
     def callback_tmc3(self, ch, method, properties, body):
@@ -369,18 +377,22 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [TC3] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == HK_REQ_COM_STS:
-            self.com_status[TMC3] = bool(int(param[1]))            
-                    
-        elif param[0] == HK_REQ_GETVALUE:
-            self.dtvalue[label_list[TMC3_A]] = self.judge_value(param[1])
-            self.dtvalue[label_list[TMC3_B]] = self.judge_value(param[2])
-            self.heatlabel[label_list[TMC3_B]] = self.judge_value(param[3])
-            self.set_point[4] = self.judge_value(param[4])
-            
-        elif param[0] == HK_REQ_MANUAL_CMD:
-            res = "[TC3] %s" % param[1]
-            self.e_recv.setText(res)
+        try:
+            if param[0] == HK_REQ_COM_STS:
+                self.com_status[TMC3] = bool(int(param[1]))            
+                        
+            elif param[0] == HK_REQ_GETVALUE:
+                self.dtvalue[label_list[TMC3_A]] = self.judge_value(param[1])
+                self.dtvalue[label_list[TMC3_B]] = self.judge_value(param[2])
+                self.heatlabel[label_list[TMC3_B]] = self.judge_value(param[3])
+                self.set_point[4] = self.judge_value(param[4])
+                
+            elif param[0] == HK_REQ_MANUAL_CMD:
+                res = "[TC3] %s" % param[1]
+                self.e_recv.setText(res)
+        
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
             
     
     def callback_tm(self, ch, method, properties, body):
@@ -392,16 +404,20 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [TM] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
-        if param[0] == HK_REQ_COM_STS:
-            self.com_status[TM] = bool(int(param[1]))            
+        try:
+            if param[0] == HK_REQ_COM_STS:
+                self.com_status[TM] = bool(int(param[1]))            
+            
+            elif param[0] == HK_REQ_GETVALUE:
+                for i in range(TM_CNT):
+                    self.dtvalue[label_list[TM_1+i]] = self.judge_value(param[i+1])
+                    
+            elif param[0] == HK_REQ_MANUAL_CMD:
+                res = "[TM] %s" % param[1]
+                self.e_recv.setText(res)
         
-        elif param[0] == HK_REQ_GETVALUE:
-            for i in range(TM_CNT):
-                self.dtvalue[label_list[TM_1+i]] = self.judge_value(param[i+1])
-                
-        elif param[0] == HK_REQ_MANUAL_CMD:
-            res = "[TM] %s" % param[1]
-            self.e_recv.setText(res)
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
             
     
     def callback_vm(self, ch, method, properties, body):
@@ -413,14 +429,18 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [VM] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == HK_REQ_COM_STS:
-            self.com_status[VM] = bool(int(param[1]))            
-            
-        elif param[0] == HK_REQ_GETVALUE:
-            if len(param[1]) > 10 or param[1] == DEFAULT_VALUE:
-                self.dpvalue = DEFAULT_VALUE
-            else:
-                self.dpvalue = param[1]
+        try:
+            if param[0] == HK_REQ_COM_STS:
+                self.com_status[VM] = bool(int(param[1]))            
+                
+            elif param[0] == HK_REQ_GETVALUE:
+                if len(param[1]) > 10 or param[1] == DEFAULT_VALUE:
+                    self.dpvalue = DEFAULT_VALUE
+                else:
+                    self.dpvalue = param[1]
+        
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
                 
             
     def callback_pdu(self, ch, method, properties, body):
@@ -432,14 +452,18 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [PDU] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == HK_REQ_COM_STS:
-            self.com_status[PDU] = bool(int(param[1]))            
-            
-        elif param[0] == HK_REQ_PWR_STS:
-            for i in range(PDU_IDX):
-                self.power_status[i] = param[i+1]
+        try:
+            if param[0] == HK_REQ_COM_STS:
+                self.com_status[PDU] = bool(int(param[1]))            
                 
-        self.show_pdu_status()
+            elif param[0] == HK_REQ_PWR_STS:
+                for i in range(PDU_IDX):
+                    self.power_status[i] = param[i+1]
+                
+            self.show_pdu_status()
+            
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
             
         
     #-------------------------------

@@ -3,7 +3,7 @@
 """
 Created on Jun 28, 2022
 
-Modified on July 04, 2023
+Modified on July 26, 2023
 
 @author: hilee
 """
@@ -436,20 +436,23 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [EngTools] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == ALIVE:
-            self.simulation = bool(int(param[1]))   
-            
-            for idx in range(DCS_CNT):
-                if self.simulation:
-                    path = WORKING_DIR + "IGRINS/Demo/"
-                else:
-                    path = WORKING_DIR + "IGRINS/" + self.dcs_list[idx].lower() + "/"
+        try:
+            if param[0] == ALIVE:
+                self.simulation = bool(int(param[1]))   
                 
-                self.e_path[idx].setText(path)
-                self.e_savefilename[idx].setText("")
-                
-            msg = "%s %s %d" % (CMD_INIT2_DONE, "all", self.simulation)
-            self.publish_to_queue(msg)
+                for idx in range(DCS_CNT):
+                    if self.simulation:
+                        path = WORKING_DIR + "IGRINS/Demo/"
+                    else:
+                        path = WORKING_DIR + "IGRINS/" + self.dcs_list[idx].lower() + "/"
+                    
+                    self.e_path[idx].setText(path)
+                    self.e_savefilename[idx].setText("")
+                    
+                msg = "%s %s %d" % (CMD_INIT2_DONE, "all", self.simulation)
+                self.publish_to_queue(msg)
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
                             
        
     #-------------------------------
@@ -482,19 +485,22 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [PDU] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == HK_REQ_COM_STS:
-            #self.com_status[PDU] = bool(int(param[1])) 
-            pass
-            
-        elif param[0] == HK_REQ_PWR_STS:
-            for i in range(PDU_IDX):
-                self.power_status[i] = param[i+1]
+        try:
+            if param[0] == HK_REQ_COM_STS:
+                #self.com_status[PDU] = bool(int(param[1])) 
+                pass
+                
+            elif param[0] == HK_REQ_PWR_STS:
+                for i in range(PDU_IDX):
+                    self.power_status[i] = param[i+1]
 
-            if self.power_status[0] == ON and self.power_status[1] == ON:
-                self.chk_open_calibration.setEnabled(True)
+                if self.power_status[0] == ON and self.power_status[1] == ON:
+                    self.chk_open_calibration.setEnabled(True)
 
-            if param[-1] == "done" and self.lamp_on:
-                self.bt_take_image.click()
+                if param[-1] == "done" and self.lamp_on:
+                    self.bt_take_image.click()
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
                     
         
     def callback_lt(self, ch, method, properties, body):
@@ -507,43 +513,47 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [LT] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
-        if param[0] == HK_REQ_COM_STS:
-            self.bt_lt_motor_init.setEnabled(bool(int(param[1])))
-        
-        elif param[0] == DT_REQ_INITMOTOR:
-            if param[1] == "TRY":
-                msg = "%s - need to initialize" % param[1]
-                self.log.send(self.iam, INFO, msg)  
-            elif param[1] == "OK":
-                self.protect_btn_lt(True)
-                self.label_ltpos.setText("0")
-                self.QWidgetBtnColor(self.bt_lt_motor_init, "white", "green")
-                self.motor_initialized[LT-1] = True
-                
-        elif param[0] == DT_REQ_MOVEMOTOR:
-            self.lt_moved = True
-            self.protect_btn_lt(True)
-            self.label_ltpos.setText(param[2])
+        try:
+            if param[0] == HK_REQ_COM_STS:
+                self.bt_lt_motor_init.setEnabled(bool(int(param[1])))
             
-            self.QWidgetBtnColor(self.bt_lt_move_to[int(param[1])], "black")
-
-            if self.cal_mode:
-                #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "lt: here!!!!")
-                if self.ut_moved and self.lt_moved:
-                    #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "lt: self.ut_moved and self.lt_moved")
-                    self.func_lamp(self.cal_cur)
-                    #ti.sleep(1)
+            elif param[0] == DT_REQ_INITMOTOR:
+                if param[1] == "TRY":
+                    msg = "%s - need to initialize" % param[1]
+                    self.log.send(self.iam, INFO, msg)  
+                elif param[1] == "OK":
+                    self.protect_btn_lt(True)
+                    self.label_ltpos.setText("0")
+                    self.QWidgetBtnColor(self.bt_lt_motor_init, "white", "green")
+                    self.motor_initialized[LT-1] = True
+                    
+            elif param[0] == DT_REQ_MOVEMOTOR:
+                self.lt_moved = True
+                self.protect_btn_lt(True)
+                self.label_ltpos.setText(param[2])
                 
-                    #self.bt_take_image.click()
-                
-        elif param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
-            self.lt_moved = True
-            self.protect_btn_lt(True)
-            self.label_ltpos.setText(param[1])
+                self.QWidgetBtnColor(self.bt_lt_move_to[int(param[1])], "black")
 
-        elif param[0] == DT_REQ_SETLT:
-            self.label_ltpos.setText(param[2])
-            self.sts_lt_pos[int(param[1])].setText(param[2])
+                if self.cal_mode:
+                    #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "lt: here!!!!")
+                    if self.ut_moved and self.lt_moved:
+                        #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "lt: self.ut_moved and self.lt_moved")
+                        self.func_lamp(self.cal_cur)
+                        #ti.sleep(1)
+                    
+                        #self.bt_take_image.click()
+                    
+            elif param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
+                self.lt_moved = True
+                self.protect_btn_lt(True)
+                self.label_ltpos.setText(param[1])
+
+            elif param[0] == DT_REQ_SETLT:
+                self.label_ltpos.setText(param[2])
+                self.sts_lt_pos[int(param[1])].setText(param[2])
+                
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
                 
         
     def callback_ut(self, ch, method, properties, body):
@@ -556,43 +566,47 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [UT] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == HK_REQ_COM_STS:
-            self.bt_ut_motor_init.setEnabled(bool(int(param[1])))
-                                            
-        elif param[0] == DT_REQ_INITMOTOR:
-            if param[1] == "TRY":
-                msg = "%s - need to initialize" % param[1]
-                self.log.send(self.iam, INFO, msg)
-            elif param[1] == "OK":
+        try:
+            if param[0] == HK_REQ_COM_STS:
+                self.bt_ut_motor_init.setEnabled(bool(int(param[1])))
+                                                
+            elif param[0] == DT_REQ_INITMOTOR:
+                if param[1] == "TRY":
+                    msg = "%s - need to initialize" % param[1]
+                    self.log.send(self.iam, INFO, msg)
+                elif param[1] == "OK":
+                    self.protect_btn_ut(True)
+                    self.label_utpos.setText("0")                
+                    self.QWidgetBtnColor(self.bt_ut_motor_init, "white", "green")
+                    self.motor_initialized[UT-1] = True
+                                
+            elif param[0] == DT_REQ_MOVEMOTOR:
+                self.ut_moved = True
                 self.protect_btn_ut(True)
-                self.label_utpos.setText("0")                
-                self.QWidgetBtnColor(self.bt_ut_motor_init, "white", "green")
-                self.motor_initialized[UT-1] = True
-                            
-        elif param[0] == DT_REQ_MOVEMOTOR:
-            self.ut_moved = True
-            self.protect_btn_ut(True)
-            self.label_utpos.setText(param[2])
-            
-            self.QWidgetBtnColor(self.bt_ut_move_to[int(param[1])], "black")
-            
-            if self.cal_mode:
-                #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "ut: here!!!!")
-                if self.ut_moved and self.lt_moved:
-                    #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "ut: self.ut_moved and self.lt_moved")
-                    self.func_lamp(self.cal_cur)
-                    #ti.sleep(1)
+                self.label_utpos.setText(param[2])
                 
-                    #self.bt_take_image.click()
-        
-        elif param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
-            self.ut_moved = True
-            self.protect_btn_ut(True)
-            self.label_utpos.setText(param[1])
+                self.QWidgetBtnColor(self.bt_ut_move_to[int(param[1])], "black")
+                
+                if self.cal_mode:
+                    #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "ut: here!!!!")
+                    if self.ut_moved and self.lt_moved:
+                        #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "ut: self.ut_moved and self.lt_moved")
+                        self.func_lamp(self.cal_cur)
+                        #ti.sleep(1)
+                    
+                        #self.bt_take_image.click()
+            
+            elif param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
+                self.ut_moved = True
+                self.protect_btn_ut(True)
+                self.label_utpos.setText(param[1])
 
-        elif param[0] == DT_REQ_SETUT:
-            self.label_utpos.setText(param[2])
-            self.sts_ut_pos[int(param[1])].setText(param[2])
+            elif param[0] == DT_REQ_SETUT:
+                self.label_utpos.setText(param[2])
+                self.sts_ut_pos[int(param[1])].setText(param[2])
+                
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
                                         
 
     #-------------------------------
@@ -657,150 +671,155 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def dcs_status(self, dc_idx, cmd):
         param = cmd.split()
-
-        if param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
-            self.dcs_ready[dc_idx] = True
-            self.bt_init_status(dc_idx)
-
-            if self.radio_HK_sync.isChecked():
-                self.set_HK_sync()
-            elif self.radio_whole_sync.isChecked():
-                self.set_whole_sync()
-            elif self.radio_SVC.isChecked():
-                self.set_svc()
-            elif self.radio_H.isChecked():
-                self.set_H()
-            elif self.radio_K.isChecked():
-                self.set_K()
-            
-        elif param[0] == CMD_SETFSPARAM_ICS:
-            next_idx = self.get_next_idx()
-            
-            msg = "%s %s %d %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation, next_idx)
-            self.publish_to_queue(msg)
-
-        elif param[0] == CMD_ACQUIRERAMP_ICS:                        
-            self.cur_cnt[dc_idx] += 1
-            self.label_prog_sts[dc_idx].setText("Done")
-            
-            end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
-            self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
-                        
-            self.prog_timer[dc_idx].stop()
-            self.cur_prog_step[dc_idx] = 100
-            self.progressBar[dc_idx].setValue(self.cur_prog_step[dc_idx])           
-
-            self.elapsed_timer[dc_idx].stop()
-
-            self.measure_T[dc_idx] = float(param[1])
-            
-            # load data
-            self.load_data(dc_idx, param[2])
         
-            self.acquiring[dc_idx] = False
-            #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "self.acquiring[dc_idx]:", dc_idx, self.acquiring[dc_idx])
+        try:
+
+            if param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
+                self.dcs_ready[dc_idx] = True
+                self.bt_init_status(dc_idx)
+
+                if self.radio_HK_sync.isChecked():
+                    self.set_HK_sync()
+                elif self.radio_whole_sync.isChecked():
+                    self.set_whole_sync()
+                elif self.radio_SVC.isChecked():
+                    self.set_svc()
+                elif self.radio_H.isChecked():
+                    self.set_H()
+                elif self.radio_K.isChecked():
+                    self.set_K()
+                
+            elif param[0] == CMD_SETFSPARAM_ICS:
+                next_idx = self.get_next_idx()
+                
+                msg = "%s %s %d %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation, next_idx)
+                self.publish_to_queue(msg)
+
+            elif param[0] == CMD_ACQUIRERAMP_ICS:                        
+                self.cur_cnt[dc_idx] += 1
+                self.label_prog_sts[dc_idx].setText("Done")
+                
+                end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
+                self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
+                            
+                self.prog_timer[dc_idx].stop()
+                self.cur_prog_step[dc_idx] = 100
+                self.progressBar[dc_idx].setValue(self.cur_prog_step[dc_idx])           
+
+                self.elapsed_timer[dc_idx].stop()
+
+                self.measure_T[dc_idx] = float(param[1])
+                
+                # load data
+                self.load_data(dc_idx, param[2])
             
-            if self.cal_mode:
-                show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.cal_e_repeat[self.cal_cur].text())
-                self.label_cur_num[dc_idx].setText(show_cur_cnt)
+                self.acquiring[dc_idx] = False
+                #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "self.acquiring[dc_idx]:", dc_idx, self.acquiring[dc_idx])
+                
+                if self.cal_mode:
+                    show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.cal_e_repeat[self.cal_cur].text())
+                    self.label_cur_num[dc_idx].setText(show_cur_cnt)
 
-                if self.cur_cnt[dc_idx] < int(self.cal_e_repeat[self.cal_cur].text()):
-                    if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                        self.all_acquired = True
-                        #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "repeat: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx)
-                        self.bt_take_image.click()
+                    if self.cur_cnt[dc_idx] < int(self.cal_e_repeat[self.cal_cur].text()):
+                        if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
+                            self.all_acquired = True
+                            #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "repeat: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx)
+                            self.bt_take_image.click()
 
-                else:                                                    
-                    if self.cal_stop_clicked:
+                    else:                                                    
+                        if self.cal_stop_clicked:
+                            self.enable_dcs(dc_idx, True)
+
+                            if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:   
+                                self.func_lamp(self.cal_cur, False)
+                                self.all_acquired = True
+                                #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "stop: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx) 
+                                self.cal_mode = False
+                                self.bt_run.setText("RUN")
+                                self.QWidgetBtnColor(self.bt_run, "black")
+
+                                self.QWidgetCheckBoxColor(self.cal_chk[self.cal_cur], "black")                    
+                                self.QWidgetEditColor(self.cal_e_exptime[self.cal_cur], "black")
+                                self.QWidgetEditColor(self.cal_e_repeat[self.cal_cur], "black")
+
+                                for i in range(DCS_CNT):
+                                    self.cur_cnt[i] = 0
+                            
+                            return             
+
                         self.enable_dcs(dc_idx, True)
-
-                        if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:   
+                        if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
                             self.func_lamp(self.cal_cur, False)
                             self.all_acquired = True
-                            #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "stop: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx) 
-                            self.cal_mode = False
-                            self.bt_run.setText("RUN")
-                            self.QWidgetBtnColor(self.bt_run, "black")
+                            #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "next frame: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx)   
+                            self.cal_mode = False  
+                            self.cal_cur += 1
+                            #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "next frame: self.cal_cur += 1")
 
-                            self.QWidgetCheckBoxColor(self.cal_chk[self.cal_cur], "black")                    
-                            self.QWidgetEditColor(self.cal_e_exptime[self.cal_cur], "black")
-                            self.QWidgetEditColor(self.cal_e_repeat[self.cal_cur], "black")
+                            for i in range(DCS_CNT):
+                                self.cur_cnt[i] = 0
+
+                            self.cal_run_cycle()
+
+                else:
+                    show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.e_repeat[dc_idx].text())
+                    self.label_cur_num[dc_idx].setText(show_cur_cnt)
+                    
+                    '''
+                    if self.mode == CONT_MODE and self.stop_clicked:
+                        self.enable_dcs(dc_idx, True)
+                        
+                        if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
+                            self.all_acquired = True
+                            self.protect_btn(True) 
+                            self.bt_take_image.setText("Continuous")
+                            self.QWidgetBtnColor(self.bt_take_image, "black")
+                            self.stop_clicked = False
 
                             for i in range(DCS_CNT):
                                 self.cur_cnt[i] = 0
                         
-                        return             
+                    el
+                    '''
+                    if self.cur_cnt[dc_idx] < int(self.e_repeat[dc_idx].text()):
+                        self.continuous[dc_idx] = True
+                        self.bt_take_image.click()
 
-                    self.enable_dcs(dc_idx, True)
-                    if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
-                        self.func_lamp(self.cal_cur, False)
-                        self.all_acquired = True
-                        #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "next frame: not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]", dc_idx)   
-                        self.cal_mode = False  
-                        self.cal_cur += 1
-                        #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "next frame: self.cal_cur += 1")
+                    else:
+                        self.enable_dcs(dc_idx, True)
 
-                        for i in range(DCS_CNT):
-                            self.cur_cnt[i] = 0
+                        if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:                                                    
+                            self.all_acquired = True
+                            if self.mode == CONT_MODE:
+                                self.bt_take_image.setText("Continuous")
+                            else:
+                                self.bt_take_image.setText("Take Image")
+                                
+                            self.protect_btn(True) 
+                            self.QWidgetBtnColor(self.bt_take_image, "black")
+                            #self.stop_clicked = False
 
-                        self.cal_run_cycle()
-
-            else:
-                show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.e_repeat[dc_idx].text())
-                self.label_cur_num[dc_idx].setText(show_cur_cnt)
+                            for i in range(DCS_CNT):
+                                self.cur_cnt[i] = 0
+        
+            elif param[0] == CMD_STOPACQUISITION:
                 
-                '''
-                if self.mode == CONT_MODE and self.stop_clicked:
-                    self.enable_dcs(dc_idx, True)
+                end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
+                self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
+
+                self.enable_dcs(dc_idx, True)
+
+                self.acquiring[dc_idx] = False
+
+                if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
+                    self.all_acquired = True
+                    self.protect_btn(True)                    
+                    self.bt_take_image.setText("Take Image")  
+                    self.QWidgetBtnColor(self.bt_take_image, "black")
+                    #self.stop_clicked = False  
                     
-                    if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
-                        self.all_acquired = True
-                        self.protect_btn(True) 
-                        self.bt_take_image.setText("Continuous")
-                        self.QWidgetBtnColor(self.bt_take_image, "black")
-                        self.stop_clicked = False
-
-                        for i in range(DCS_CNT):
-                            self.cur_cnt[i] = 0
-                    
-                el
-                '''
-                if self.cur_cnt[dc_idx] < int(self.e_repeat[dc_idx].text()):
-                    self.continuous[dc_idx] = True
-                    self.bt_take_image.click()
-
-                else:
-                    self.enable_dcs(dc_idx, True)
-
-                    if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:                                                    
-                        self.all_acquired = True
-                        if self.mode == CONT_MODE:
-                            self.bt_take_image.setText("Continuous")
-                        else:
-                            self.bt_take_image.setText("Take Image")
-                            
-                        self.protect_btn(True) 
-                        self.QWidgetBtnColor(self.bt_take_image, "black")
-                        #self.stop_clicked = False
-
-                        for i in range(DCS_CNT):
-                            self.cur_cnt[i] = 0
-    
-        elif param[0] == CMD_STOPACQUISITION:
-            
-            end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
-            self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
-
-            self.enable_dcs(dc_idx, True)
-
-            self.acquiring[dc_idx] = False
-
-            if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:    
-                self.all_acquired = True
-                self.protect_btn(True)                    
-                self.bt_take_image.setText("Take Image")  
-                self.QWidgetBtnColor(self.bt_take_image, "black")
-                #self.stop_clicked = False  
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
         
         
     #-------------------------------

@@ -2,7 +2,7 @@
 """
 Created on Nov 8, 2022
 
-Modified on May 24, 2023
+Modified on July 26, 2023
 
 @author: hilee
 """
@@ -63,10 +63,17 @@ class temp_ctrl(threading.Thread):
         self.consumer_hk, self.consumer_uploader = None, None
         
         self.prev_cmd = ""
-        self.pause = False
+        #self.pause = False
         
-        self.wait_time = float(Period/6)
-                
+        if self.iam == "tmc3":
+            self.com_len = 4            
+            self.cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(2), self.get_setpoint(2)]
+        else:
+            self.com_len = 6            
+            self.cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(1), self.get_heating_power(2), self.get_setpoint(1), self.get_setpoint(2)]
+            
+        self.wait_time = float(Period/self.com_len)
+        self.res = [DEFAULT_VALUE for _ in range(self.com_len)]    
         
     def __del__(self):
         msg = "Closing %s" % self.iam
@@ -190,8 +197,8 @@ class temp_ctrl(threading.Thread):
                 
                 ti.sleep(self.wait_time)
 
-                #send_to(cmd)
-                #info = recv_from()
+                send_to(cmd)
+                info = recv_from()
 
             return info[:-2]
             
@@ -206,86 +213,24 @@ class temp_ctrl(threading.Thread):
     
     def start_monitoring(self):
         
-        #if self.pause:
-        #    return
-        
-        '''
-        value = [DEFAULT_VALUE, DEFAULT_VALUE]
-        heat = [DEFAULT_VALUE, DEFAULT_VALUE]
-        setp = [DEFAULT_VALUE, DEFAULT_VALUE]
-            
-        value[0] = self.get_value("A")
-        ti.sleep(self.wait_time)  
-        value[1] = self.get_value("B")     
-        ti.sleep(self.wait_time)
-
-        if self.iam != "tmc3":
-            heat[0] = self.get_heating_power(1)
-            ti.sleep(self.wait_time) 
-        heat[1] = self.get_heating_power(2)
-        ti.sleep(self.wait_time)
-
-        if self.iam != "tmc3":
-            setp[0] = self.get_setpoint(1)
+        idx = 0
+        while idx < self.com_len:
+            self.res[idx] = self.socket_send(self.cmd_list[idx])
             ti.sleep(self.wait_time)
-        setp[1] = self.get_setpoint(2)
-        ti.sleep(self.wait_time)
-        
-        for i in range(2):
-            if value[i] == None:
-                value[i] = DEFAULT_VALUE
-            if heat[i] == None:
-                heat[i] = DEFAULT_VALUE
-            if setp[i] == None:
-                setp[i] = DEFAULT_VALUE
-
-        if self.iam != "tmc3":
-            msg = "%s %s %s %s %s %s %s" % (HK_REQ_GETVALUE, value[0], value[1], heat[0], heat[1], setp[0], setp[1]) 
-        else:
-            msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, value[0], value[1], heat[1], setp[1]) 
-        self.publish_to_queue(msg)
-        '''
-        
-        if self.pause:
-            return
-
-        # need to test!!!        
-        if self.iam != "tmc3":
-            com_len = 6
-            res = [DEFAULT_VALUE for _ in range(com_len)]
-            cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(1), self.get_heating_power(2), self.get_setpoint(1), self.get_setpoint(2)]
-            idx = 0
-            while idx < com_len:
-                res[idx] = self.socket_send(cmd_list[idx])
-                ti.sleep(self.wait_time)
-                if res[idx] == DEFAULT_VALUE:
-                    continue
-                elif res[idx] == None:
-                    res[idx] = DEFAULT_VALUE
-                idx += 1
+            if self.res[idx] == None:
+                self.res[idx] = DEFAULT_VALUE
+            #if self.res[idx] == DEFAULT_VALUE:
+            #    continue
+            idx += 1
             
-            msg = "%s %s %s %s %s %s %s" % (HK_REQ_GETVALUE, res[0], res[1], res[2], res[3], res[4], res[5]) 
-            
-        else:
-            com_len = 4
-            res = [DEFAULT_VALUE for _ in range(com_len)]
-            cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(2), self.get_setpoint(2)]
-            idx = 0
-            while idx < com_len:
-                res[idx] = self.socket_send(cmd_list[idx])
-                ti.sleep(self.wait_time)
-                if res[idx] == DEFAULT_VALUE:
-                    continue
-                elif res[idx] == None:
-                    res[idx] = DEFAULT_VALUE
-                idx += 1
-            
-            msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, res[0], res[1], res[2], res[3]) 
+        if self.iam != "tmc3":            
+            msg = "%s %s %s %s %s %s %s" % (HK_REQ_GETVALUE, self.res[0], self.res[1], self.res[2], self.res[3], self.res[4], self.res[5]) 
+        else:            
+            msg = "%s %s %s %s %s" % (HK_REQ_GETVALUE, self.res[0], self.res[1], self.res[2], self.res[3]) 
             
         self.publish_to_queue(msg)
             
-        if not self.pause:
-            threading.Thread(target=self.start_monitoring).start()
+        threading.Thread(target=self.start_monitoring).start()
 
     
     #-------------------------------
@@ -329,20 +274,19 @@ class temp_ctrl(threading.Thread):
                             
         if param[0] == HK_REQ_MANUAL_CMD:            
             if self.iam != param[1]:    return
-            
-            self.pause = True
-            
+                    
             cmd = ""
             for idx in range(len(param)-2):
                 cmd += param[idx+2] + " "
             cmd = cmd[:-1] + "\r\n"
-            value = self.socket_send(cmd)
-            msg = "%s %s" % (param[0], value) 
-            self.publish_to_queue(msg)
             
-            self.pause = False
-            self.start_monitoring() 
-            
+            try:
+                idx = self.cmd_list.index(cmd)
+                msg = "%s %s" % (param[0], self.res[idx]) 
+                self.publish_to_queue(msg)
+            except:
+                pass
+                        
             
    
 if __name__ == "__main__":

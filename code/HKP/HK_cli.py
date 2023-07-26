@@ -85,25 +85,25 @@ class HK_cli(threading.Thread):
     #-------------------------------
     # sub queue
     def connect_to_server_sub_q(self):
-            # RabbitMQ connect
-            sub_hk_ex = [self.com_list[i]+'.ex' for i in range(COM_CNT+2)]
-            for idx in range(COM_CNT+2):
-                self.consumer[idx] = MsgMiddleware(HK, self.ics_ip_addr, self.ics_id, self.ics_pwd, sub_hk_ex[idx])      
-                self.consumer[idx].connect_to_server()
-                
-            self.consumer[TMC1].define_consumer(self.com_list[TMC1]+'.q', self.callback_tmc1)       
-            self.consumer[TMC2].define_consumer(self.com_list[TMC2]+'.q', self.callback_tmc2)
-            self.consumer[TMC3].define_consumer(self.com_list[TMC3]+'.q', self.callback_tmc3)
-            self.consumer[TM].define_consumer(self.com_list[TM]+'.q', self.callback_tm)
-            self.consumer[VM].define_consumer(self.com_list[VM]+'.q', self.callback_vm)
-            self.consumer[PDU].define_consumer(self.com_list[PDU]+'.q', self.callback_pdu)
-            self.consumer[LT].define_consumer(self.com_list[LT-1]+'.q', self.callback_lt)
-            self.consumer[UT].define_consumer(self.com_list[UT-1]+'.q', self.callback_ut)
+        # RabbitMQ connect
+        sub_hk_ex = [self.com_list[i]+'.ex' for i in range(COM_CNT+2)]
+        for idx in range(COM_CNT+2):
+            self.consumer[idx] = MsgMiddleware(HK, self.ics_ip_addr, self.ics_id, self.ics_pwd, sub_hk_ex[idx])      
+            self.consumer[idx].connect_to_server()
             
-            for idx in range(COM_CNT+2):
-                th = threading.Thread(target=self.consumer[idx].start_consumer)
-                th.daemon = True
-                th.start()
+        self.consumer[TMC1].define_consumer(self.com_list[TMC1]+'.q', self.callback_tmc1)       
+        self.consumer[TMC2].define_consumer(self.com_list[TMC2]+'.q', self.callback_tmc2)
+        self.consumer[TMC3].define_consumer(self.com_list[TMC3]+'.q', self.callback_tmc3)
+        self.consumer[TM].define_consumer(self.com_list[TM]+'.q', self.callback_tm)
+        self.consumer[VM].define_consumer(self.com_list[VM]+'.q', self.callback_vm)
+        self.consumer[PDU].define_consumer(self.com_list[PDU]+'.q', self.callback_pdu)
+        self.consumer[LT].define_consumer(self.com_list[LT-1]+'.q', self.callback_lt)
+        self.consumer[UT].define_consumer(self.com_list[UT-1]+'.q', self.callback_ut)
+        
+        for idx in range(COM_CNT+2):
+            th = threading.Thread(target=self.consumer[idx].start_consumer)
+            th.daemon = True
+            th.start()
                 
                  
     def callback_tmc1(self, ch, method, properties, body):
@@ -150,42 +150,53 @@ class HK_cli(threading.Thread):
         cmd = body.decode()
         param = cmd.split()
         
-        if param[0] == HK_REQ_PWR_STS:
-            pwr_sts = ""
-            if param[1] == None:    return
+        try:
+            if param[0] == HK_REQ_PWR_STS:
+                pwr_sts = ""
+                if param[1] == None:    return
+                    
+                for i in range(PDU_IDX):
+                    pwr_sts += param[i+1] + " "
+                print('[PDU]', pwr_sts)
+        
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
+            
                 
-            for i in range(PDU_IDX):
-                pwr_sts += param[i+1] + " "
-            print('[PDU]', pwr_sts)
-                
-                
-
     def callback_lt(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
         
-        if param[0] == DT_REQ_INITMOTOR:
-            print('[lt]', "init OK")           
-            
-        elif param[0] == DT_REQ_MOVEMOTOR or param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
-            print('[lt]', "moved:", param[1])    
-            
-        elif param[0] == DT_REQ_SETLT:
-            print('[lt]', "save OK")
+        try:
+            if param[0] == DT_REQ_INITMOTOR:
+                print('[lt]', "init OK")           
+                
+            elif param[0] == DT_REQ_MOVEMOTOR or param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
+                print('[lt]', "moved:", param[1])    
+                
+            elif param[0] == DT_REQ_SETLT:
+                print('[lt]', "save OK")
+                
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
                 
                 
     def callback_ut(self, ch, method, properties, body):
         cmd = body.decode()
         param = cmd.split()
         
-        if param[0] == DT_REQ_INITMOTOR:
-            print('[ut]', "init OK")             
+        try:
+            if param[0] == DT_REQ_INITMOTOR:
+                print('[ut]', "init OK")             
+                
+            elif param[0] == DT_REQ_MOVEMOTOR or param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
+                print('[ut]', "moved:", param[1])
             
-        elif param[0] == DT_REQ_MOVEMOTOR or param[0] == DT_REQ_MOTORGO or param[0] == DT_REQ_MOTORBACK:
-            print('[ut]', "moved:", param[1])
+            elif param[0] == DT_REQ_SETUT:
+                print('[ut]', "save OK")
         
-        elif param[0] == DT_REQ_SETUT:
-            print('[ut]', "save OK")
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
                
 
     def show_func(self, show):

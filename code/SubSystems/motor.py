@@ -2,7 +2,7 @@
 """
 Created on Nov 10, 2022
 
-Created on Dec 14, 2022
+Created on July 26, 2022
 
 @author: hilee
 """
@@ -439,61 +439,65 @@ class motor(threading.Thread) :
         else:
             msg = "<- [DTP] %s" % cmd
             self.log.send(self.iam, INFO, msg)
-                
-        if param[0] == HK_REQ_COM_STS:
-            msg = "%s %d" % (param[0], self.comStatus)   
-            self.publish_to_queue(msg)
-            
-        elif param[0] == DT_REQ_INITMOTOR:
-            if self.iam != param[1]:    return
-            self.init_motor()
-            msg = "%s OK" % param[0]
-            self.publish_to_queue(msg)
-        else:
-            if self.init is False:
-                msg = "%s TRY" % param[0]
+        
+        try:        
+            if param[0] == HK_REQ_COM_STS:
+                msg = "%s %d" % (param[0], self.comStatus)   
                 self.publish_to_queue(msg)
-            
-            elif param[0] == DT_REQ_MOVEMOTOR:
+                
+            elif param[0] == DT_REQ_INITMOTOR:
                 if self.iam != param[1]:    return
-                if self.iam == MOTOR_LT:
-                    curpos = self.move_motor(int(param[2]))
-                    curpos = "%s" % (int(curpos) * (-1))
-                elif self.iam == MOTOR_UT:
-                    curpos = self.move_motor(int(param[2]))
+                self.init_motor()
+                msg = "%s OK" % param[0]
+                self.publish_to_queue(msg)
+            else:
+                if self.init is False:
+                    msg = "%s TRY" % param[0]
+                    self.publish_to_queue(msg)
+                
+                elif param[0] == DT_REQ_MOVEMOTOR:
+                    if self.iam != param[1]:    return
+                    if self.iam == MOTOR_LT:
+                        curpos = self.move_motor(int(param[2]))
+                        curpos = "%s" % (int(curpos) * (-1))
+                    elif self.iam == MOTOR_UT:
+                        curpos = self.move_motor(int(param[2]))
+                        
+                    msg = "%s %s %s" % (param[0], param[2], curpos)
+                    self.publish_to_queue(msg)
+                #-----------------------------------------------------    
+                # for each
+                elif param[0] == DT_REQ_MOTORGO:
+                    if self.iam != param[1]:    return
+                    curpos = self.move_motor_delta(True, int(param[2]))
+                    if self.iam == MOTOR_LT:
+                        curpos = "%s" % (int(curpos) * (-1))
+                    msg = "%s %s" % (param[0], curpos)
+                    self.publish_to_queue(msg)
                     
-                msg = "%s %s %s" % (param[0], param[2], curpos)
-                self.publish_to_queue(msg)
-            #-----------------------------------------------------    
-            # for each
-            elif param[0] == DT_REQ_MOTORGO:
-                if self.iam != param[1]:    return
-                curpos = self.move_motor_delta(True, int(param[2]))
-                if self.iam == MOTOR_LT:
-                    curpos = "%s" % (int(curpos) * (-1))
-                msg = "%s %s" % (param[0], curpos)
-                self.publish_to_queue(msg)
-                
-            elif param[0] == DT_REQ_MOTORBACK:
-                if self.iam != param[1]:    return
-                curpos = self.move_motor_delta(False, int(param[2]))
-                if self.iam == MOTOR_LT:
-                    curpos = "%s" % (int(curpos) * (-1))
-                msg = "%s %s" % (param[0], curpos)
-                self.publish_to_queue(msg)
-                
-            elif param[0] == DT_REQ_SETUT:
-                if self.iam != MOTOR_UT:    return
-                pos = self.setUT(int(param[1]))
-                msg = "%s %s %s" % (param[0], param[1], pos)
-                self.publish_to_queue(msg)
-                
-            elif param[0] == DT_REQ_SETLT:
-                if self.iam != MOTOR_LT:    return
-                pos = self.setLT(int(param[1]))
-                curpos = "%s" % (int(pos) * (-1))
-                msg = "%s %s %s" % (param[0], param[1], curpos)
-                self.publish_to_queue(msg)
+                elif param[0] == DT_REQ_MOTORBACK:
+                    if self.iam != param[1]:    return
+                    curpos = self.move_motor_delta(False, int(param[2]))
+                    if self.iam == MOTOR_LT:
+                        curpos = "%s" % (int(curpos) * (-1))
+                    msg = "%s %s" % (param[0], curpos)
+                    self.publish_to_queue(msg)
+                    
+                elif param[0] == DT_REQ_SETUT:
+                    if self.iam != MOTOR_UT:    return
+                    pos = self.setUT(int(param[1]))
+                    msg = "%s %s %s" % (param[0], param[1], pos)
+                    self.publish_to_queue(msg)
+                    
+                elif param[0] == DT_REQ_SETLT:
+                    if self.iam != MOTOR_LT:    return
+                    pos = self.setLT(int(param[1]))
+                    curpos = "%s" % (int(pos) * (-1))
+                    msg = "%s %s %s" % (param[0], param[1], curpos)
+                    self.publish_to_queue(msg)
+                    
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
                 
     
 if __name__ == "__main__":

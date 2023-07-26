@@ -26,6 +26,7 @@ from EngTools_def import *
 import Libs.SetConfig as sc
 from  Libs.logger import *
 
+from distutils.util import strtobool
 
 class MainWindow(Ui_Dialog, QMainWindow):
     
@@ -62,6 +63,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.dt_ex = self.cfg.get(MAIN, 'dt_exchange')
         self.dt_q = self.cfg.get(MAIN, 'dt_routing_key')
         
+        self.simulation = strtobool(self.cfg.get(MAIN, "simulation"))
+        
         # 0 - HKP, 1 - DTP
         self.proc = [None, None]
         
@@ -74,7 +77,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.label_stsHKP.setText("---")
         self.label_stsDTP.setText("---")
         self.radio_real.setChecked(True)
-        self.simulation = False
+        
+        if self.simulation:
+            self.radio_inst_simul.setChecked(True)
+            self.radio_real.setChecked(False)
+        else:
+            self.radio_inst_simul.setChecked(False)
+            self.radio_real.setChecked(True)
         
         self.connect_to_server_ex()
         self.connect_to_server_hk_q()
@@ -150,18 +159,21 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [HKP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
 
-        if param[0] == HK_STATUS:
-            self.label_stsHKP.setText(param[2])
-            self.bt_runHKP.setEnabled(False)
-            
-        elif param[0] == EXIT:                     
-            self.proc[HKP] = None
-            self.bt_runHKP.setEnabled(True)
-            self.label_stsHKP.setText("CLOSED")
+        try:
+            if param[0] == HK_STATUS:
+                self.label_stsHKP.setText(param[2])
+                self.bt_runHKP.setEnabled(False)
                 
-            if self.bt_runHKP.isEnabled() and self.bt_runDTP.isEnabled():
-                self.radio_inst_simul.setEnabled(True)
-                self.radio_real.setEnabled(True)  
+            elif param[0] == EXIT:                     
+                self.proc[HKP] = None
+                self.bt_runHKP.setEnabled(True)
+                self.label_stsHKP.setText("CLOSED")
+                    
+                if self.bt_runHKP.isEnabled() and self.bt_runDTP.isEnabled():
+                    self.radio_inst_simul.setEnabled(True)
+                    self.radio_real.setEnabled(True)  
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")
 
 
     #-------------------------------
@@ -186,21 +198,24 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "<- [DTP] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         
-        if param[0] == DT_STATUS:
-            self.label_stsDTP.setText(param[2])                
-            self.bt_runDTP.setEnabled(False)
-            
-            msg = "%s %d" % (ALIVE, self.simulation)
-            self.publish_to_queue(msg)
-
-        elif param[0] == EXIT:                     
-            self.proc[DTP] = None   
-            self.bt_runDTP.setEnabled(True)   
-            self.label_stsDTP.setText("CLOSED")  
+        try:
+            if param[0] == DT_STATUS:
+                self.label_stsDTP.setText(param[2])                
+                self.bt_runDTP.setEnabled(False)
                 
-            if self.bt_runHKP.isEnabled() and self.bt_runDTP.isEnabled():
-                self.radio_inst_simul.setEnabled(True)
-                self.radio_real.setEnabled(True)       
+                msg = "%s %d" % (ALIVE, self.simulation)
+                self.publish_to_queue(msg)
+
+            elif param[0] == EXIT:                     
+                self.proc[DTP] = None   
+                self.bt_runDTP.setEnabled(True)   
+                self.label_stsDTP.setText("CLOSED")  
+                    
+                if self.bt_runHKP.isEnabled() and self.bt_runDTP.isEnabled():
+                    self.radio_inst_simul.setEnabled(True)
+                    self.radio_real.setEnabled(True)   
+        except:
+            self.log.send(self.iam, WARNING, "parsing error")    
             
     
     def set_mode(self):                    
