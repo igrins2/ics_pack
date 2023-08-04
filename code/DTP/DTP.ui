@@ -94,31 +94,6 @@
      <set>Qt::AlignCenter</set>
     </property>
    </widget>
-   <widget class="QLabel" name="label_23">
-    <property name="geometry">
-     <rect>
-      <x>200</x>
-      <y>381</y>
-      <width>51</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>9</pointsize>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="layoutDirection">
-     <enum>Qt::LeftToRight</enum>
-    </property>
-    <property name="text">
-     <string>Repeat:</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_61">
     <property name="geometry">
      <rect>
@@ -500,32 +475,6 @@
      <enum>QFrame::Raised</enum>
     </property>
    </widget>
-   <widget class="QRadioButton" name="radio_number_fowler_H">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>379</y>
-      <width>101</width>
-      <height>25</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>     N. Fowler:</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radio_exptime_H">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>356</y>
-      <width>101</width>
-      <height>25</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Exp. Time (s):</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_62">
     <property name="geometry">
      <rect>
@@ -606,6 +555,63 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_30">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>357</y>
+      <width>101</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Exp. Time (s):</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_32">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>377</y>
+      <width>101</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>     N. Fowler:</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_23">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>380</y>
+      <width>51</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Repeat:</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
   </widget>
@@ -885,31 +891,6 @@
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
     </property>
    </widget>
-   <widget class="QLabel" name="label_24">
-    <property name="geometry">
-     <rect>
-      <x>200</x>
-      <y>381</y>
-      <width>51</width>
-      <height>20</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>9</pointsize>
-      <bold>true</bold>
-     </font>
-    </property>
-    <property name="layoutDirection">
-     <enum>Qt::LeftToRight</enum>
-    </property>
-    <property name="text">
-     <string>Repeat:</string>
-    </property>
-    <property name="alignment">
-     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-    </property>
-   </widget>
    <widget class="Line" name="line_10">
     <property name="geometry">
      <rect>
@@ -1090,32 +1071,6 @@
      <enum>QFrame::Raised</enum>
     </property>
    </widget>
-   <widget class="QRadioButton" name="radio_exptime_K">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>356</y>
-      <width>101</width>
-      <height>25</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Exp. Time (s):</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radio_number_fowler_K">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>379</y>
-      <width>101</width>
-      <height>25</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>     N. Fowler:</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_63">
     <property name="geometry">
      <rect>
@@ -1196,6 +1151,63 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_33">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>357</y>
+      <width>101</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Exp. Time (s):</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_34">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>377</y>
+      <width>101</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>     N. Fowler:</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_24">
+    <property name="geometry">
+     <rect>
+      <x>200</x>
+      <y>380</y>
+      <width>51</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Repeat:</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
   </widget>
@@ -2927,16 +2939,10 @@
     <property name="geometry">
      <rect>
       <x>200</x>
-      <y>381</y>
+      <y>380</y>
       <width>51</width>
       <height>20</height>
      </rect>
-    </property>
-    <property name="font">
-     <font>
-      <pointsize>9</pointsize>
-      <bold>true</bold>
-     </font>
     </property>
     <property name="layoutDirection">
      <enum>Qt::LeftToRight</enum>
@@ -3386,32 +3392,6 @@
      <enum>QFrame::Raised</enum>
     </property>
    </widget>
-   <widget class="QRadioButton" name="radio_exptime_svc">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>356</y>
-      <width>101</width>
-      <height>25</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>Exp. Time (s):</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="radio_number_fowler_svc">
-    <property name="geometry">
-     <rect>
-      <x>20</x>
-      <y>379</y>
-      <width>101</width>
-      <height>25</height>
-     </rect>
-    </property>
-    <property name="text">
-     <string>     N. Fowler:</string>
-    </property>
-   </widget>
    <widget class="QLabel" name="label_60">
     <property name="geometry">
      <rect>
@@ -3492,6 +3472,44 @@
     </property>
     <property name="alignment">
      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_26">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>357</y>
+      <width>101</width>
+      <height>20</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>Exp. Time (s):</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_27">
+    <property name="geometry">
+     <rect>
+      <x>20</x>
+      <y>377</y>
+      <width>101</width>
+      <height>25</height>
+     </rect>
+    </property>
+    <property name="layoutDirection">
+     <enum>Qt::LeftToRight</enum>
+    </property>
+    <property name="text">
+     <string>     N. Fowler:</string>
+    </property>
+    <property name="alignment">
+     <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
     </property>
    </widget>
   </widget>

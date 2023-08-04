@@ -53,6 +53,7 @@ T_frame = 1.45479
 T_exp = 1.63
 T_minFowler = 0.168
 T_br = 2
+N_fowler_max = 16
 
 # for cal motor moving position
 COM_CNT = 3

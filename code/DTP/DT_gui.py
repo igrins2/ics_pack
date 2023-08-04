@@ -8,9 +8,7 @@ Modified on July 26, 2023
 @author: hilee
 """
 
-from pickletools import read_unicodestring1
 import sys, os
-from matplotlib.figure import Figure
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
 
@@ -35,8 +33,7 @@ import numpy as np
 import astropy.io.fits as fits 
 import Libs.zscale as zs
 
-import glob
-
+from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
@@ -97,7 +94,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.dcs_list = ["DCSS", "DCSH", "DCSK"]
         
         self.sel_mode = MODE_HK
-        
+
+        self.N_fowler = 1
+
         self.init_events()
         
         self.bt_take_image.setText("Take Image")
@@ -111,8 +110,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.e_mscale_max.setText("5000")
         
         for i in range(DCS_CNT):
-            self.e_exptime[i].setText("1.63")
-            self.e_FS_number[i].setText("1")
+            self.e_exptime[i].setText(str(T_exp))
+            self.e_FS_number[i].setText(str(self.N_fowler))
             self.e_repeat[i].setText("1")
 
             self.label_prog_sts[i].setText("Idle")
@@ -123,8 +122,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.label_cur_num[i].setText("0 / 0")
                     
         for i in range(CAL_CNT):
-            self.cal_e_exptime[i].setText("1.63")
-            self.cal_e_repeat[i].setText("1")
+            self.cal_e_exptime[i].setText(str(T_exp))
+            self.cal_e_repeat[i].setText(str(self.N_fowler))
         
         self.label_utpos.setText("---")
         self.label_ltpos.setText("---")
@@ -259,10 +258,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.bt_scale_apply.setEnabled(False)
         
         self.bt_take_image.clicked.connect(self.btn_click)   
-        
-        self.radio_exptime = [self.radio_exptime_svc, self.radio_exptime_H, self.radio_exptime_K]
-        self.radio_N_fowler = [self.radio_number_fowler_svc, self.radio_number_fowler_H, self.radio_number_fowler_K]
-                
+                        
         self.e_exptime = [self.e_exptime_svc, self.e_exptimeH, self.e_exptimeK]
         self.e_FS_number = [self.e_FS_number_svc, self.e_FSnumberH, self.e_FSnumberK]
         self.e_repeat = [self.e_repeat_number_svc, self.e_repeatH, self.e_repeatK]
@@ -281,9 +277,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.e_path = [self.e_path_svc, self.e_path_H, self.e_path_K]
         self.e_savefilename = [self.e_savefilename_svc, self.e_savefilename_H, self.e_savefilename_K]
         
-        for i in range(DCS_CNT):
-            self.radio_exptime[i].setChecked(True)
-            
+        for i in range(DCS_CNT):            
             self.e_exptime[i].setEnabled(False)
             self.e_FS_number[i].setEnabled(False)
             self.e_repeat[i].setEnabled(False)
@@ -291,36 +285,21 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.chk_ds9[i].setEnabled(False)            
             self.bt_init[i].setEnabled(False)
 
-            
-        self.radio_exptime[SVC].clicked.connect(lambda: self.judge_exp_time(SVC)) 
-        self.radio_N_fowler[SVC].clicked.connect(lambda: self.judge_FS_number(SVC))
-        self.e_exptime[SVC].editingFinished.connect(lambda: self.judge_param(SVC))
-        self.e_FS_number[SVC].editingFinished.connect(lambda: self.judge_param(SVC))
-        self.e_repeat[SVC].editingFinished.connect(lambda: self.change_name(SVC))
+        self.e_exptime_svc.editingFinished.connect(lambda: self.judge_param(SVC))
+        self.e_FS_number_svc.editingFinished.connect(lambda: self.judge_limit(SVC))
+        self.e_repeat_number_svc.editingFinished.connect(lambda: self.change_name(SVC))
         
-        self.e_exptime[SVC].textChanged.connect(self.sync_apply_HK())
-        self.e_FS_number[SVC].textChanged.connect(self.sync_apply_HK())
-        self.e_repeat[SVC].textChanged.connect(self.sync_apply_HK())
+        self.e_exptimeH.editingFinished.connect(lambda: self.judge_param(H))
+        self.e_FSnumberH.editingFinished.connect(lambda: self.judge_limit(H))
+        self.e_repeatH.editingFinished.connect(lambda: self.change_name(H))
         
-        self.radio_exptime[H].clicked.connect(lambda: self.judge_exp_time(H)) 
-        self.radio_N_fowler[H].clicked.connect(lambda: self.judge_FS_number(H))
-        self.e_exptime[H].editingFinished.connect(lambda: self.judge_param(H))
-        self.e_FS_number[H].editingFinished.connect(lambda: self.judge_param(H)) 
-        self.e_repeat[H].editingFinished.connect(lambda: self.change_name(H))
+        self.e_exptimeK.editingFinished.connect(lambda: self.judge_param(K))
+        self.e_FSnumberK.editingFinished.connect(lambda: self.judge_limit(K))
+        self.e_repeatK.editingFinished.connect(lambda: self.change_name(K)) 
         
-        self.e_exptime[H].textChanged.connect(self.sync_apply_K())
-        self.e_FS_number[H].textChanged.connect(self.sync_apply_K())
-        self.e_repeat[H].textChanged.connect(self.sync_apply_K())
-        
-        self.radio_exptime[K].clicked.connect(lambda: self.judge_exp_time(K)) 
-        self.radio_N_fowler[K].clicked.connect(lambda: self.judge_FS_number(K))
-        self.e_exptime[K].editingFinished.connect(lambda: self.judge_param(K))
-        self.e_FS_number[K].editingFinished.connect(lambda: self.judge_param(K)) 
-        self.e_repeat[K].editingFinished.connect(lambda: self.change_name(K)) 
-        
-        self.bt_init[SVC].clicked.connect(lambda: self.initialize2(SVC))            
-        self.bt_init[H].clicked.connect(lambda: self.initialize2(H))            
-        self.bt_init[K].clicked.connect(lambda: self.initialize2(K))                
+        self.bt_init_SVC.clicked.connect(lambda: self.initialize2(SVC))            
+        self.bt_init_H.clicked.connect(lambda: self.initialize2(H))            
+        self.bt_init_K.clicked.connect(lambda: self.initialize2(K))                
             
         #------------------
         #calibration
@@ -690,8 +669,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     self.set_K()
                 
             elif param[0] == CMD_SETFSPARAM_ICS:
-                next_idx = self.get_next_idx()
+                next_idx = self.get_next_idx(dc_idx)
                 
+                ongoing_filename = "SDC%s_%s_%04d.fits" % (self.dcs_list[dc_idx][-1], self.cur_date, next_idx)
+                self.label_ongoing_filename[dc_idx].setText(ongoing_filename)
                 msg = "%s %s %d %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation, next_idx)
                 self.publish_to_queue(msg)
 
@@ -702,13 +683,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
                 self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
                             
-                self.prog_timer[dc_idx].stop()
+                #self.prog_timer[dc_idx].stop()
                 self.cur_prog_step[dc_idx] = 100
                 self.progressBar[dc_idx].setValue(self.cur_prog_step[dc_idx])           
 
-                self.elapsed_timer[dc_idx].stop()
+                #self.elapsed_timer[dc_idx].stop()
 
                 self.measure_T[dc_idx] = float(param[1])
+                print(dc_idx, self.measure_T[dc_idx])
                 
                 # load data
                 self.load_data(dc_idx, param[2])
@@ -728,7 +710,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
                     else:                                                    
                         if self.cal_stop_clicked:
-                            self.enable_dcs(dc_idx, True)
+                            self.selected_mode()
 
                             if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:   
                                 self.func_lamp(self.cal_cur, False)
@@ -747,7 +729,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
                             
                             return             
 
-                        self.enable_dcs(dc_idx, True)
+                        self.selected_mode()
+
                         if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
                             self.func_lamp(self.cal_cur, False)
                             self.all_acquired = True
@@ -786,7 +769,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         self.bt_take_image.click()
 
                     else:
-                        self.enable_dcs(dc_idx, True)
+                        self.selected_mode()
 
                         if not self.all_acquired and not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:                                                    
                             self.all_acquired = True
@@ -795,8 +778,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
                             else:
                                 self.bt_take_image.setText("Take Image")
                                 
-                            self.protect_btn(True) 
                             self.QWidgetBtnColor(self.bt_take_image, "black")
+                            self.protect_btn(True) 
                             #self.stop_clicked = False
 
                             for i in range(DCS_CNT):
@@ -807,7 +790,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
                 self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
 
-                self.enable_dcs(dc_idx, True)
+                self.selected_mode()
 
                 self.acquiring[dc_idx] = False
 
@@ -817,6 +800,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     self.bt_take_image.setText("Take Image")  
                     self.QWidgetBtnColor(self.bt_take_image, "black")
                     #self.stop_clicked = False  
+
+                    for i in range(DCS_CNT):
+                        self.cur_cnt[i] = 0
                     
         except:
             self.log.send(self.iam, WARNING, "parsing error")
@@ -876,8 +862,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if self.cur_cnt[dc_idx] == 0:
             msg = "%s %s %d %.3f 1 %d 1 %.3f 1" % (CMD_SETFSPARAM_ICS, self.dcs_list[dc_idx], self.simulation, _exptime, _FS_number, _fowlerTime)
         else:
-            next_idx = self.get_next_idx()
-            ongoing_filename = "SDC%s_%s_%04d" % (self.dcs_list[dc_idx][-1], self.cur_date, next_idx)
+            next_idx = self.get_next_idx(dc_idx)
+            ongoing_filename = "SDC%s_%s_%04d.fits" % (self.dcs_list[dc_idx][-1], self.cur_date, next_idx)
             self.label_ongoing_filename[dc_idx].setText(ongoing_filename)
             msg = "%s %s %d %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation, next_idx)
         self.publish_to_queue(msg)
@@ -896,30 +882,41 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.publish_to_queue(msg)
         
         
-    def get_next_idx(self):
+    def get_next_idx(self, dc_idx):
         
         _t = datetime.datetime.utcnow()
         self.cur_date = "%04d%02d%02d" % (_t.year, _t.month, _t.day)
         
         dir_names = []
-        if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_HK or self.sel_mode == MODE_H:
-            filepath_h = "%sIGRINS/dcsh/Fowler/%s/" % (WORKING_DIR, self.cur_date)
-            for names in os.listdir(filepath_h):
-                if names.find(".fits") < 0:
-                    dir_names.append(names)
+        try:
+            if dc_idx == SVC:
+                filepath_s = "%sIGRINS/dcss/Fowler/%s/" % (WORKING_DIR, self.cur_date)
+                for names in os.listdir(filepath_s):
+                    if names.find(".fits") < 0:
+                        dir_names.append(names)
+            
+            else:
+                #if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_HK or self.sel_mode == MODE_H:
+                filepath_h = "%sIGRINS/dcsh/Fowler/%s/" % (WORKING_DIR, self.cur_date)
+                for names in os.listdir(filepath_h):
+                    if names.find(".fits") < 0:
+                        dir_names.append(names)
 
-        if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_HK or self.sel_mode == MODE_K:
-            filepath_k = "%sIGRINS/dcsk/Fowler/%s/" % (WORKING_DIR, self.cur_date)   
-            for names in os.listdir(filepath_k):
-                if names.find(".fits") < 0:
-                    dir_names.append(names)
-                
-        numbers = list(map(int, dir_names))
-        
-        if len(numbers) > 0:
-            next_idx = max(numbers) + 1
-        else:
-            next_idx = 1
+                #if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_HK or self.sel_mode == MODE_K:
+                filepath_k = "%sIGRINS/dcsk/Fowler/%s/" % (WORKING_DIR, self.cur_date)   
+                for names in os.listdir(filepath_k):
+                    if names.find(".fits") < 0:
+                        dir_names.append(names)
+
+            numbers = list(map(int, dir_names))
+
+            if len(numbers) > 0:
+                next_idx = max(numbers) + 1
+            else:
+                next_idx = 1
+
+        except:
+            next_idx = 1        
             
         return next_idx
             
@@ -1021,33 +1018,24 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         
             
     def enable_dcs(self, dc_idx, enable):
-        self.radio_exptime[dc_idx].setEnabled(enable)
         self.e_exptime[dc_idx].setEnabled(enable)
-
-        self.radio_N_fowler[dc_idx].setEnabled(enable)
         self.e_FS_number[dc_idx].setEnabled(enable)
-
         self.e_repeat[dc_idx].setEnabled(enable)
         self.chk_ds9[dc_idx].setEnabled(enable)
-                
-        if self.radio_exptime[dc_idx].isChecked() and enable:
-            self.judge_exp_time(dc_idx)
-        elif self.radio_N_fowler[dc_idx].isChecked() and enable:
-            self.judge_FS_number(dc_idx)
-            
+                            
             
     def show_elapsed(self, dc_idx):
         cur_elapsed = ti.time() - self.elapsed[dc_idx]
-        if self.measure_T[dc_idx] > 0 and cur_elapsed >= self.measure_T[dc_idx]: # or (self.mode == SINGLE_MODE and self.stop_clicked):
+        if self.cur_prog_step[dc_idx] >= 100:   #self.measure_T[dc_idx] > 0 and cur_elapsed >= self.measure_T[dc_idx]
             self.elapsed_timer[dc_idx].stop()
             return
         
-        msg = "%.3f sec" % (ti.time() - self.elapsed[dc_idx])
+        msg = "%.3f sec" % cur_elapsed #(ti.time() - self.elapsed[dc_idx])
         self.label_prog_elapsed[dc_idx].setText(msg)
 
 
     def show_progressbar(self, dc_idx):
-        if self.cur_prog_step[dc_idx] >= 100: # or (self.mode == SINGLE_MODE and self.stop_clicked):
+        if self.cur_prog_step[dc_idx] >= 100:
             self.prog_timer[dc_idx].stop()
             #self.log.send(self.iam, INFO, "progress bar end!!!")
             return
@@ -1063,11 +1051,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.radio_H.setEnabled(enable)
         self.radio_K.setEnabled(enable)
         
-        #if enable == False and self.bt_take_image.text() == "Stop":
-        #    self.bt_take_image.setEnabled(True)
-        #else:
-        #    self.bt_take_image.setEnabled(enable)
-
         for dc_idx in range(DCS_CNT):
             self.bt_init[dc_idx].setEnabled(enable)
             self.bt_init_status(dc_idx)
@@ -1227,6 +1210,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.enable_dcs(SVC, False)
         self.enable_dcs(H, False)
+
+
+    def selected_mode(self):
+        if self.sel_mode == MODE_HK:        self.set_HK_sync()
+        elif self.sel_mode == MODE_WHOLE:   self.set_whole_sync()
+        elif self.sel_mode == MODE_SVC:     self.set_svc()
+        elif self.sel_mode == MODE_H:       self.set_H()
+        elif self.sel_mode == MODE_K:       self.set_K()
         
         
     def bt_init_status(self, idx):
@@ -1254,29 +1245,21 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 elif not self.continuous[H] and not self.continuous[K] and self.continuous[SVC]:
                     self.set_fs_param(SVC)
                     self.continuous[SVC] = False
-                '''
                 else:
-                    self.stop_clicked = False
-                    if btn_name == "Stop":
-                        self.stop_clicked = True
+                    if self.bt_take_image.text() == "Abort":
+                        self.abort_acquisition()
                     else:
                         self.single_exposure()
             else:
-                self.stop_clicked = False
-                '''
-                     
-            if self.bt_take_image.text() == "Abort":
-                self.abort_acquisition()
-            else:
-                self.single_exposure()
+                if self.bt_take_image.text() == "Abort":
+                    self.abort_acquisition()
+                else:
+                    self.single_exposure()
                 
         
     def single_exposure(self):    
         self.QWidgetBtnColor(self.bt_take_image, "yellow", "blue")
         
-        #if int(self.e_repeat[SVC].text()) > 1 or int(self.e_repeat[H].text()) > 1 or int(self.e_repeat[K].text()) > 1:
-        #    self.bt_take_image.setText("Stop")
-        #else:
         self.bt_take_image.setText("Abort")
                     
         self.call_set_fs_param()
@@ -1300,58 +1283,42 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.stop_acquistion(K)
         if self.radio_whole_sync.isChecked() or self.radio_SVC.isChecked():
             self.stop_acquistion(SVC)
-                    
-    
-    def judge_exp_time(self, dc_idx):
-        self.e_exptime[dc_idx].setEnabled(True)
-        self.e_FS_number[dc_idx].setEnabled(False)
-        
-        if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
-            for idx in range(2):
-                self.e_exptime[idx+1].setEnabled(True)
-                self.e_FS_number[idx+1].setEnabled(False)
-        elif dc_idx == H and self.sel_mode == MODE_HK:
-            self.e_exptime[K].setEnabled(True)
-            self.e_FS_number[K].setEnabled(False)
-        
-        
-    def judge_FS_number(self, dc_idx):
-        self.e_exptime[dc_idx].setEnabled(False)
-        self.e_FS_number[dc_idx].setEnabled(True)
-        
-        if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
-            for idx in range(2):
-                self.e_exptime[idx+1].setEnabled(False)
-                self.e_FS_number[idx+1].setEnabled(True)
-        elif dc_idx == H and self.sel_mode == MODE_HK:
-            self.e_exptime[K].setEnabled(False)
-            self.e_FS_number[K].setEnabled(True)
-        
+                           
         
     def judge_param(self, dc_idx):
         if self.e_exptime[dc_idx].text() == "" or self.e_FS_number[dc_idx].text() == "":    return
         
         # calculation fowler number & exp time
         _expTime = float(self.e_exptime[dc_idx].text())
-        _fowler_num = int(self.e_FS_number[dc_idx].text())
 
-        _fowler_time = T_exp
+        if _expTime < T_exp:
+            msg = "Exp.Time should be more than %d." % T_exp
+            QMessageBox.warning(self, WARNING, msg)
+            self.log.send(self.iam, WARNING, msg)
 
-        if self.radio_exptime[dc_idx].isChecked():
+            self.e_exptime[dc_idx].setText(str(T_exp))
+            self.N_fowler = 1
+            
+        else:
             _max_fowler_number = int((_expTime - T_minFowler) / T_frame)
-            if _fowler_num > _max_fowler_number:
-                #dialog box
-                QMessageBox.warning(self, WARNING, "please change 'exposure time'!")
-                self.log.send(self.iam, WARNING, "please change 'exposure time'!")
-                return
+            self.N_fowler = N_fowler_max
+            while self.N_fowler > _max_fowler_number:
+                self.N_fowler //= 2
 
-        elif self.radio_N_fowler[dc_idx].isChecked():
-            _fowler_time = _expTime - T_frame * _fowler_num
-            if _fowler_time < T_minFowler:
-                #dialog box
-                QMessageBox.warning(self, WARNING, "please change 'fowler sampling number'!")
-                self.log.send(self.iam, WARNING, "please change 'fowler sampling number'!")
-                return        
+        self.e_FS_number[dc_idx].setText(str(self.N_fowler))            
+
+        if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
+            self.sync_apply_HK()
+        elif dc_idx == H and self.sel_mode == MODE_HK:
+            self.sync_apply_K()
+
+
+    def judge_limit(self, dc_idx):
+        _input = float(self.e_FS_number[dc_idx].text())
+        if _input > self.N_fowler:
+            msg = "N.Fowler should be below %d." % self.N_fowler
+            QMessageBox.warning(self, WARNING, msg)
+            self.log.send(self.iam, WARNING, msg)
             
     
     def change_name(self, dc_idx):
@@ -1363,6 +1330,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.mode = SINGLE_MODE
         self.QWidgetBtnColor(self.bt_take_image, "black")
         #self.stop_clicked = False
+
+        if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
+            for idx in range(2):
+                self.e_repeat[idx+1].setText(self.e_repeat[SVC].text())
+        elif dc_idx == H and self.sel_mode == MODE_HK:
+            self.e_repeat[K].setText(self.e_repeat[H].text())
         
         
     def sync_apply_HK(self):
@@ -1371,8 +1344,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         for idx in range(2):
             self.e_exptime[idx+1].setText(self.e_exptime[SVC].text())
-            self.e_FS_number[idx+1].setText(self.e_exptime[SVC].text())
-            self.e_repeat[idx+1].setText(self.e_exptime[SVC].text())   
+            self.e_FS_number[idx+1].setText(self.e_FS_number[SVC].text())
             
             
     def sync_apply_K(self):
@@ -1380,8 +1352,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             return
         
         self.e_exptime[K].setText(self.e_exptime[H].text())
-        self.e_FS_number[K].setText(self.e_exptime[H].text())
-        self.e_repeat[K].setText(self.e_exptime[H].text())
+        self.e_FS_number[K].setText(self.e_FS_number[H].text())
                     
     
     def open_calilbration(self):                

@@ -26,7 +26,7 @@ pip install numpy
 pip install astropy
 pip install matplotlib
 pip install pyside6==6.4.2
-pip install PyQt6
+pip install PyQt6 or pyqt5
 pip install pika
 pip install pytz
 pip install Pyrebase4
