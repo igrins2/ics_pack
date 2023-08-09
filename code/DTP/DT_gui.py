@@ -3,7 +3,7 @@
 """
 Created on Jun 28, 2022
 
-Modified on July 26, 2023
+Modified on Aug 9, 2023
 
 @author: hilee
 """
@@ -420,10 +420,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.simulation = bool(int(param[1]))   
                 
                 for idx in range(DCS_CNT):
-                    if self.simulation:
-                        path = WORKING_DIR + "IGRINS/Demo/"
-                    else:
-                        path = WORKING_DIR + "IGRINS/" + self.dcs_list[idx].lower() + "/"
+                    path = WORKING_DIR + "IGRINS/" + self.dcs_list[idx].lower() + "/"
                     
                     self.e_path[idx].setText(path)
                     self.e_savefilename[idx].setText("")
@@ -614,7 +611,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
         
         param = cmd.split()
-        if not (param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
+        if not (param[0] == CMD_INITIALIZE1 or param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
             return
 
         msg = "<- [DCSS] %s" % cmd
@@ -627,7 +624,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
 
         param = cmd.split()
-        if not (param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
+        if not (param[0] == CMD_INITIALIZE1 or param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
             return
 
         msg = "<- [DCSH] %s" % cmd
@@ -639,7 +636,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cmd = body.decode()
 
         param = cmd.split()
-        if not (param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
+        if not (param[0] == CMD_INITIALIZE1 or param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
             return
 
         msg = "<- [DCSK] %s" % cmd
@@ -652,8 +649,26 @@ class MainWindow(Ui_Dialog, QMainWindow):
         param = cmd.split()
         
         try:
+            if param[0] == CMD_INITIALIZE1:
+                if not self.simulation and int(param[2]) == 0:
+                    self.dcs_ready[dc_idx] = False
+                    self.bt_init_status(dc_idx)
+                else:
+                    self.dcs_ready[dc_idx] = True
+                    self.bt_init_status(dc_idx)
 
-            if param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
+                    if self.radio_HK_sync.isChecked():
+                        self.set_HK_sync()
+                    elif self.radio_whole_sync.isChecked():
+                        self.set_whole_sync()
+                    elif self.radio_SVC.isChecked():
+                        self.set_svc()
+                    elif self.radio_H.isChecked():
+                        self.set_H()
+                    elif self.radio_K.isChecked():
+                        self.set_K()
+                
+            elif param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
                 self.dcs_ready[dc_idx] = True
                 self.bt_init_status(dc_idx)
 
@@ -685,12 +700,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
                             
                 #self.prog_timer[dc_idx].stop()
                 self.cur_prog_step[dc_idx] = 100
-                self.progressBar[dc_idx].setValue(self.cur_prog_step[dc_idx])           
+                #self.progressBar[dc_idx].setValue(self.cur_prog_step[dc_idx])           
 
                 #self.elapsed_timer[dc_idx].stop()
 
                 self.measure_T[dc_idx] = float(param[1])
-                print(dc_idx, self.measure_T[dc_idx])
+                #print(dc_idx, self.measure_T[dc_idx])
                 
                 # load data
                 self.load_data(dc_idx, param[2])
@@ -890,20 +905,20 @@ class MainWindow(Ui_Dialog, QMainWindow):
         dir_names = []
         try:
             if dc_idx == SVC:
-                filepath_s = "%sIGRINS/dcss/Fowler/%s/" % (WORKING_DIR, self.cur_date)
+                filepath_s = "%sIGRINS/%s/Fowler/%s/" % (WORKING_DIR, self.dcs_list[dc_idx].lower(), self.cur_date)
                 for names in os.listdir(filepath_s):
                     if names.find(".fits") < 0:
                         dir_names.append(names)
             
             else:
                 #if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_HK or self.sel_mode == MODE_H:
-                filepath_h = "%sIGRINS/dcsh/Fowler/%s/" % (WORKING_DIR, self.cur_date)
+                filepath_h = "%sIGRINS/%s/Fowler/%s/" % (WORKING_DIR, self.dcs_list[dc_idx].lower(), self.cur_date)
                 for names in os.listdir(filepath_h):
                     if names.find(".fits") < 0:
                         dir_names.append(names)
 
                 #if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_HK or self.sel_mode == MODE_K:
-                filepath_k = "%sIGRINS/dcsk/Fowler/%s/" % (WORKING_DIR, self.cur_date)   
+                filepath_k = "%sIGRINS/%s/Fowler/%s/" % (WORKING_DIR, self.dcs_list[dc_idx].lower(), self.cur_date)   
                 for names in os.listdir(filepath_k):
                     if names.find(".fits") < 0:
                         dir_names.append(names)
@@ -926,29 +941,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.label_prog_sts[dc_idx].setText("Transfer")
         
         try:
-            filepath = ""
-            if self.simulation:
-                if dc_idx == SVC:
-                    filepath = "%sIGRINS/Demo/SDCS_demo1.fits" % WORKING_DIR
-                elif dc_idx == H:
-                    filepath = "%sIGRINS/Demo/SDCH_demo.fits" % WORKING_DIR
-                elif dc_idx == K:
-                    filepath = "%sIGRINS/Demo/SDCK_demo.fits" % WORKING_DIR
-            else:
-                if dc_idx == SVC:
-                    filepath = "%sIGRINS/dcss/Fowler/%s" % (WORKING_DIR, folder_name)
-                elif dc_idx == H:
-                    filepath = "%sIGRINS/dcsh/Fowler/%s" % (WORKING_DIR, folder_name)
-                elif dc_idx == K:
-                    filepath = "%sIGRINS/dcsk/Fowler/%s" % (WORKING_DIR, folder_name)
-            
-            filename = filepath.split("/")
+            filepath = "%sIGRINS/%s/Fowler/%s" % (WORKING_DIR, self.dcs_list[dc_idx].lower(), folder_name)
+            subdir = filepath.split("/")
             path = "/"
-            for dir in filename:
+            for dir in subdir:
                 if dir != "" and dir.find(".fits") < 0:
                     path += dir + "/"
             self.e_path[dc_idx].setText(path)
-            self.e_savefilename[dc_idx].setText(filename[-1])
+            self.e_savefilename[dc_idx].setText(subdir[-1])
             
             frm = fits.open(filepath)
             data = frm[0].data
@@ -1028,7 +1028,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         cur_elapsed = ti.time() - self.elapsed[dc_idx]
         if self.cur_prog_step[dc_idx] >= 100:   #self.measure_T[dc_idx] > 0 and cur_elapsed >= self.measure_T[dc_idx]
             self.elapsed_timer[dc_idx].stop()
-            return
+            #return
         
         msg = "%.3f sec" % cur_elapsed #(ti.time() - self.elapsed[dc_idx])
         self.label_prog_elapsed[dc_idx].setText(msg)
@@ -1037,6 +1037,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def show_progressbar(self, dc_idx):
         if self.cur_prog_step[dc_idx] >= 100:
             self.prog_timer[dc_idx].stop()
+            self.progressBar[dc_idx].setValue(100)
             #self.log.send(self.iam, INFO, "progress bar end!!!")
             return
         
@@ -1222,7 +1223,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def bt_init_status(self, idx):
         if self.dcs_ready[idx] and self.bt_init[idx].isEnabled():
-                self.QWidgetBtnColor(self.bt_init[idx], "white", "green")
+            self.QWidgetBtnColor(self.bt_init[idx], "white", "green")
         else:
             self.QWidgetBtnColor(self.bt_init[idx], "black", "silver")
         
@@ -1320,6 +1321,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
             QMessageBox.warning(self, WARNING, msg)
             self.log.send(self.iam, WARNING, msg)
             
+            self.e_FS_number[dc_idx].setText(str(self.N_fowler))
+            
+        if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
+            self.sync_apply_HK()
+        elif dc_idx == H and self.sel_mode == MODE_HK:
+            self.sync_apply_K()
+            
     
     def change_name(self, dc_idx):
         if int(self.e_repeat[dc_idx].text()) > 1:
@@ -1368,7 +1376,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             if self.proc_sub[UT] == None:
                 self.proc_sub[UT] = subprocess.Popen(['python', cmd, self.com_list[UT]])
                 
-            self.bt_take_image.setEnabled(False)
+            #self.bt_take_image.setEnabled(False)
             
         else:
             self.setFixedSize(1030, 741)
@@ -1376,7 +1384,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.power_status[MOTOR-1] = OFF
             self.power_onoff()
             
-            self.bt_take_image.setEnabled(True)
+            #self.bt_take_image.setEnabled(True)
 
                 
          

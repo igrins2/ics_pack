@@ -3,7 +3,7 @@
 """
 Created on Jun 28, 2022
 
-Modified on July 03, 2022
+Modified on Aug 9, 2022
 
 @author: hilee
 """
@@ -125,6 +125,7 @@ ALIVE = "Alive" # from EngTools
 
 DT_STATUS = "DTStatus"
 
+CMD_INITIALIZE1 = "Initialize1" 
 CMD_INIT2_DONE = "Initialize2_Done" # to DCS
 CMD_INITIALIZE2_ICS = "Initialize2_ics" 
 CMD_SETFSPARAM_ICS = "SetFSParam_ics"
