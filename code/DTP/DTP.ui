@@ -1372,9 +1372,9 @@
     <widget class="QPushButton" name="bt_ltpos_prev">
      <property name="geometry">
       <rect>
-       <x>42</x>
+       <x>77</x>
        <y>320</y>
-       <width>31</width>
+       <width>41</width>
        <height>21</height>
       </rect>
      </property>
@@ -1454,7 +1454,7 @@
       <rect>
        <x>192</x>
        <y>123</y>
-       <width>31</width>
+       <width>41</width>
        <height>21</height>
       </rect>
      </property>
@@ -1472,9 +1472,9 @@
     <widget class="QPushButton" name="bt_utpos_prev">
      <property name="geometry">
       <rect>
-       <x>42</x>
+       <x>77</x>
        <y>123</y>
-       <width>31</width>
+       <width>41</width>
        <height>21</height>
       </rect>
      </property>
@@ -1543,8 +1543,8 @@
      </property>
      <property name="geometry">
       <rect>
-       <x>30</x>
-       <y>310</y>
+       <x>20</x>
+       <y>280</y>
        <width>111</width>
        <height>21</height>
       </rect>
@@ -1571,7 +1571,7 @@
       <rect>
        <x>192</x>
        <y>320</y>
-       <width>31</width>
+       <width>41</width>
        <height>21</height>
       </rect>
      </property>
@@ -2118,9 +2118,9 @@
     <widget class="QLabel" name="label_utpos">
      <property name="geometry">
       <rect>
-       <x>77</x>
+       <x>121</x>
        <y>123</y>
-       <width>111</width>
+       <width>67</width>
        <height>21</height>
       </rect>
      </property>
@@ -2153,9 +2153,9 @@
     <widget class="QLabel" name="label_ltpos">
      <property name="geometry">
       <rect>
-       <x>77</x>
+       <x>121</x>
        <y>320</y>
-       <width>111</width>
+       <width>67</width>
        <height>21</height>
       </rect>
      </property>
@@ -2183,6 +2183,56 @@
      </property>
      <property name="wordWrap">
       <bool>false</bool>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_75">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>124</y>
+       <width>61</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::LeftToRight</enum>
+     </property>
+     <property name="text">
+      <string>Current</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+    <widget class="QLabel" name="label_84">
+     <property name="geometry">
+      <rect>
+       <x>10</x>
+       <y>321</y>
+       <width>61</width>
+       <height>20</height>
+      </rect>
+     </property>
+     <property name="font">
+      <font>
+       <pointsize>10</pointsize>
+       <bold>true</bold>
+      </font>
+     </property>
+     <property name="layoutDirection">
+      <enum>Qt::LeftToRight</enum>
+     </property>
+     <property name="text">
+      <string>Current</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
    </widget>
@@ -2843,9 +2893,9 @@
    <widget class="QPushButton" name="bt_parking">
     <property name="geometry">
      <rect>
-      <x>23</x>
+      <x>140</x>
       <y>304</y>
-      <width>221</width>
+      <width>104</width>
       <height>31</height>
      </rect>
     </property>
@@ -2856,7 +2906,7 @@
      </font>
     </property>
     <property name="text">
-     <string>Calibration Box Parking</string>
+     <string>Cal.Box Parking</string>
     </property>
    </widget>
    <widget class="QCheckBox" name="chk_ThAr_off">

@@ -99,7 +99,7 @@ OFF = "off"
 #LAMP_FLAT = [OFF, ON, OFF, OFF, ON, OFF, ON, OFF, OFF]
 #LAMP_THAR = [OFF, OFF, OFF, ON, OFF, ON, OFF, OFF, OFF]
 
-LAMP_FLAT = [OFF, ON, OFF, OFF, OFF, ON, OFF, OFF, ON, OFF]
+LAMP_FLAT = [OFF, ON, OFF, OFF, OFF, ON, OFF, ON, ON, OFF]
 LAMP_THAR = [OFF, OFF, OFF, ON, OFF, OFF, ON, OFF, OFF, OFF]
 
 MUX_TYPE = 2
@@ -116,6 +116,7 @@ DT_REQ_INITMOTOR = "InitMotor"  #motor
 DT_REQ_MOVEMOTOR = "MoveMotor"  #motor
 DT_REQ_MOTORGO = "MotorGo"      #motor
 DT_REQ_MOTORBACK = "MotorBack"  #motor
+DT_REQ_STOP = "StopMotor"       #motor
 
 DT_REQ_SETUT = "SetUT"          #motor
 DT_REQ_SETLT = "SetLT"          #motor

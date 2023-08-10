@@ -432,6 +432,7 @@ class motor(threading.Thread) :
         param = cmd.split()
         
         if len(param) < 2:  return
+        if param[0] == HK_REQ_UPLOAD_DB:    return
 
         if hkp:
             msg = "<- [HKP] %s" % cmd
@@ -494,6 +495,13 @@ class motor(threading.Thread) :
                     pos = self.setLT(int(param[1]))
                     curpos = "%s" % (int(pos) * (-1))
                     msg = "%s %s %s" % (param[0], param[1], curpos)
+                    self.publish_to_queue(msg)
+
+                elif param[0] == DT_REQ_STOP:
+                    self.send_to_motor("X")
+                    ti.sleep(1)
+                    curpos = self.send_to_motor("RPA", True)
+                    msg = "%s %s" % (param[0], curpos)
                     self.publish_to_queue(msg)
                     
         except:

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>686</width>
+    <width>782</width>
     <height>498</height>
    </rect>
   </property>
@@ -25,7 +25,7 @@
   <widget class="QLabel" name="label_27">
    <property name="geometry">
     <rect>
-     <x>430</x>
+     <x>530</x>
      <y>7</y>
      <width>111</width>
      <height>20</height>
@@ -49,7 +49,7 @@
   <widget class="QLabel" name="sts_updated">
    <property name="geometry">
     <rect>
-     <x>540</x>
+     <x>640</x>
      <y>7</y>
      <width>141</width>
      <height>21</height>
@@ -123,7 +123,7 @@
   <widget class="QLabel" name="sts_interval">
    <property name="geometry">
     <rect>
-     <x>489</x>
+     <x>589</x>
      <y>30</y>
      <width>171</width>
      <height>20</height>
@@ -635,7 +635,7 @@
   <widget class="QLabel" name="label_34">
    <property name="geometry">
     <rect>
-     <x>480</x>
+     <x>580</x>
      <y>469</y>
      <width>171</width>
      <height>20</height>
@@ -730,7 +730,7 @@
   <widget class="QLabel" name="sts_monitor_error">
    <property name="geometry">
     <rect>
-     <x>651</x>
+     <x>751</x>
      <y>470</y>
      <width>20</width>
      <height>20</height>
@@ -960,7 +960,7 @@
     <rect>
      <x>270</x>
      <y>87</y>
-     <width>401</width>
+     <width>501</width>
      <height>371</height>
     </rect>
    </property>
@@ -1001,7 +1001,7 @@
     <number>14</number>
    </property>
    <property name="columnCount">
-    <number>4</number>
+    <number>5</number>
    </property>
    <attribute name="horizontalHeaderCascadingSectionResizes">
     <bool>false</bool>
@@ -1055,6 +1055,17 @@
    <row/>
    <column>
     <property name="text">
+     <string>TC / TM</string>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>10</pointsize>
+      <bold>true</bold>
+     </font>
+    </property>
+   </column>
+   <column>
+    <property name="text">
      <string>Temperature</string>
     </property>
     <property name="font">
@@ -1102,7 +1113,7 @@
      <string/>
     </property>
     <property name="textAlignment">
-     <set>AlignTrailing|AlignVCenter</set>
+     <set>AlignCenter</set>
     </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
@@ -1141,7 +1152,7 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="1" column="0">
+   <item row="0" column="4">
     <property name="text">
      <string/>
     </property>
@@ -1150,6 +1161,17 @@
     </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="1" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsDropEnabled|ItemIsEnabled</set>
     </property>
    </item>
    <item row="1" column="1">
@@ -1185,12 +1207,23 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="2" column="0">
+   <item row="1" column="4">
     <property name="text">
      <string/>
     </property>
     <property name="textAlignment">
      <set>AlignTrailing|AlignVCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="2" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
     </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
@@ -1229,12 +1262,23 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="3" column="0">
+   <item row="2" column="4">
     <property name="text">
      <string/>
     </property>
     <property name="textAlignment">
      <set>AlignTrailing|AlignVCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="3" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
     </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
@@ -1273,7 +1317,7 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="4" column="0">
+   <item row="3" column="4">
     <property name="text">
      <string/>
     </property>
@@ -1282,6 +1326,17 @@
     </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="4" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsSelectable|ItemIsEnabled</set>
     </property>
    </item>
    <item row="4" column="1">
@@ -1317,12 +1372,23 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="5" column="0">
+   <item row="4" column="4">
     <property name="text">
      <string/>
     </property>
     <property name="textAlignment">
      <set>AlignTrailing|AlignVCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="5" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
     </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
@@ -1361,12 +1427,23 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="6" column="0">
+   <item row="5" column="4">
     <property name="text">
      <string/>
     </property>
     <property name="textAlignment">
      <set>AlignTrailing|AlignVCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="6" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
     </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
@@ -1405,12 +1482,23 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="7" column="0">
+   <item row="6" column="4">
     <property name="text">
      <string/>
     </property>
     <property name="textAlignment">
      <set>AlignTrailing|AlignVCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="7" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
     </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
@@ -1449,7 +1537,7 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="8" column="0">
+   <item row="7" column="4">
     <property name="text">
      <string/>
     </property>
@@ -1457,7 +1545,18 @@
      <set>AlignTrailing|AlignVCenter</set>
     </property>
     <property name="flags">
-     <set>ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="8" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
     </property>
    </item>
    <item row="8" column="1">
@@ -1493,7 +1592,7 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="9" column="0">
+   <item row="8" column="4">
     <property name="text">
      <string/>
     </property>
@@ -1501,7 +1600,18 @@
      <set>AlignTrailing|AlignVCenter</set>
     </property>
     <property name="flags">
-     <set>ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="9" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
     </property>
    </item>
    <item row="9" column="1">
@@ -1537,7 +1647,7 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="10" column="0">
+   <item row="9" column="4">
     <property name="text">
      <string/>
     </property>
@@ -1545,7 +1655,18 @@
      <set>AlignTrailing|AlignVCenter</set>
     </property>
     <property name="flags">
-     <set>ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="10" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
     </property>
    </item>
    <item row="10" column="1">
@@ -1581,7 +1702,7 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="11" column="0">
+   <item row="10" column="4">
     <property name="text">
      <string/>
     </property>
@@ -1589,7 +1710,18 @@
      <set>AlignTrailing|AlignVCenter</set>
     </property>
     <property name="flags">
-     <set>ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="11" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
     </property>
    </item>
    <item row="11" column="1">
@@ -1625,7 +1757,7 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="12" column="0">
+   <item row="11" column="4">
     <property name="text">
      <string/>
     </property>
@@ -1633,7 +1765,18 @@
      <set>AlignTrailing|AlignVCenter</set>
     </property>
     <property name="flags">
-     <set>ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="12" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
     </property>
    </item>
    <item row="12" column="1">
@@ -1669,7 +1812,7 @@
      <set>ItemIsEnabled</set>
     </property>
    </item>
-   <item row="13" column="0">
+   <item row="12" column="4">
     <property name="text">
      <string/>
     </property>
@@ -1677,7 +1820,18 @@
      <set>AlignTrailing|AlignVCenter</set>
     </property>
     <property name="flags">
-     <set>ItemIsDragEnabled|ItemIsDropEnabled|ItemIsUserCheckable|ItemIsEnabled</set>
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="13" column="0">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
     </property>
    </item>
    <item row="13" column="1">
@@ -1703,6 +1857,17 @@
     </property>
    </item>
    <item row="13" column="3">
+    <property name="text">
+     <string/>
+    </property>
+    <property name="textAlignment">
+     <set>AlignTrailing|AlignVCenter</set>
+    </property>
+    <property name="flags">
+     <set>ItemIsEnabled</set>
+    </property>
+   </item>
+   <item row="13" column="4">
     <property name="text">
      <string/>
     </property>
@@ -1755,7 +1920,7 @@
   <widget class="QLabel" name="sts_monitor_ok">
    <property name="geometry">
     <rect>
-     <x>580</x>
+     <x>680</x>
      <y>470</y>
      <width>19</width>
      <height>20</height>
@@ -1812,7 +1977,7 @@
   <widget class="QLabel" name="alert_status">
    <property name="geometry">
     <rect>
-     <x>590</x>
+     <x>690</x>
      <y>54</y>
      <width>81</width>
      <height>25</height>

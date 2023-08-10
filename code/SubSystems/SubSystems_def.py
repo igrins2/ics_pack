@@ -74,6 +74,7 @@ DT_REQ_INITMOTOR = "InitMotor"  #motor
 DT_REQ_MOVEMOTOR = "MoveMotor"  #motor
 DT_REQ_MOTORGO = "MotorGo"      #motor
 DT_REQ_MOTORBACK = "MotorBack"  #motor
+DT_REQ_STOP = "StopMotor"       #motor
 
 DT_REQ_SETUT = "SetUT"          #motor
 DT_REQ_SETLT = "SetLT"          #motor
