@@ -11,10 +11,9 @@ Modified on Apr 18, 2023
 # -----------------------------------------------------------
 # definition: constant
 
-#import os
-#dir = os.getcwd().split("/")
-#WORKING_DIR = "/" + dir[1] + "/" + dir[2] + "/"
-WORKING_DIR = "/home/ics/"
+import os
+dir = os.getcwd().split("/")
+WORKING_DIR = "/" + dir[1] + "/" + dir[2] + "/"
 
 MAIN = "MAIN"
 
@@ -26,45 +25,51 @@ INFO = "INFO"
 WARNING = "WARNING"
 ERROR = "ERROR"
 
-SINGLE_MODE = 0
-CONT_MODE = 1
-GUIDE_MODE = 2
-
 SVC = 0
-H_K = 1
-ALL = 2
-
 H = 1
 K = 2
 
-IMG_SVC = 0
-IMG_EXPAND = 1
-IMG_FITTING = 2
-IMG_PROFILE = 3
+START = 0
+END = 1
 
+TEST_MODE = "test"
+ACQ_MODE = "acq"
+SCI_MODE = "sci"
+
+ACT_TEST = 0
+ACT_REBOOT = 1
+ACT_INIT = 2
+ACT_APPLY = 3
+ACT_OBSERVE = 4
+ACT_ABORT = 5
+
+T_minFowler = 0.168
 T_frame = 1.45479
-T_br = 2
+N_fowler_max = 16
 
+OBS_PREP = "OBS_PREP"
+OBS_STARTED_ACQ = "OBS_STARTED_ACQ"
+OBS_END_ACQ = "OBS_END_ACQ"
+OBS_START_DSET_WRITE = "OBS_START_DSET_WRITE"
+OBS_END_DSET_WRITE = "OBS_END_DSET_WRITE"
 
-HK_REQ_PWR_STS = "PowerStatus"  #pdu
-HK_REQ_PWR_ONOFF = "PowerOnOff" #pdu
+#EXIT = "Exit"
 
-HK_REQ_COM_STS = "ComPortStatus"
-HK_REQ_GETVALUE = "GetValue"  #temp_ctrl, tm, vm
-
-CMD_REQ_TEMP = "ReqTempInfo"    #from DCS
-CMD_SIMULATION = "Simulation"
-SUB_STATUS = "SubStatus"
-EXIT = "Exit"
-
+CMD_INITIALIZE1 = "Initialize1" 
 CMD_INIT2_DONE = "Initialize2_Done" # to DCS
 CMD_INITIALIZE2_ICS = "Initialize2_ics"
 CMD_SETFSPARAM_ICS = "SetFSParam_ics"
 CMD_ACQUIRERAMP_ICS = "ACQUIRERAMP_ics"
 CMD_STOPACQUISITION = "STOPACQUISITION"
+CMD_RESTART = "Restart"
+
+CMD_BUSY = "Busy"
 
 INSTSEQ_SHOW_TCS_INFO = "ShowTCSInfo"
+
 OBSAPP_CAL_OFFSET = "CalOffset"
-OBSAPP_BUSY = "ObsAppBusy"
+OBSAPP_SAVE_SVC = "SaveSVC"
+
+#OBSAPP_BUSY = "ObsAppBusy"
 
 #CMD_COMPLETED = "Completed"

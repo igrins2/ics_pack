@@ -126,6 +126,8 @@ ALIVE = "Alive" # from EngTools
 
 DT_STATUS = "DTStatus"
 
+CMD_BUSY = "Busy"
+
 CMD_INITIALIZE1 = "Initialize1" 
 CMD_INIT2_DONE = "Initialize2_Done" # to DCS
 CMD_INITIALIZE2_ICS = "Initialize2_ics" 

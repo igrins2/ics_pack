@@ -15,11 +15,16 @@ PDU_IDX = 8
 TM_CNT = 8
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
-#import os
-#dir = os.getcwd().split("/")
+import os, sys
+##dir = os.getcwd().split("/")
 #WORKING_DIR = "/" + dir[1] + "/" + dir[2] + "/"
-WORKING_DIR = "/home/ics/"
         
+try:
+    dir = sys.argv[0].split('/')
+    WORKING_DIR = "/home/%s/" % dir[2]
+except:
+    WORKING_DIR = "/home/ics/"
+    
 MAIN = "MAIN"
 HK = "HK"
 

@@ -71,9 +71,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.producer = None
         self.consumer_hk = None
         self.consumer_dt = None
-        
-        self.param = ""
-                
+                        
         self.label_stsHKP.setText("---")
         self.label_stsDTP.setText("---")
         self.radio_real.setChecked(True)

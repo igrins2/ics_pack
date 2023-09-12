@@ -129,7 +129,6 @@ class uploader(threading.Thread):
         threading.Timer(self.upload_interval, self.publish_dewar_list).start()
         
         
-    
     def __del__(self):
         msg = "Closing %s" % self.iam
         self.log.send(self.iam, DEBUG, msg)
@@ -145,7 +144,7 @@ class uploader(threading.Thread):
         self.consumer_hk = None
 
         self.log.send(self.iam, DEBUG, "Closed!")
-                                    
+                                     
 
     def get_firebase(self, simul):
         
