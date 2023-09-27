@@ -32,7 +32,8 @@ pip install pytz
 pip install Pyrebase4
 #conda install -c conda-forge cppyy
 #python -m pip install cppyy
-STDCXX=11 MAKE_NPROCS=12 pip install cppyy==2.4.0 --verbose cppyy --no-binary=cppyy-cling
+#STDCXX=11 MAKE_NPROCS=12 pip install cppyy==2.4.2 --verbose cppyy --no-binary=cppyy-cling
+STDCXX=11 python -m pip install cppyy==2.4.0 --no-cache-dir --force-reinstall
 
 
 

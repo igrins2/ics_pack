@@ -16,6 +16,7 @@ dir = os.getcwd().split("/")
 WORKING_DIR = "/" + dir[1] + "/" + dir[2] + "/"
 
 MAIN = "MAIN"
+INST_SEQ = "InstSeq"
 
 DCS_CNT = 3
 
@@ -47,11 +48,13 @@ T_minFowler = 0.168
 T_frame = 1.45479
 N_fowler_max = 16
 
+'''
 OBS_PREP = "OBS_PREP"
 OBS_STARTED_ACQ = "OBS_STARTED_ACQ"
 OBS_END_ACQ = "OBS_END_ACQ"
 OBS_START_DSET_WRITE = "OBS_START_DSET_WRITE"
 OBS_END_DSET_WRITE = "OBS_END_DSET_WRITE"
+'''
 
 #EXIT = "Exit"
 

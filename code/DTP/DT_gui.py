@@ -1477,6 +1477,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             if self.cal_chk[cal_cnt].isChecked():
                 if cal_cnt == self.cal_cur:
                     #print(ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime()), "current idx:", self.cal_cur)
+                    self.cal_judge_param(cal_cnt)
                     self.QWidgetCheckBoxColor(self.cal_chk[cal_cnt], "blue") 
                     self.QWidgetEditColor(self.cal_e_exptime[cal_cnt], "blue")
                     self.QWidgetEditColor(self.cal_e_repeat[cal_cnt], "blue")
@@ -1497,6 +1498,38 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.QWidgetBtnColor(self.bt_run, "black")
             self.cal_stop_clicked = True
             self.cal_mode = False
+            
+            
+    # need to test 
+    def cal_judge_param(self, cal_cnt):
+        if self.cal_e_exptime[cal_cnt].text() == "":    return
+        
+        # calculation fowler number & exp time
+        _expTime = float(self.cal_e_exptime[cal_cnt].text())
+
+        if _expTime < T_exp:
+            msg = "Exp.Time should be more than %d." % T_exp
+            QMessageBox.warning(self, WARNING, msg)
+            self.log.send(self.iam, WARNING, msg)
+
+            self.cal_e_exptime[cal_cnt].setText(str(T_exp))
+            self.N_fowler = 1
+            
+        else:
+            _max_fowler_number = int((_expTime - T_minFowler) / T_frame)
+            self.N_fowler = N_fowler_max
+            while self.N_fowler > _max_fowler_number:
+                self.N_fowler //= 2
+
+        if self.sel_mode == MODE_HK or self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_H:   
+            self.e_exptime[H].setText(self.cal_e_exptime[cal_cnt].text())
+            self.e_FS_number[H].setText(str(self.N_fowler))      
+        if self.sel_mode == MODE_HK or self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_K:   
+            self.e_exptime[K].setText(self.cal_e_exptime[cal_cnt].text())
+            self.e_FS_number[K].setText(str(self.N_fowler))            
+        if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_SVC:   
+            self.e_exptime[SVC].setText(self.cal_e_exptime[cal_cnt].text())
+            self.e_FS_number[SVC].setText(str(self.N_fowler))
             
             
     def cal_parking(self):
