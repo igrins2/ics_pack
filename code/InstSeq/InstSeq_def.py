@@ -3,7 +3,7 @@
 """
 Created on Feb 10, 2023
 
-Modified on Apr 18, 2023
+Modified on Sep 29, 2023
 
 @author: hilee
 """
@@ -71,7 +71,9 @@ CMD_BUSY = "Busy"
 INSTSEQ_SHOW_TCS_INFO = "ShowTCSInfo"
 
 OBSAPP_CAL_OFFSET = "CalOffset"
-OBSAPP_SAVE_SVC = "SaveSVC"
+#OBSAPP_SAVE_SVC = "SaveSVC"
+
+CUR_P_Q_POS = "Current_p_and_q_Position"
 
 #OBSAPP_BUSY = "ObsAppBusy"
 
