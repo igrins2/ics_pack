@@ -660,11 +660,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         try:
             if param[0] == CMD_BUSY:
-                if not self.acquiring[dc_idx]:
-                    self.bt_take_image.setEnabled(False)
-                    self.QWidgetBtnColor(self.bt_take_image, "silver")
-                    self.protect_btn(False)
-                    return
+                self.acquiring[dc_idx] = False
+                msg = "Detector is busy! Please wait a few second!"
+                QMessageBox.warning(self, WARNING, msg)
+                return
                                     
             if param[0] == CMD_INITIALIZE1:
                 if not self.simulation and int(param[2]) == 0:
@@ -700,10 +699,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 elif self.radio_K.isChecked():
                     self.set_K()
                 
-            elif param[0] == CMD_SETFSPARAM_ICS:
-                if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                    return
-                    
+            elif param[0] == CMD_SETFSPARAM_ICS:                    
                 next_idx = self.get_next_idx(dc_idx)
                 
                 ongoing_filename = "SDC%s_%s_%04d.fits" % (self.dcs_list[dc_idx][-1], self.cur_date, next_idx)
@@ -712,12 +708,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 self.publish_to_queue(msg)
 
             elif param[0] == CMD_ACQUIRERAMP_ICS:      
-                if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                    self.bt_take_image.setEnabled(True)
-                    self.QWidgetBtnColor(self.bt_take_image, "black")
-                    self.protect_btn(True)
-                    return
-                
                 self.cur_cnt[dc_idx] += 1
                 self.label_prog_sts[dc_idx].setText("Done")
                 
@@ -790,13 +780,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
                             for i in range(DCS_CNT):
                                 self.cur_cnt[i] = 0
         
-            elif param[0] == CMD_STOPACQUISITION:
-                if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                    self.bt_take_image.setEnabled(True)
-                    self.QWidgetBtnColor(self.bt_take_image, "black")
-                    self.protect_btn(True)
-                    return
-                
+            elif param[0] == CMD_STOPACQUISITION:                
                 end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
                 self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
 
@@ -872,7 +856,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.elapsed_timer[dc_idx].start()
 
         if self.cur_cnt[dc_idx] == 0:
-            msg = "%s %s %d %.3f 1 %d 1 %.3f 1" % (CMD_SETFSPARAM_ICS, self.dcs_list[dc_idx], self.simulation, _exptime, _FS_number, _fowlerTime)
+            msg = "%s %s %d %.3f %d %.3f" % (CMD_SETFSPARAM_ICS, self.dcs_list[dc_idx], self.simulation, _exptime, _FS_number, _fowlerTime)
         else:
             next_idx = self.get_next_idx(dc_idx)
             ongoing_filename = "SDC%s_%s_%04d.fits" % (self.dcs_list[dc_idx][-1], self.cur_date, next_idx)

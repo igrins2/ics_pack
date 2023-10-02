@@ -17,6 +17,7 @@ WORKING_DIR = "/" + dir[1] + "/" + dir[2] + "/"
 
 MAIN = "MAIN"
 INST_SEQ = "InstSeq"
+SC = "SC"
 
 DCS_CNT = 3
 
@@ -48,15 +49,8 @@ T_minFowler = 0.168
 T_frame = 1.45479
 N_fowler_max = 16
 
-'''
-OBS_PREP = "OBS_PREP"
-OBS_STARTED_ACQ = "OBS_STARTED_ACQ"
-OBS_END_ACQ = "OBS_END_ACQ"
-OBS_START_DSET_WRITE = "OBS_START_DSET_WRITE"
-OBS_END_DSET_WRITE = "OBS_END_DSET_WRITE"
-'''
-
 #EXIT = "Exit"
+HK_REQ_PWR_ONOFF = "PowerOnOff" #pdu
 
 CMD_INITIALIZE1 = "Initialize1" 
 CMD_INIT2_DONE = "Initialize2_Done" # to DCS
@@ -66,14 +60,14 @@ CMD_ACQUIRERAMP_ICS = "ACQUIRERAMP_ics"
 CMD_STOPACQUISITION = "STOPACQUISITION"
 CMD_RESTART = "Restart"
 
-CMD_BUSY = "Busy"
-
-INSTSEQ_SHOW_TCS_INFO = "ShowTCSInfo"
+INSTSEQ_TCS_INFO_PA = "TCSInfoPA"
+INSTSEQ_FRM_MODE = "FrameMode"
 
 OBSAPP_CAL_OFFSET = "CalOffset"
-#OBSAPP_SAVE_SVC = "SaveSVC"
+OBSAPP_OUTOF_NUMBER_SVC = "Out_of_Number_SVC"
+OBSAPP_TAKING_IMG = "StartTakingImage"
 
-CUR_P_Q_POS = "Current_p_and_q_Position"
+MOVEPOS_P_Q = "Current_p_and_q_Position"
 
 #OBSAPP_BUSY = "ObsAppBusy"
 

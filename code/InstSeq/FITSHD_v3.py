@@ -9,7 +9,7 @@ FHDARR = [
 
 #['FieldName','Value(or Key Name)','Comment(s)'],
 
-['I_HDRVER' ,'S',   '0.993'      ,'version of IGRINS FITS Header'],
+['I_HDRVER' ,'S',   '0.994'      ,'version of IGRINS FITS Header'],
 
 ['DETECTOR' ,'S',  'H2RG'                 ,'name of Detector'],
 ['TIMESYS'  ,'S',  'UTC'                  ,'Time system used in this header'],
@@ -36,16 +36,7 @@ FHDARR = [
 ['ZDSTART'  ,'F5', '{start[tel_zd]}' ,'[d] ZD at start of run'],
 ['ZDEND'    ,'F5', '{end[tel_zd]}' ,'[d] ZD at end of run'],
 ['PASTART'  ,'F5', '{start[tel_position_angle]}' ,'[d] rotator position angle at start'],
-['PAEND'    ,'F5', '{end[tel_position_angle]}' ,'[d] rotator position angle at end'],
-
-['GAIN'     ,'F2', '2.00' ,'[electrons/ADU], Conversion Gain'],
-['RDNOISE'  ,'F2', '9.00' ,'Read Noise of Fowler Sampled Image with NSAMP'],
-
-['SLIT_CX'  ,'I', '1024'      ,'Center position of slit in the SVC image'],
-['SLIT_CY'  ,'I', '1021'      ,'Center position of slit in the SVC image'],
-['SLIT_WID' ,'I', '8'         ,'(px) Width of slit'],
-['SLIT_LEN' ,'I', '112'       ,'(px) Length of slit'],
-['SLIT_ANG' ,'I', '135'       ,'(d) Position angle of slit in the image']
+['PAEND'    ,'F5', '{end[tel_position_angle]}' ,'[d] rotator position angle at end']
 
 #DO NOT remove/modify
 ]
