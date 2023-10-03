@@ -260,7 +260,7 @@ class Inst_Seq(threading.Thread):
                 print("SequenceCommand.TEST")
                 self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_TEST}
 
-                if not (self.dcs_ready[SVC] and self.dcs_ready[H] and self.dcs_ready[K]):
+                if not self.dcs_ready[SVC] or not self.dcs_ready[H] or not self.dcs_ready[K]:
                     print("instDummy.DataResponse:ERROR")
                     return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
                                 
@@ -298,7 +298,6 @@ class Inst_Seq(threading.Thread):
                 self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_INIT}
                             
                 for idx in range(DCS_CNT):
-                    
                     self.dcs_ready[idx] = False
                     
                 self.initialize2()
@@ -526,7 +525,7 @@ class Inst_Seq(threading.Thread):
                 print("SequenceCommand.TEST")
                 self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_TEST}
 
-                if not (self.dcs_ready[SVC] and self.dcs_ready[H] and self.dcs_ready[K]):
+                if not self.dcs_ready[SVC] and not self.dcs_ready[H] and not self.dcs_ready[K]:
                     print("instDummy.DataResponse:ERROR")
                     return self.publish_to_queue_test("instDummy.DataResponse(giapi.HandlerResponse.ERROR)")
                                 
@@ -918,8 +917,8 @@ class Inst_Seq(threading.Thread):
 
             if self.rebooting[SVC]:
                 self.restart_done()
-            else:
-                self.response_complete()
+            else:                    
+                self.response_complete(bool(int(param[1])))
     
         elif param[0] == CMD_SETFSPARAM_ICS:   
             print(self.apply_mode) 
@@ -931,9 +930,10 @@ class Inst_Seq(threading.Thread):
                 self.start_acquisition()
                     
             else:
-                print("instDummy.DataResponse:ACCEPTED")
-                instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
-                self.publish_to_queue_test("instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED)")
+                self.response_complete(bool(int(param[1])))
+                #print("instDummy.DataResponse:ACCEPTED")
+                #instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
+                #self.publish_to_queue_test("instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED)")
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
             print(self.apply_mode) 
@@ -1000,7 +1000,7 @@ class Inst_Seq(threading.Thread):
                     self.restart_done()
             else:
                 if self.dcs_ready[SVC] and self.dcs_ready[H] and self.dcs_ready[K]:
-                    self.response_complete()
+                    self.response_complete(bool(int(param[1])))
     
         elif param[0] == CMD_SETFSPARAM_ICS:   
             print(self.apply_mode) 
@@ -1019,7 +1019,7 @@ class Inst_Seq(threading.Thread):
             elif self.apply_mode == ACQ_MODE:
                 #print("instDummy.DataResponse:ACCEPTED")
                 #instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
-                self.response_complete()
+                self.response_complete(bool(int(param[1])))
 
                 # request TCS info     
                 #self.req_from_TCS()
@@ -1035,16 +1035,21 @@ class Inst_Seq(threading.Thread):
             # request TCS info
             #self.req_from_TCS()
             
+            res = bool(int(param[3]))
+            
             self.acquiring[idx] = False
             if self.apply_mode == TEST_MODE:
-                if not (self.acquiring[SVC] and self.acquiring[H] and self.acquiring[K]): 
+                if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
                     self.apply_mode = None
-                    self.response_complete()
-                   
+                    self.response_complete(res)
+                       
             elif self.apply_mode == ACQ_MODE:
                 self.apply_mode = None
-                self.svc_file_list.append(param[2])
-                self.save_fits_MEF(self.dcs_list[SVC])
+                if res:
+                    self.svc_file_list.append(param[2])
+                    self.save_fits_MEF(self.dcs_list[SVC])
+                else:
+                    self.response_complete(False)
                 
             elif self.apply_mode == SCI_MODE:
                 if self.cur_number_svc == 1:
@@ -1063,7 +1068,7 @@ class Inst_Seq(threading.Thread):
             
             self.acquiring[idx] = False
                 
-            if not (self.acquiring[SVC] and self.acquiring[H] and self.acquiring[K]):
+            if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
                 if self.apply_mode != None:
                     self.apply_mode = None
                     self.response_complete()
@@ -1085,14 +1090,14 @@ class Inst_Seq(threading.Thread):
                     self.restart_done()
             else:
                 if self.dcs_ready[SVC] and self.dcs_ready[H] and self.dcs_ready[K]:
-                    self.response_complete()
+                    self.response_complete(bool(int(param[1])))
     
         elif param[0] == CMD_SETFSPARAM_ICS:   
             print(self.apply_mode) 
             if self.apply_mode == None or self.cur_action_id == 0: return
             
             self.dcs_setparam[idx] = True  
-            self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ACCEPTED
+            #self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ACCEPTED
             
             if self.apply_mode == TEST_MODE:
                 if self.dcs_setparam[SVC] and self.dcs_setparam[H] and self.dcs_setparam[K]:
@@ -1100,8 +1105,9 @@ class Inst_Seq(threading.Thread):
                     
             else:
                 if self.dcs_setparam[H] and self.dcs_setparam[K]:
-                    print("instDummy.DataResponse:ACCEPTED")
-                    instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
+                    #("instDummy.DataResponse:ACCEPTED")
+                    #nstDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
+                    self.response_complete(bool(int(param[1])))
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
             print(self.apply_mode) 
@@ -1111,17 +1117,22 @@ class Inst_Seq(threading.Thread):
             
             if self.apply_mode == None or self.cur_action_id == 0: return
             
+            res = bool(int(param[3]))
+            
             self.acquiring[idx] = False
             if self.apply_mode == TEST_MODE:
-                if not (self.acquiring[SVC] and self.acquiring[H] and self.acquiring[K]): 
+                if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
                     self.apply_mode = None
-                    self.response_complete()
+                    self.response_complete(res)
                 
             if self.apply_mode == SCI_MODE:
                 self.filepath_h = param[2]
-                if not (self.acquiring[H] and self.acquiring[K]):
+                if not self.acquiring[H] and not self.acquiring[K]:
                     self.apply_mode = None
-                    self.save_fits_MEF()
+                    if res:
+                        self.save_fits_MEF()
+                    else:
+                        self.response_complete(False)
             
         elif param[0] == CMD_STOPACQUISITION:
             print(self.apply_mode)       
@@ -1129,7 +1140,7 @@ class Inst_Seq(threading.Thread):
             
             self.acquiring[idx] = False
                 
-            if not (self.acquiring[SVC] and self.acquiring[H] and self.acquiring[K]):
+            if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
                 if self.apply_mode != None:
                     self.apply_mode = None
                     self.response_complete()
@@ -1152,14 +1163,14 @@ class Inst_Seq(threading.Thread):
                     self.restart_done()
             else:
                 if self.dcs_ready[SVC] and self.dcs_ready[H] and self.dcs_ready[K]:
-                    self.response_complete()
+                    self.response_complete(bool(int(param[1])))
     
         elif param[0] == CMD_SETFSPARAM_ICS:   
             print(self.apply_mode) 
             if self.apply_mode == None or self.cur_action_id == 0: return
             
             self.dcs_setparam[idx] = True  
-            self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ACCEPTED
+            #self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ACCEPTED
             
             if self.apply_mode == TEST_MODE:
                 if self.dcs_setparam[SVC] and self.dcs_setparam[H] and self.dcs_setparam[K]:
@@ -1167,8 +1178,9 @@ class Inst_Seq(threading.Thread):
                     
             else:
                 if self.dcs_setparam[H] and self.dcs_setparam[K]:
-                    print("instDummy.DataResponse:ACCEPTED")
-                    instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
+                    #print("instDummy.DataResponse:ACCEPTED")
+                    #instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
+                    self.response_complete(bool(int(param[1])))
 
         elif param[0] == CMD_ACQUIRERAMP_ICS:
             print(self.apply_mode) 
@@ -1178,17 +1190,22 @@ class Inst_Seq(threading.Thread):
             
             if self.apply_mode == None or self.cur_action_id == 0: return
             
+            res = bool(int(param[3]))
+            
             self.acquiring[idx] = False
             if self.apply_mode == TEST_MODE:
-                if not (self.acquiring[SVC] and self.acquiring[H] and self.acquiring[K]): 
+                if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
                     self.apply_mode = None
-                    self.response_complete()
+                    self.response_complete(res)
                    
             if self.apply_mode == SCI_MODE:
                 self.filepath_k = param[2]
-                if not (self.acquiring[H] and self.acquiring[K]):
+                if not self.acquiring[H] and not self.acquiring[K]:
                     self.apply_mode = None
-                    self.save_fits_MEF()
+                    if res:
+                        self.save_fits_MEF()
+                    else:
+                        self.response_complete(False)
             
         elif param[0] == CMD_STOPACQUISITION:
             print(self.apply_mode)       
@@ -1196,33 +1213,33 @@ class Inst_Seq(threading.Thread):
             
             self.acquiring[idx] = False
                 
-            if not (self.acquiring[SVC] and self.acquiring[H] and self.acquiring[K]):
+            if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
                 if self.apply_mode != None:
                     self.apply_mode = None
                     self.response_complete()
 
 
-    def response_complete(self):
+    def response_complete(self, status=False):
         if self.cur_action_id == 0:
             return 
         
-        self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.COMPLETED
+        if status:
+            self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.COMPLETED
+        else:
+            self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ERROR
         
         _t = ti.time() - self.actRequested[self.cur_action_id]['t'] 
 
         '''
         if _t < 0.300:
-            print("instDummy.DataResponse:COMPLETED")
-            instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
-            self.publish_to_queue_test("instDummy.DataResponse(giapi.HandlerResponse.COMPLETED)")
-        
+            print("instDummy.DataResponse:COMPLETED")                    
         el
         '''
         if _t >= 0.300:
             print("postCompetionInfo")
-            giapi.CommandUtil.postCompletionInfo(self.cur_action_id, giapi.HandlerResponse.create(self.actRequested[self.cur_action_id]['numAct']))      
+            giapi.CommandUtil.postCompletionInfo(self.cur_action_id, giapi.HandlerResponse.create(self.actRequested[self.cur_action_id]['response']))      
             
-            cmd = "giapi.CommandUtil.postCompletionInfo(%d, giapi.HandlerResponse.create(%d))" % (self.cur_action_id, self.actRequested[self.cur_action_id]['numAct'])
+            cmd = "giapi.CommandUtil.postCompletionInfo(%d, giapi.HandlerResponse.create(%d))" % (self.cur_action_id, self.actRequested[self.cur_action_id]['response'])
             self.publish_to_queue_test(cmd)
             
         self.cur_action_id = 0

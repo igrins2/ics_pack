@@ -685,6 +685,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         self.set_K()
                 
             elif param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
+                
+                if not bool(int(param[1])):
+                    msg = "Detector error!"
+                    QMessageBox.warning(self, WARNING, msg)
+                    return
+                
                 self.dcs_ready[dc_idx] = True
                 self.bt_init_status(dc_idx)
 
@@ -699,7 +705,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 elif self.radio_K.isChecked():
                     self.set_K()
                 
-            elif param[0] == CMD_SETFSPARAM_ICS:                    
+            elif param[0] == CMD_SETFSPARAM_ICS:  
+                if not bool(int(param[1])):
+                    msg = "Detector error!"
+                    QMessageBox.warning(self, WARNING, msg)
+                    return
+                                  
                 next_idx = self.get_next_idx(dc_idx)
                 
                 ongoing_filename = "SDC%s_%s_%04d.fits" % (self.dcs_list[dc_idx][-1], self.cur_date, next_idx)
@@ -707,7 +718,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 msg = "%s %s %d %d" % (CMD_ACQUIRERAMP_ICS, self.dcs_list[dc_idx], self.simulation, next_idx)
                 self.publish_to_queue(msg)
 
-            elif param[0] == CMD_ACQUIRERAMP_ICS:      
+            elif param[0] == CMD_ACQUIRERAMP_ICS:     
+                if not bool(int(param[3])):
+                    msg = "Detector error!"
+                    QMessageBox.warning(self, WARNING, msg)
+                    return
+                 
                 self.cur_cnt[dc_idx] += 1
                 self.label_prog_sts[dc_idx].setText("Done")
                 
