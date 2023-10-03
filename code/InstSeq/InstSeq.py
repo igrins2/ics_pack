@@ -349,6 +349,8 @@ class Inst_Seq(threading.Thread):
                         msg = "%s %s" % (INSTSEQ_FRM_MODE, frame_mode)
                         self.publish_to_queue(msg)
                     '''
+                print("instDummy.DataResponse:STARTED")
+                return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                                                                     
             elif seq_cmd == giapi.command.SequenceCommand.OBSERVE:
                 print("SequenceCommand.OBSERVE")
@@ -432,7 +434,7 @@ class Inst_Seq(threading.Thread):
                 #print(t2)
                 t2 = ti.time() - t
                 
-            if t2 >= 0.300 or self.actRequested[action_id]['response'] == giapi.HandlerResponse.ERROR:
+            if self.actRequested[action_id]['response'] == giapi.HandlerResponse.ERROR:
                 print(f'Error detected time: {t2} seconds')
                 print("instDummy.DataResponse:ERROR")
                 return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
@@ -1008,15 +1010,16 @@ class Inst_Seq(threading.Thread):
                 return
             
             self.dcs_setparam[idx] = True  
-            self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ACCEPTED
+            #self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ACCEPTED
             
             if self.apply_mode == TEST_MODE:
                 if self.dcs_setparam[SVC] and self.dcs_setparam[H] and self.dcs_setparam[K]:
                     self.start_acquisition()
                     
             elif self.apply_mode == ACQ_MODE:
-                print("instDummy.DataResponse:ACCEPTED")
-                instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
+                #print("instDummy.DataResponse:ACCEPTED")
+                #instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
+                self.response_complete()
 
                 # request TCS info     
                 #self.req_from_TCS()
