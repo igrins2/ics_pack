@@ -710,7 +710,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     msg = "Detector error!"
                     QMessageBox.warning(self, WARNING, msg)
                     return
-                                  
+                             
+                #20231005
+                if not self.acquiring[dc_idx]:
+                    return
+
                 next_idx = self.get_next_idx(dc_idx)
                 
                 ongoing_filename = "SDC%s_%s_%04d.fits" % (self.dcs_list[dc_idx][-1], self.cur_date, next_idx)
@@ -722,6 +726,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 if not bool(int(param[3])):
                     msg = "Detector error!"
                     QMessageBox.warning(self, WARNING, msg)
+                    return
+
+                #20231006
+                if not self.acquiring[dc_idx]:
                     return
                  
                 self.cur_cnt[dc_idx] += 1
@@ -976,6 +984,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
     def reload_img(self, dc_idx):   
         
+        #20231005
+        self.clean_ax(self.image_ax[dc_idx])
+        self.image_ax[dc_idx].clear()
+
         try:
             #_img = np.flipud(self.img[dc_idx])
             #_img = np.fliplr(np.rot90(self.img[dc_idx])
@@ -1050,10 +1062,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if self.radio_whole_sync.isChecked() or self.radio_SVC.isChecked():
             self.bt_init[SVC].setEnabled(enable)
             self.bt_init_status(SVC)
-        elif self.radio_HK_sync.isChecked()() or self.radio_whole_sync.isChecked() or self.radio_H.isChecked():
+        elif self.radio_HK_sync.isChecked() or self.radio_whole_sync.isChecked() or self.radio_H.isChecked():
             self.bt_init[H].setEnabled(enable)
             self.bt_init_status(H)
-        elif self.radio_HK_sync.isChecked()() or self.radio_whole_sync.isChecked() or self.radio_K.isChecked():    
+        elif self.radio_HK_sync.isChecked() or self.radio_whole_sync.isChecked() or self.radio_K.isChecked():    
             self.bt_init[K].setEnabled(enable)
             self.bt_init_status(K)
         

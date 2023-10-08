@@ -192,7 +192,8 @@ class Inst_Seq(threading.Thread):
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.TEST, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.REBOOT, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.INIT, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
-        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.APPLY, giapi.command.ActivitySet.SET_PRESET,self._handler)
+        #giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.APPLY, giapi.command.ActivitySet.SET_PRESET,self._handler)
+        giapi.CommandUtil.subscribeApply("ig2", giapi.command.ActivitySet.SET_PRESET_START, self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.OBSERVE, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.ABORT, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         
@@ -312,33 +313,15 @@ class Inst_Seq(threading.Thread):
                     keys = config.getValue(k)
                     # keys = ig2:dcs:expTime=1.63 / ig2:seq:state="acq" or "sci"
                     print(keys)
+                    print(f"SCI_MODE: {SCI_MODE} {k} == ig2:seq:state")
                     
                     if k == "ig2:dcs:expTime":
                         self.cur_expTime = float(keys.c_str())
+                        print(f'after asigned {self.cur_expTime}')
                     
                     elif k == "ig2:seq:state":
                         self.apply_mode = keys
-                        
-                        if self.apply_mode == ACQ_MODE:
-                            self.dcs_setparam[SVC] = False
-                            self.set_exp(self.dcs_list[SVC])
-                            
-                        elif self.apply_mode == SCI_MODE:
-                            self.dcs_setparam[SVC] = False
-                            self.dcs_setparam[H] = False
-                            self.dcs_setparam[K] = False
-                                                        
-                            _exptime_sci = self.cur_expTime
-                            
-                            _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
-                            _FS_number_sci = N_fowler_max
-                            while _FS_number_sci > _max_fowler_number:
-                                _FS_number_sci //= 2
-                                
-                            if not self.cur_ObsApp_taking:
-                                self.set_exp(self.dcs_list[SVC])
-                            self.set_exp("H_K", _exptime_sci, _FS_number_sci)
-                            
+                                                   
                     '''    
                     elif k == "ig2:seq:mode":
                         self.frame_mode = keys
@@ -348,7 +331,27 @@ class Inst_Seq(threading.Thread):
                         msg = "%s %s" % (INSTSEQ_FRM_MODE, frame_mode)
                         self.publish_to_queue(msg)
                     '''
-                print("instDummy.DataResponse:STARTED")
+                if self.apply_mode == ACQ_MODE:
+                    self.dcs_setparam[SVC] = False
+                    self.set_exp(self.dcs_list[SVC])
+                            
+                elif self.apply_mode == SCI_MODE:
+                    self.dcs_setparam[SVC] = False
+                    self.dcs_setparam[H] = False
+                    self.dcs_setparam[K] = False
+                                                        
+                    _exptime_sci = self.cur_expTime
+                            
+                    _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
+                    _FS_number_sci = N_fowler_max
+                    while _FS_number_sci > _max_fowler_number:
+                        _FS_number_sci //= 2
+                                
+                    print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
+                    self.set_exp("H_K", _exptime_sci, _FS_number_sci)
+                    if not self.cur_ObsApp_taking:
+                        self.set_exp(self.dcs_list[SVC])
+
                 return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                                                                     
             elif seq_cmd == giapi.command.SequenceCommand.OBSERVE:
@@ -359,8 +362,8 @@ class Inst_Seq(threading.Thread):
                     keys = config.getValue(k)
                     print(keys)
                     
-                    if k == "DATA_LABELS":
-                        self.data_label = keys
+                    if k == "DATA_LABEL":
+                        self.data_label = keys.c_str()
                         
                     else:
                         _t = datetime.datetime.utcnow()
@@ -369,7 +372,11 @@ class Inst_Seq(threading.Thread):
                         self.data_label = _tmp
                                                         
                     self.send_to_GDS(giapi.data.ObservationEvent.OBS_PREP, self.data_label)
-                    self.send_to_GDS(giapi.data.ObservationEvent.OBS_STARTED_ACQ, self.data_label)
+                    self.send_to_GDS(giapi.data.ObservationEvent.OBS_START_ACQ, self.data_label)
+                    
+                    self.cur_number_svc = 1
+                    self.filepath_h = ""
+                    self.filepath_k = ""
                     
                     self.cur_number_svc = 0
                     self.filepath_h = ""
@@ -405,12 +412,14 @@ class Inst_Seq(threading.Thread):
                 if self.apply_mode == ACQ_MODE:
                     self.stop_acquistion(self.dcs_list[SVC])
                     print("instDummy.DataResponse:STARTED")
-                    instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
+                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                         
                 elif self.apply_mode == SCI_MODE:
                     self.stop_acquistion("H_K")  
+                    if not self.cur_ObsApp_taking:
+                        self.stop_acquistion(self.dcs_list[SVC])
                     print("instDummy.DataResponse:STARTED")
-                    instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
+                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
             '''
             #from getting the TCS info. PA!
@@ -613,7 +622,7 @@ class Inst_Seq(threading.Thread):
                 self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_OBSERVE}
                                 
                 self.send_to_GDS(giapi.data.ObservationEvent.OBS_PREP, self.data_label)
-                self.send_to_GDS(giapi.data.ObservationEvent.OBS_STARTED_ACQ, self.data_label)
+                self.send_to_GDS(giapi.data.ObservationEvent.OBS_START_ACQ, self.data_label)
                 
                 if self.apply_mode == ACQ_MODE:
                     self.acquiring[SVC] = True
@@ -758,6 +767,9 @@ class Inst_Seq(threading.Thread):
             
             
     def req_from_TCS(self):
+        
+        return
+
         tcsContext = cppyy.gbl.TcsContext()
         print(tcsContext)
         
@@ -951,7 +963,7 @@ class Inst_Seq(threading.Thread):
             if self.apply_mode == TEST_MODE:
                 if not self.acquiring[SVC]: 
                     self.apply_mode = None
-                    self.response_complete()
+                    self.response_complete(True)
             
             elif self.apply_mode == ACQ_MODE:
                 self.acquiring[SVC] = False
@@ -981,7 +993,7 @@ class Inst_Seq(threading.Thread):
                 self.acquiring[idx] = False
            
             self.apply_mode = None
-            self.response_complete()
+            self.response_complete(True)
             
             
     def dcs_data_processing_SVC(self, param):
@@ -1071,7 +1083,7 @@ class Inst_Seq(threading.Thread):
             if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
                 if self.apply_mode != None:
                     self.apply_mode = None
-                    self.response_complete()
+                    self.response_complete(True)
                     
                     
     def dcs_data_processing_H(self, param):
@@ -1143,7 +1155,7 @@ class Inst_Seq(threading.Thread):
             if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
                 if self.apply_mode != None:
                     self.apply_mode = None
-                    self.response_complete()
+                    self.response_complete(True)
                     
                 
                 
@@ -1216,7 +1228,7 @@ class Inst_Seq(threading.Thread):
             if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
                 if self.apply_mode != None:
                     self.apply_mode = None
-                    self.response_complete()
+                    self.response_complete(True)
 
 
     def response_complete(self, status=False):
@@ -1235,13 +1247,21 @@ class Inst_Seq(threading.Thread):
             print("instDummy.DataResponse:COMPLETED")                    
         el
         '''
-        if _t >= 0.300:
-            print("postCompetionInfo")
-            giapi.CommandUtil.postCompletionInfo(self.cur_action_id, giapi.HandlerResponse.create(self.actRequested[self.cur_action_id]['response']))      
+        print (f"time: {_t} response: {self.actRequested[self.cur_action_id]['response']}")
+        #if _t >= 0.300:
+        #    print("postCompetionInfo")
+        giapi.CommandUtil.postCompletionInfo(self.cur_action_id, giapi.HandlerResponse.create(self.actRequested[self.cur_action_id]['response']))      
             
-            cmd = "giapi.CommandUtil.postCompletionInfo(%d, giapi.HandlerResponse.create(%d))" % (self.cur_action_id, self.actRequested[self.cur_action_id]['response'])
-            self.publish_to_queue_test(cmd)
+        cmd = "giapi.CommandUtil.postCompletionInfo(%d, giapi.HandlerResponse.create(%d))" % (self.cur_action_id, self.actRequested[self.cur_action_id]['response'])
+        self.publish_to_queue_test(cmd)
+        
+        #if _t >= 0.300:
+        #    print("postCompetionInfo")
+        #    giapi.CommandUtil.postCompletionInfo(self.cur_action_id, giapi.HandlerResponse.create(self.actRequested[self.cur_action_id]['response']))      
             
+        #    cmd = "giapi.CommandUtil.postCompletionInfo(%d, giapi.HandlerResponse.create(%d))" % (self.cur_action_id, self.actRequested[self.cur_action_id]['response'])
+        #    self.publish_to_queue_test(cmd)
+         
         self.cur_action_id = 0
 
 
@@ -1284,6 +1304,7 @@ class Inst_Seq(threading.Thread):
         else:                      
             _fowlerTime = expTime - T_frame * FS_number
             msg = "%s %s %d %.3f %d %.3f" % (CMD_SETFSPARAM_ICS, target, self.simulation_mode, expTime, FS_number, _fowlerTime)
+        
         
         self.publish_to_queue(msg)
 
@@ -1366,8 +1387,15 @@ class Inst_Seq(threading.Thread):
         return ValHD
             
             
-    def create_cube(self):    
-        for svc_name, idx in enumerate(self.svc_file_list):
+    def create_cube(self):
+        print("self.svc_file_list", self.svc_file_list)
+        if len(self.svc_file_list) == 0:
+            return [], [], [], []
+
+        svc_list, cutout_list = [], []
+        svc_list_header, cutout_list_header = [], []
+        
+        for idx, svc_name in enumerate(self.svc_file_list):
             # read data and header
             filepath = "%sIGRINS/dcss/Fowler/%s" % (WORKING_DIR, svc_name)
             _hdul = pyfits.open(filepath)
@@ -1384,20 +1412,17 @@ class Inst_Seq(threading.Thread):
 
             # make cube
             cx, cy = int(self.slit_cen[0]), int(self.slit_cen[1])
-            pixelscale = self.pixel_scale / 3600.
+            #pixelscale = self.pixel_scale / 3600.
             
             svc_proc = svc_process.SlitviewProc(self.mask_svc)
-
-            svc_list, cutout_list = [], []
-            svc_list_header, cutout_list_header = [], []
 
             _header.set("SVC-IDX", idx+1, "Number of SVC data")
 
             slices = slice(cx-128, cx+128), slice(cx-128, cy+128)
             hdu_list = svc_proc.get_hdulist(_header, _img, slices)
 
-            update_header2(hdu_list[1].header, cx, cy, pixelscale)
-            update_header2(hdu_list[2].header, 128, 128, pixelscale)
+            #update_header2(hdu_list[1].header, cx, cy, pixelscale)
+            #update_header2(hdu_list[2].header, 128, 128, pixelscale)
 
             svc_list.append(hdu_list[1].data)
             cutout_list.append(hdu_list[2].data)
@@ -1482,37 +1507,43 @@ class Inst_Seq(threading.Thread):
         img_array = np.array(svc_list)
         
         #-----------------------------------------------------------------------
-        svc_list_header[0].set("GAIN", 2.00, "[electrons/ADU], Conversion Gain")
-        svc_list_header[0].set("RDNOISE", 9.00, "Read Noise of Fowler Sampled Image with NSAMP")
-        
-        svc_list_header[0].set("SLIT_CX", self.slit_cen[0], "Center position of slit in the SVC image")
-        svc_list_header[0].set("SLIT_CY", self.slit_cen[1], "Center position of slit in the SVC image")
-        #svc_list_header[0].set("SLIT_WID", self.slit_width, "(px) Width of slit")
-        #svc_list_header[0].set("SLIT_LEN", self.slit_len, "(px) Length of slit")
-        svc_list_header[0].set("SLIT_ANG", self.slit_ang, "(d) Position angle of slit in the image")
+        if svc_list_header != []:
+            svc_list_header[0].set("GAIN", 2.00, "[electrons/ADU], Conversion Gain")
+            svc_list_header[0].set("RDNOISE", 9.00, "Read Noise of Fowler Sampled Image with NSAMP")
+            svc_list_header[0].set("SLIT_CX", self.slit_cen[0], "Center position of slit in the SVC image")
+            svc_list_header[0].set("SLIT_CY", self.slit_cen[1], "Center position of slit in the SVC image")
+            svc_list_header[0].set("SLIT_WID", self.slit_width, "(px) Width of slit")
+            svc_list_header[0].set("SLIT_LEN", self.slit_len, "(px) Length of slit")
+            svc_list_header[0].set("SLIT_ANG", self.slit_ang, "(d) Position angle of slit in the image")
         #-----------------------------------------------------------------------
         
-        _new_hdul = pyfits.CompImageHDU(data=img_array, header=svc_list_header[0], compression_type="HCOMPRESS_1", hcomp_scale=2.5)
+        if svc_list_header == []:
+            _new_hdul = pyfits.ImageHDU()
+        else:
+            _new_hdul = pyfits.CompImageHDU(data=img_array, header=svc_list_header[0], compression_type="HCOMPRESS_1", hcomp_scale=2.5)
         hdu_list.append(_new_hdul)
 
         # cutout SVC cube
-        img_array = np.array(cutout_list)
-        _new_hdul = pyfits.ImageHDU(data=img_array, header=cutout_list_header[0])
+        if cutout_list_header == []:
+            _new_hdul = pyfits.ImageHDU()
+        else:
+            img_array = np.array(cutout_list)
+            _new_hdul = pyfits.ImageHDU(data=img_array, header=cutout_list_header[0])
         hdu_list.append(_new_hdul)
         
         # table
         cols = []
         for idx in range(len(svc_list)):
-            table = pyfits.Column(name=str(idx+1), format='20000A', array=[str(svc_list_header[idx])], ascii=False)
-            cols.append(table) 
+            if svc_list_header != []:
+                table = pyfits.Column(name=str(idx+1), format='20000A', array=[str(svc_list_header[idx])], ascii=False)
+                cols.append(table) 
         hdu_table = pyfits.BinTableHDU.from_columns(cols)
         hdu_list.append(hdu_table)
         
         _t = datetime.datetime.utcnow()
-        cur_date = [_t.year, _t.month, _t.day]
-        path = "%sIGRINS/Data/%s/" % (WORKING_DIR, cur_date)
+        path = "%sIGRINS/Data/%04d%02d%02d" % (WORKING_DIR, _t.year, _t.month, _t.day)
         self.log.createFolder(path)
-        MEF_file = "%s%s.fits" % (path, self.data_label)
+        MEF_file = "%s/%s" % (path, self.data_label)
         
         new_hdul = pyfits.HDUList(hdu_list)
         new_hdul.writeto(MEF_file, overwrite=True) 
@@ -1528,7 +1559,7 @@ class Inst_Seq(threading.Thread):
         self.filepath_h = ""
         self.filepath_k = ""
         self.frame_mode = ""
-        self.response_complete()
+        self.response_complete(True)
 
 
     def stop_acquistion(self, target="all"):     

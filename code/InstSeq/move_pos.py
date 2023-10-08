@@ -58,9 +58,6 @@ class MovePosition(threading.Thread):
         self.producer = None
                                 
         self.tcs_waitTime = int(cfg.get(INST_SEQ, "tcs-wait-time"))
-                                          
-        
-    def __del__(self):
         
         for th in threading.enumerate():
             print(th.name + " exit.")              
@@ -88,40 +85,42 @@ class MovePosition(threading.Thread):
         
     def send_to_TCS(self, p, q):        
         #res = giapi.GeminiUtil.tcsApplyOffset(p, q, giapi.OffsetType.ACQ, self.tcs_waitTime)    # after wait time, no response, res = 0 : wait time -> config.ini
-            
+        res = giapi.GeminiUtil.tcsApplyOffset(float(p), float(q), giapi.OffsetType.ACQ, self.tcs_waitTime)    
+        ##res = 1
         msg = "tcsApplyOffset %s %s->" % (p, q)
+        print(f'Offset executed {msg} ')
         self.log.send(self.iam, INFO, msg)
                 
-        #msg = "TCS Finished! result is: %d" % res
-        #self.log.send(self.iam, INFO, msg)
+        msg = "TCS Finished! result is: %d" % res
+        self.log.send(self.iam, INFO, msg)
         
         #if res == 1:
         msg = "%s %s %s" % (MOVEPOS_P_Q, p, q)
         self.publish_to_queue(msg)
         
         
-    def start(self):
-        print( '================================================\n'+
-            '                Ctrl + C to exit or type: exit  \n'+
-            '================================================\n')
+    def start(self, p, q):
+        #print( '================================================\n'+
+        #    '                Ctrl + C to exit or type: exit  \n'+
+        #    '================================================\n')
                     
-        while True:
-            print("input p q:", end=" ")
-            args = input()
-            if args == "exit":
-                break
+        #while True:
+        #    print("input p q:", end=" ")
+        #    args = input()
+        #    if args == "exit":
+        #        break
             
-            param = list(args.split())    
-            if len(param) == 2:
-                self.send_to_TCS(param[0], param[1])
+        #    param = list(args.split())    
+        #    if len(param) == 2:
+        #self.send_to_TCS(param[0], param[1])
+        self.send_to_TCS(p, q)
     
     
 if __name__ == "__main__":
         
     proc = MovePosition()
-        
     proc.connect_to_server_ex()
-    proc.start()
+    proc.start(sys.argv[1], sys.argv[2])
     
     proc.__del__()
         
