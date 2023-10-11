@@ -11,19 +11,19 @@
 3. Set nfs mount
 	- dcs: server / ics, TelOps: client
 	
-		**S-192.168.1.11, H-192.168.1.18, K-192.168.1.15** (IP address may be changed for the future)
+		**S-192.168.1.200, H-192.168.1.201, K-192.168.1.202** (IP address may be changed for the future)
 
 	- IGRINS setting directory - $HOME/IGRINS
 		
 		- example for dcss
 		```
 		# dnf install nfs-utils nfs4-acl-tools
-		# showmount -e 192.168.1.11
-		# mount -t nfs 192.168.1.11:/home/dcss/DCS/Data $HOME/IGRINS/dcss
+		# showmount -e 192.168.1.200
+		# mount -t nfs 192.168.1.200:/home/dcss/DCS/Data $HOME/IGRINS/dcss
 	
 		# mount | grep nfs
 	
-		# echo "192.168.1.11:/home/dcss/DCS/Data     $HOME/IGRINS/dcss  nfs     defaults 0 0">>/etc/fstab
+		# echo "192.168.1.200:/home/dcss/DCS/Data     $HOME/IGRINS/dcss  nfs     defaults 0 0">>/etc/fstab
 		# cat /etc/fstab
 		```
 4. Install rabbitmq server 

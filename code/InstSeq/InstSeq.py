@@ -197,7 +197,7 @@ class Inst_Seq(threading.Thread):
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.OBSERVE, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.ABORT, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         
-        print(f'Subscribing APPLY {giapi.CommandUtil.subscribeApply("ig", giapi.command.ActivitySet.SET_PRESET, self._handler)}')
+        #print(f'Subscribing APPLY {giapi.CommandUtil.subscribeApply("ig", giapi.command.ActivitySet.SET_PRESET, self._handler)}')
         
         if self.reboot:
                                             
@@ -375,10 +375,6 @@ class Inst_Seq(threading.Thread):
                     self.send_to_GDS(giapi.data.ObservationEvent.OBS_START_ACQ, self.data_label)
                     
                     self.cur_number_svc = 1
-                    self.filepath_h = ""
-                    self.filepath_k = ""
-                    
-                    self.cur_number_svc = 0
                     self.filepath_h = ""
                     self.filepath_k = ""
                     

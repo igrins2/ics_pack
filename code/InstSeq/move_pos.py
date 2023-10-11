@@ -58,6 +58,10 @@ class MovePosition(threading.Thread):
         self.producer = None
                                 
         self.tcs_waitTime = int(cfg.get(INST_SEQ, "tcs-wait-time"))
+        #print(self.tcs_waitTime)
+                                          
+        
+    def __del__(self):
         
         for th in threading.enumerate():
             print(th.name + " exit.")              
