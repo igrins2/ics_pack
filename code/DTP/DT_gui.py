@@ -28,6 +28,7 @@ import subprocess
 import time as ti
 import datetime
 import threading
+from distutils.util import strtobool
 
 import numpy as np
 import astropy.io.fits as fits 
@@ -91,6 +92,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         motor_ltpos = cfg.get(HK, "lt-pos").split(",")
 
         self.t_after_lamp_on = int(cfg.get(HK, "lampontime"))
+        
+        self.simulation = strtobool(cfg.get(MAIN, "simulation"))
 
         self.com_list = ["pdu", "lt", "ut"]
         self.dcs_list = ["DCSS", "DCSH", "DCSK"]
@@ -140,9 +143,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.sts_lt_pos[4].setText(motor_ltpos[4])
         
         self.e_movinginterval.setText("1")        
-        
-        self.simulation = False     #from EngTools
-        
+                
         self.mode = SINGLE_MODE
         self.continuous = [False for _ in range(DCS_CNT)]
         
