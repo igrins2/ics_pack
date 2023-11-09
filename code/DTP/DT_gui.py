@@ -3,11 +3,12 @@
 """
 Created on Jun 28, 2022
 
-Modified on Aug 9, 2023
+Modified on Oct 31, 2023
 
 @author: hilee
 """
 
+from curses import KEY_BEG
 import sys, os
 
 sys.path.append(os.path.dirname(os.path.abspath(os.path.dirname(__file__))))
@@ -907,6 +908,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.cur_date = "%04d%02d%02d" % (_t.year, _t.month, _t.day)
         
         dir_names = []
+        dir_h, dir_k = [], []
         try:
             if dc_idx == SVC:
                 filepath_s = "%sIGRINS/%s/Fowler/%s/" % (WORKING_DIR, self.dcs_list[SVC].lower(), self.cur_date)
@@ -920,23 +922,29 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 for names in os.listdir(filepath_h):
                     if names.find(".fits") < 0:
                         dir_names.append(names)
+                        dir_h.append(names)
 
                 #if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_HK or self.sel_mode == MODE_K:
                 filepath_k = "%sIGRINS/%s/Fowler/%s/" % (WORKING_DIR, self.dcs_list[K].lower(), self.cur_date)   
                 for names in os.listdir(filepath_k):
                     if names.find(".fits") < 0:
                         dir_names.append(names)
+                        dir_k.append(names)
+        except:
+            pass
 
+        if self.sel_mode == MODE_H:
+            numbers = list(map(int, dir_h))
+        elif self.sel_mode == MODE_K:
+            numbers = list(map(int, dir_k))
+        else:          
             numbers = list(map(int, dir_names))
 
-            if len(numbers) > 0:
-                next_idx = max(numbers) + 1
-            else:
-                next_idx = 1
-
-        except:
-            next_idx = 1        
-            
+        if len(numbers) > 0:
+            next_idx = max(numbers) + 1
+        else:
+            next_idx = 1
+              
         return next_idx
             
     
@@ -954,13 +962,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.e_path[dc_idx].setText(path)
             self.e_savefilename[dc_idx].setText(subdir[-1])
             
-            frm = fits.open(filepath)
-            data = frm[0].data
-            self.header[dc_idx] = frm[0].header
+            hdul = fits.open(filepath)
+            data = hdul[0].data
+            self.header[dc_idx] = hdul[0].header
             _img = np.array(data, dtype = "f")
             #_img = np.flipud(np.array(data, dtype = "f"))
             self.img[dc_idx] = _img#[0:FRAME_Y, 0:FRAME_X]
             #self.img = _img
+            hdul.close()
             
             self.zmin, self.zmax = zs.zscale(self.img[dc_idx])
             range = "%d ~ %d" % (self.zmin, self.zmax)
@@ -1060,16 +1069,34 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.radio_H.setEnabled(enable)
         self.radio_K.setEnabled(enable)
         
-        if self.radio_whole_sync.isChecked() or self.radio_SVC.isChecked():
+        if self.radio_HK_sync.isChecked():
+            self.bt_init[H].setEnabled(enable)
+            self.bt_init[K].setEnabled(enable)
+            
+            self.bt_init_status(H)
+            self.bt_init_status(K)
+            
+        elif self.radio_whole_sync.isChecked():
+            self.bt_init[SVC].setEnabled(enable)
+            self.bt_init[H].setEnabled(enable)
+            self.bt_init[K].setEnabled(enable)
+            
+            self.bt_init_status(SVC)
+            self.bt_init_status(H)
+            self.bt_init_status(K)
+            
+        elif self.radio_SVC.isChecked():
             self.bt_init[SVC].setEnabled(enable)
             self.bt_init_status(SVC)
-        elif self.radio_HK_sync.isChecked() or self.radio_whole_sync.isChecked() or self.radio_H.isChecked():
+            
+        elif self.radio_H.isChecked():
             self.bt_init[H].setEnabled(enable)
             self.bt_init_status(H)
-        elif self.radio_HK_sync.isChecked() or self.radio_whole_sync.isChecked() or self.radio_K.isChecked():    
+            
+        elif self.radio_K.isChecked():
             self.bt_init[K].setEnabled(enable)
             self.bt_init_status(K)
-        
+                
         
     def protect_btn_ut(self, enable):
         self.bt_utpos_prev.setEnabled(enable)
