@@ -1,11 +1,12 @@
 """
 ... from uploader.py from IGRINS
 
-Modified on July 26, 2023
+Modified on Nov 20, 2023
 
 @author: hilee, JJLee
 """
 
+import enum
 import os, sys
 #import time as ti
 import datetime
@@ -22,6 +23,20 @@ from SubSystems_def import *
 import Libs.SetConfig as sc
 from Libs.MsgMiddleware import *
 from Libs.logger import *
+
+import cppyy
+giapi_root=os.environ.get("GIAPI_ROOT")
+cppyy.add_include_path(f"{giapi_root}/install/include")
+cppyy.add_library_path(f"{giapi_root}/install/lib")
+cppyy.include("giapi/GeminiUtil.h")
+cppyy.include("giapi/giapi.h")
+cppyy.include("giapi/GiapiUtil.h")
+cppyy.include("giapi/StatusUtil.h")
+cppyy.include("giapi/giapiexcept.h")
+cppyy.load_library("libgiapi-glue-cc")
+cppyy.add_include_path(f"{giapi_root}/src/examples/InstrumentDummyPython")
+
+from cppyy.gbl import giapi
 
 #HKLogPath = WORKING_DIR + "IGRINS/Log/Web/tempweb.dat"
 
@@ -90,7 +105,41 @@ GEA_COM_TM          = 37
 GEA_COM_VM          = 38
 GEA_COM_PDU         = 39
 
-
+GEA_Items = {GEA_VACUUM:"vacuum:pressure", 
+            
+            GEA_BENCH:"bench:temp",
+            GEA_BENCH_HEATING:"bench:heatPower",
+            GEA_GRATING:"grating:temp", 
+            GEA_GRATING_HEATING:"grating:heatPower", 
+            GEA_DETS:"dcss:temp", 
+            GEA_DETS_HEATING:"dcss:heatPower",
+            GEA_DETK:"dcsk:temp", 
+            GEA_DETK_HEATING:"dcsk:heatPower",
+            GEA_CAMH:"camh:temp", 
+            GEA_DETH:"dcsh:temp", 
+            GEA_DETH_HEATING:"dcsh:heatPower",
+            GEA_BENCHCEN:"benchCenter:temp", 
+            GEA_COLDHEAD1:"1stColdHead:temp", 
+            GEA_COLDHEAD2:"2ndColdHead:temp", 
+            GEA_COLDSTOP:"heaterCover:temp", 
+            GEA_CHARCOALBOX:"charcoalBox:temp", 
+            GEA_CAMK:"camk:temp", 
+            GEA_SHIELDTOP:"radShield:temp", 
+            GEA_AIR:"rackAmbient:temp", 
+            
+            GEA_PDU1_PWR:"macie:power",
+            GEA_PDU2_PWR:"vm:power", 
+            GEA_PDU3_PWR:"motor:power", 
+            GEA_PDU4_PWR:"THLamp:power", 
+            GEA_PDU5_PWR:"HCLamp:power",
+            
+            GEA_COM_PDU:"pdu:com",
+            GEA_COM_VM:"vacuum:com",
+            GEA_COM_TC1:"tc1:com",
+            GEA_COM_TC2:"tc2:com",
+            GEA_COM_TC3:"tc3:com",
+            GEA_COM_TM:"tm:com"} 
+        
 class uploader(threading.Thread):
     
     def __init__(self):
@@ -110,13 +159,33 @@ class uploader(threading.Thread):
         
         self.hk_sub_ex = cfg.get(MAIN, "hk_exchange")     
         self.hk_sub_q = cfg.get(MAIN, "hk_routing_key")
+
+        self.simul = strtobool(cfg.get(MAIN, "simulation"))
                 
         #datetime, vacuum, temperature 14, heating power 5, set point 5, pdu status 8, com status 6
-        self.hk_list = [None for _ in range(40)]
+        self.hk_list = [0 for _ in range(40)]
+        
+        self.temp_sts_bench, self.temp_sts_grating, self.temp_sts_air = None, None, None
+        self.temp_sts_detH, self.temp_sts_detK, self.temp_sts_detS = None, None, None
         
         self.upload_interval = int(cfg.get(HK, "upload-intv"))
+        self.upload_to_web = strtobool(cfg.get(HK, "upload-to-web"))
         
-        self.simul = strtobool(cfg.get(MAIN, "simulation"))
+        # --------------------------------------------
+        self.temp_warn_lower, self.temp_normal_lower, self.temp_normal_upper, self.temp_warn_upper = dict() ,dict() ,dict() ,dict() 
+        self.label_list = ["tmc1-a", "tmc1-b", "tmc2-a", "tmc2-b", "tmc3-b", "tm-8"]
+        for k in self.label_list:
+            hk_list = cfg.get(HK, k).split(",")
+            if k == "tm-8":
+                self.temp_normal_lower[k] = hk_list[0]
+                self.temp_normal_upper[k] = hk_list[1]
+                self.temp_warn_upper[k] = hk_list[2]
+            else:
+                self.temp_warn_lower[k] = hk_list[0]
+                self.temp_normal_lower[k] = hk_list[1]
+                self.temp_normal_upper[k] = hk_list[3]
+                self.temp_warn_upper[k] = hk_list[4]
+        # --------------------------------------------
 
         firebase = self.get_firebase(self.simul)
         self.db = firebase.database()
@@ -124,9 +193,45 @@ class uploader(threading.Thread):
         self.producer = None
         self.consumer = [None for _ in range(COM_CNT)]
         self.consumer_hk = None       
-                        
+        self.consumer_dcs = [None for _ in range(DCS_CNT)]
+        
+        self.dcs_enable = [True for _ in range(DCS_CNT)]
+              
+        # ---------------------------------------------------------------------          
+        # create status items
+        for idx, item in enumerate(GEA_Items):
+            if idx < 20:
+                break
+            cmd = "ig2:sts:" + item
+            if idx == 0:
+                giapi.StatusUtil.createStatusItem(cmd, giapi.type.DOUBLE)
+            else:
+                giapi.StatusUtil.createStatusItem(cmd, giapi.type.FLOAT)
+            print(cmd)
+
+        # create alarm items 
+        for idx in range(GEA_COM_PDU, len(GEA_Items)):
+            cmd = "ig2:alm:" + GEA_Items[idx]            
+            giapi.StatusUtil.createAlarmStatusItem(cmd, giapi.type.BOOLEAN)
+            print(cmd)
+       
+        giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_BENCH], giapi.type.BOOLEAN)
+        giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_GRATING], giapi.type.BOOLEAN)
+        giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETS], giapi.type.BOOLEAN)
+        giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETK], giapi.type.BOOLEAN)
+        giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETH], giapi.type.BOOLEAN)  
+        
+        # create health items
+        giapi.StatusUtil.createHealthStatusItem("ig2:health")
+        giapi.StatusUtil.createHealthStatusItem("ig2:ics:health")
+        giapi.StatusUtil.createHealthStatusItem("ig2:dcsh:health")
+        giapi.StatusUtil.createHealthStatusItem("ig2:dcsk:health")
+        giapi.StatusUtil.createHealthStatusItem("ig2:dcss:health")
+        # ---------------------------------------------------------------------
+        
         # publish queue "dewar list"
         threading.Timer(self.upload_interval, self.publish_dewar_list).start()
+        threading.Timer(self.upload_interval, self.uploade_to_GEA).start()      
         
         
     def __del__(self):
@@ -142,6 +247,8 @@ class uploader(threading.Thread):
         for i in range(COM_CNT):
             self.consumer[i] = None
         self.consumer_hk = None
+        for i in range(DCS_CNT):
+            self.consumer_dcs[i] = None
 
         self.log.send(self.iam, DEBUG, "Closed!")
                                      
@@ -268,6 +375,7 @@ class uploader(threading.Thread):
         try:
             if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_TC1] = bool(int(param[1]))
+                self.alarm_com_status(GEA_COM_TC1)            
             
             elif param[0] == HK_REQ_GETVALUE:
                 self.hk_list[GEA_BENCH] = float(param[1])
@@ -276,6 +384,9 @@ class uploader(threading.Thread):
                 self.hk_list[GEA_GRATING_HEATING] = float(param[4])
                 self.hk_list[GEA_BENCH_SP] = float(param[5])
                 self.hk_list[GEA_GRATING_SP] = float(param[6])
+                
+                self.temp_sts_bench = self.alarm_temperature(self.label_list[0], GEA_BENCH)
+                self.temp_sts_grating = self.alarm_temperature(self.label_list[1], GEA_GRATING)
                 
         except:
             self.log.send(self.iam, WARNING, "parsing error")
@@ -293,6 +404,7 @@ class uploader(threading.Thread):
         try:
             if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_TC2] = bool(int(param[1]))
+                self.alarm_com_status(GEA_COM_TC2)
             
             elif param[0] == HK_REQ_GETVALUE:
                 self.hk_list[GEA_DETS] = float(param[1])
@@ -301,6 +413,9 @@ class uploader(threading.Thread):
                 self.hk_list[GEA_DETK_HEATING] = float(param[4])
                 self.hk_list[GEA_DETS_SP] = float(param[5])
                 self.hk_list[GEA_DETK_SP] = float(param[6])
+                
+                self.temp_sts_detS = self.alarm_temperature(self.label_list[2], GEA_DETS)
+                self.temp_sts_detK = self.alarm_temperature(self.label_list[3], GEA_DETK)
         
         except:
             self.log.send(self.iam, WARNING, "parsing error")
@@ -318,12 +433,15 @@ class uploader(threading.Thread):
         try:
             if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_TC3] = bool(int(param[1]))
+                self.alarm_com_status(GEA_COM_TC3)
             
             elif param[0] == HK_REQ_GETVALUE:
                 self.hk_list[GEA_CAMH] = float(param[1])
                 self.hk_list[GEA_DETH] = float(param[2])
                 self.hk_list[GEA_DETH_HEATING] = float(param[3])
                 self.hk_list[GEA_DETH_SP] = float(param[4])
+                
+                self.temp_sts_detH = self.alarm_temperature(self.label_list[4], GEA_DETH)
                 
         except:
             self.log.send(self.iam, WARNING, "parsing error")
@@ -342,6 +460,7 @@ class uploader(threading.Thread):
         try:
             if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_TM] = bool(int(param[1]))
+                self.alarm_com_status(GEA_COM_TM)
             
             elif param[0] == HK_REQ_GETVALUE:
                 self.hk_list[GEA_BENCHCEN] = float(param[1])
@@ -352,6 +471,8 @@ class uploader(threading.Thread):
                 self.hk_list[GEA_CAMK] = float(param[6])
                 self.hk_list[GEA_SHIELDTOP] = float(param[7])
                 self.hk_list[GEA_AIR] = float(param[8])
+                
+                self.temp_sts_air = self.alarm_temperature_m(self.label_list[5], GEA_AIR)
                 
         except:
             self.log.send(self.iam, WARNING, "parsing error")
@@ -370,6 +491,7 @@ class uploader(threading.Thread):
         try:
             if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_VM] = bool(int(param[1]))
+                self.alarm_com_status(GEA_COM_VM)
             
             elif param[0] == HK_REQ_GETVALUE:
                 dpvalue = ""
@@ -395,10 +517,11 @@ class uploader(threading.Thread):
         try:
             if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_PDU] = bool(int(param[1]))
+                self.alarm_com_status(GEA_COM_PDU)
             
-            elif param[1] == HK_REQ_PWR_STS:
+            elif param[0] == HK_REQ_PWR_STS:
                 for i in range(PDU_IDX):
-                    self.hk_list[GEA_PDU1_PWR+i] = bool(int(param[i+1]))
+                    self.hk_list[GEA_PDU1_PWR+i] = param[i+1]
         
         except:
             self.log.send(self.iam, WARNING, "parsing error")
@@ -416,6 +539,8 @@ class uploader(threading.Thread):
         try:
             if param[0] == HK_REQ_UPLOAD_DB:
                 db = param[1:]
+                if not self.upload_to_web:    return
+                
                 if self.simul:
                     print("uploaded virtual firebase database...")
                 
@@ -424,6 +549,69 @@ class uploader(threading.Thread):
         except:
             self.log.send(self.iam, WARNING, "parsing error")
                     
+    
+    #-------------------------------
+    # dcs queue
+    def connect_to_server_dcs_q(self):
+        # RabbitMQ connect
+        dcs_list = ["DCSS", "DCSH", "DCSK"]
+        dcs_dt_ex = [dcs_list[i]+'.ex' for i in range(DCS_CNT)]
+        for idx in range(DCS_CNT):
+            self.consumer_dcs[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, dcs_dt_ex[idx])
+            self.consumer_dcs[idx].connect_to_server()
+        
+        self.consumer_dcs[SVC].define_consumer(dcs_list[SVC]+'.q', self.callback_svc)  
+        self.consumer_dcs[H].define_consumer(dcs_list[H]+'.q', self.callback_h)
+        self.consumer_dcs[K].define_consumer(dcs_list[K]+'.q', self.callback_k)   
+        
+        for idx in range(DCS_CNT):
+            th = threading.Thread(target=self.consumer_dcs[idx].start_consumer)
+            th.start()
+            
+    
+    def callback_svc(self, ch, method, properties, body):
+        cmd = body.decode()        
+        param = cmd.split()            
+
+        msg = "<- [DCSS] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+ 
+        self.dcs_data_processing(param, SVC)
+                                               
+    
+    def callback_h(self, ch, method, properties, body):
+        cmd = body.decode()        
+        param = cmd.split()
+
+        msg = "<- [DCSH] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+        
+        self.dcs_data_processing(param, H)
+        
+                    
+    def callback_k(self, ch, method, properties, body):
+        cmd = body.decode()        
+        param = cmd.split()
+                    
+        msg = "<- [DCSK] %s" % cmd
+        self.log.send(self.iam, INFO, msg)
+        
+        self.dcs_data_processing(param, K)
+        
+        
+    def dcs_data_processing(self, param, idx):
+            
+        if param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
+            self.dcs_enable[idx] = bool(int(param[1]))
+    
+        elif param[0] == CMD_SETFSPARAM_ICS:   
+            self.dcs_enable[idx] = bool(int(param[3]))
+                
+        elif param[0] == CMD_ACQUIRERAMP_ICS:
+            self.dcs_enable[idx] = bool(int(param[3]))
+            
+
+
     '''            
     def judge_value(self, input):
         if input != DEFAULT_VALUE:
@@ -433,8 +621,70 @@ class uploader(threading.Thread):
         return value
     '''
     
+    def alarm_com_status(self, idx):
+        cmd = "ig2:alm:" + GEA_Items[idx]
+        if self.hk_list[idx]:
+            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_OK, giapi.alarm.Cause.ALARM_OK) 
+        else:
+            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_FAILURE, giapi.alarm.Cause.ALARM_OTHER, "communication error") 
+            
+            
+    def alarm_temperature(self, label, idx):
+        cmd = "ig2:alm:" + GEA_Items[idx]
+        severity, cause = None, None
+        
+        if float(self.temp_warn_lower[label]) > self.hk_list[idx]:
+            severity = giapi.alarm.Severity.ALARM_FAILURE
+            cause = giapi.alarm.Cause.ALARM_CAUSE_LOLO
+            
+        elif float(self.temp_warn_lower[label]) <= self.hk_list[idx] < float(self.temp_normal_lower[label]):
+            severity = giapi.alarm.Severity.ALARM_WARNING
+            cause = giapi.alarm.Cause.ALARM_CAUSE_LO
+            
+        elif float(self.temp_normal_lower[label]) <= self.hk_list[idx] <= float(self.temp_normal_upper[label]):
+            severity = giapi.alarm.Severity.ALARM_OK
+            cause = giapi.alarm.Cause.ALARM_CAUSE_OK
+            
+        elif float(self.temp_normal_upper[label]) < self.hk_list[idx] <= float(self.temp_warn_upper[label]):
+            severity = giapi.alarm.Severity.ALARM_WARNING
+            cause = giapi.alarm.Cause.ALARM_CAUSE_HI
+            
+        elif float(self.temp_warn_upper[label]) < self.hk_list[idx]:
+            severity = giapi.alarm.Severity.ALARM_FAILURE
+            cause = giapi.alarm.Cause.ALARM_CAUSE_HIHI
+        
+        if severity != None and cause != None:
+            giapi.StatusUtil.setAlarm(cmd, severity, cause)
+        
+        return severity
             
         
+    def alarm_temperature_m(self, label, idx):
+        cmd = "ig2:alm:" + GEA_Items[idx]
+        severity, cause = None, None
+    
+        if self.hk_list[idx] < float(self.temp_normal_lower[label]):
+            severity = giapi.alarm.Severity.ALARM_WARNING
+            cause = giapi.alarm.Cause.ALARM_CAUSE_LO
+            
+        elif float(self.temp_normal_lower[label]) <= self.hk_list[idx] <= float(self.temp_normal_upper[label]):
+            severity = giapi.alarm.Severity.ALARM_OK
+            cause = giapi.alarm.Cause.ALARM_CAUSE_OK
+            
+        elif float(self.temp_normal_upper[label]) < self.hk_list[idx] <= float(self.temp_warn_upper[label]):
+            severity = giapi.alarm.Severity.ALARM_WARNING
+            cause = giapi.alarm.Cause.ALARM_CAUSE_HI
+            
+        elif float(self.temp_warn_upper[label]) < self.hk_list[idx]:
+            severity = giapi.alarm.Severity.ALARM_FAILURE
+            cause = giapi.alarm.Cause.ALARM_CAUSE_HIHI
+            
+        if severity != None and cause != None:
+            giapi.StatusUtil.setAlarm(cmd, severity, cause)
+        
+        return severity
+            
+    
     def publish_dewar_list(self):
         
         hk_entries = [self.hk_list[GEA_VACUUM],
@@ -461,8 +711,78 @@ class uploader(threading.Thread):
         
         
     def uploade_to_GEA(self):
-        #need to add time ...
-        pass
+        # --------------------------------------------------------------
+        # upload status items
+        for key, value in GEA_Items.items():
+            if key > 20:
+                break
+            cmd = "ig2:sts:" + value     
+            giapi.StatusUtil.setValueAsFloat(cmd, self.hk_list[key])
+        
+        # --------------------------------------------------------------
+        # upload health items        
+        # giapi.health.GOOD
+        # giapi.health.WARNING
+        # giapi.health.BAD        
+        com = True
+        if not self.simul:
+            for idx in range(6):
+                if not self.hk_list[GEA_COM_TC1+idx]:
+                    com = False
+                    break
+        
+        health = [giapi.health.GOOD for _ in range(5)]    
+        
+        # ICS 
+        if not com or not self.hk_list[GEA_PDU2_PWR] or self.temp_sts_bench == giapi.alarm.Severity.ALARM_FAILURE or \
+            self.temp_sts_grating == giapi.alarm.Severity.ALARM_FAILURE or \
+                self.temp_sts_air == giapi.alarm.Severity.ALARM_FAILURE:
+            health[HEALTH_ICS] = giapi.health.BAD
+        elif self.temp_sts_bench == giapi.alarm.Severity.ALARM_WARNING or \
+            self.temp_sts_grating == giapi.alarm.Severity.ALARM_WARNING or \
+                self.temp_sts_air == giapi.alarm.Severity.ALARM_WARNING:
+            health[HEALTH_ICS] = giapi.health.WARNING
+        giapi.StatusUtil.setHealth("ig2:ics:health", health[HEALTH_ICS])
+        
+        # DCSH
+        if not self.hk_list[GEA_PDU1_PWR] or not self.dcs_enable[H] or self.temp_sts_detH == giapi.alarm.Severity.ALARM_FAILURE:
+            health[HEALTH_DCSH] = giapi.health.BAD
+        elif self.temp_sts_detH == giapi.alarm.Severity.ALARM_WARNING:
+            health[HEALTH_DCSH] = giapi.health.WARNING
+        giapi.StatusUtil.setHealth("ig2:dcsh:health", health[HEALTH_DCSH])
+        
+        # DCSK
+        if not self.hk_list[GEA_PDU1_PWR] or not self.dcs_enable[K] or self.temp_sts_detK == giapi.alarm.Severity.ALARM_FAILURE:
+            health[HEALTH_DCSK] = giapi.health.BAD
+        elif self.temp_sts_detK == giapi.alarm.Severity.ALARM_WARNING:
+            health[HEALTH_DCSK] = giapi.health.WARNING
+        giapi.StatusUtil.setHealth("ig2:dcsk:health", health[HEALTH_DCSK])
+        
+        # DCSS
+        if not self.hk_list[GEA_PDU1_PWR] or not self.dcs_enable[SVC] or self.temp_sts_detS == giapi.alarm.Severity.ALARM_FAILURE:
+            health[HEALTH_DCSS] = giapi.health.BAD
+        elif self.temp_sts_detS == giapi.alarm.Severity.ALARM_WARNING:
+            health[HEALTH_DCSS] = giapi.health.WARNING
+        giapi.StatusUtil.setHealth("ig2:dcss:health", health[HEALTH_DCSS])
+        
+        # ICS
+        for idx in range(4):
+            if health[idx] == giapi.health.WARNING:
+                health[HEALTH_IG2] = giapi.health.WARNING
+                break
+        for idx in range(4):
+            if health[idx] == giapi.health.BAD:
+                health[HEALTH_IG2] = giapi.health.BAD
+                break
+        giapi.StatusUtil.setHealth("ig2:health", health[HEALTH_IG2])
+        
+        giapi.StatusUtil.postStatus()
+        
+        msg = "%s %d" % (IG2_HEALTH, health[HEALTH_IG2])
+        self.publish_to_queue(msg)
+        
+        threading.Timer(self.upload_interval, self.uploade_to_GEA).start()
+        
             
 
 if __name__ == "__main__":

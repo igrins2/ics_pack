@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'DTPqJgUQi.ui'
+## Form generated from reading UI file 'DTPuWSIqy.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.3.2
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -97,7 +97,7 @@ class Ui_Dialog(object):
         self.label_54.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
         self.label_prog_elapsed_H = QLabel(self.groupBox_8)
         self.label_prog_elapsed_H.setObjectName(u"label_prog_elapsed_H")
-        self.label_prog_elapsed_H.setGeometry(QRect(80, 466, 61, 20))
+        self.label_prog_elapsed_H.setGeometry(QRect(80, 466, 121, 20))
         self.label_prog_elapsed_H.setFont(font2)
         self.label_prog_elapsed_H.setLayoutDirection(Qt.LeftToRight)
         self.label_prog_elapsed_H.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
@@ -247,7 +247,7 @@ class Ui_Dialog(object):
         self.progressBar_K.setValue(24)
         self.label_prog_elapsed_K = QLabel(self.groupBox_10)
         self.label_prog_elapsed_K.setObjectName(u"label_prog_elapsed_K")
-        self.label_prog_elapsed_K.setGeometry(QRect(80, 466, 61, 20))
+        self.label_prog_elapsed_K.setGeometry(QRect(80, 466, 121, 20))
         self.label_prog_elapsed_K.setFont(font2)
         self.label_prog_elapsed_K.setLayoutDirection(Qt.LeftToRight)
         self.label_prog_elapsed_K.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
@@ -836,7 +836,7 @@ class Ui_Dialog(object):
         self.label_prog_time_svc.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)
         self.label_prog_elapsed_svc = QLabel(self.groupBox_11)
         self.label_prog_elapsed_svc.setObjectName(u"label_prog_elapsed_svc")
-        self.label_prog_elapsed_svc.setGeometry(QRect(80, 466, 61, 20))
+        self.label_prog_elapsed_svc.setGeometry(QRect(80, 466, 121, 20))
         self.label_prog_elapsed_svc.setFont(font2)
         self.label_prog_elapsed_svc.setLayoutDirection(Qt.LeftToRight)
         self.label_prog_elapsed_svc.setAlignment(Qt.AlignLeading|Qt.AlignLeft|Qt.AlignVCenter)

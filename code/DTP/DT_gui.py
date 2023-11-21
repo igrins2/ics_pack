@@ -3,7 +3,7 @@
 """
 Created on Jun 28, 2022
 
-Modified on Oct 31, 2023
+Modified on Nov 15, 2023
 
 @author: hilee
 """
@@ -163,6 +163,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.output_channel = 32
         
+        self.param_dcs = [None for _ in range(DCS_CNT)]
+        
         self.cur_cnt = [0 for _ in range(DCS_CNT)]
         self.measure_T = [0 for _ in range(DCS_CNT)]
         self.header = [None for _ in range(DCS_CNT)]
@@ -199,7 +201,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.proc_sub = [None for _ in range(COM_CNT)]
         
         self.alarm_status = ALM_OK
-        
+                
         # connect to server
         self.connect_to_server_ex()
         
@@ -209,9 +211,37 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     
         msg = "%s %s" % (DT_STATUS, self.alarm_status)
         self.publish_to_queue(msg)
+        
+        self.dcs_timer = [None for _ in range(DCS_CNT)]
+        '''
+        for idx in range(DCS_CNT):
+            self.dcs_timer[idx] = QTimer(self)
+            self.dcs_timer[idx].setInterval(1)
+            self.dcs_timer[idx].timeout.connect(lambda: self.dcs_data_processing(idx))
+            self.dcs_timer[idx].start()
+        '''
+            
+        self.dcs_timer[SVC] = QTimer(self)
+        self.dcs_timer[SVC].setInterval(1)
+        self.dcs_timer[SVC].timeout.connect(lambda: self.dcs_data_processing(SVC))
+        self.dcs_timer[SVC].start()
+        
+        self.dcs_timer[H] = QTimer(self)
+        self.dcs_timer[H].setInterval(1)
+        self.dcs_timer[H].timeout.connect(lambda: self.dcs_data_processing(H))
+        self.dcs_timer[H].start()
+        
+        self.dcs_timer[K] = QTimer(self)
+        self.dcs_timer[K].setInterval(1)
+        self.dcs_timer[K].timeout.connect(lambda: self.dcs_data_processing(K))
+        self.dcs_timer[K].start()
                     
         
-    def closeEvent(self, event: QCloseEvent) -> None:                    
+    def closeEvent(self, event: QCloseEvent) -> None:    
+        
+        for idx in range(DCS_CNT):
+            self.dcs_timer[idx].stop()
+            
         self.log.send(self.iam, DEBUG, "Closing %s : " % sys.argv[0])
         self.log.send(self.iam, DEBUG, "This may take several seconds waiting for threads to close")
             
@@ -429,8 +459,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
                     self.e_path[idx].setText(path)
                     self.e_savefilename[idx].setText("")
                     
-                msg = "%s all %d" % (CMD_INIT2_DONE, self.simulation)
-                self.publish_to_queue(msg)
+                #msg = "%s all %d" % (CMD_INIT2_DONE, self.simulation)
+                #self.publish_to_queue(msg)
         except:
             self.log.send(self.iam, WARNING, "parsing error")
                             
@@ -621,44 +651,51 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()
         
-        param = cmd.split()
+        #param = cmd.split()
         #if not (param[0] == CMD_BUSY or param[0] == CMD_INITIALIZE1 or param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
         #    return
 
         msg = "<- [DCSS] %s" % cmd
         self.log.send(self.iam, INFO, msg)
+        self.param_dcs[SVC] = cmd
 
-        self.dcs_data_processing(SVC, cmd)
+        #self.dcs_data_processing(SVC, cmd)
         
     
     def callback_h(self, ch, method, properties, body):
         cmd = body.decode()
 
-        param = cmd.split()
+        #param = cmd.split()
         #if not (param[0] == CMD_BUSY or param[0] == CMD_INITIALIZE1 or param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
         #    return
 
         msg = "<- [DCSH] %s" % cmd
         self.log.send(self.iam, INFO, msg)
+        self.param_dcs[H] = cmd
         
-        self.dcs_data_processing(H, cmd)
+        #self.dcs_data_processing(H, cmd)
         
     
     def callback_k(self, ch, method, properties, body):
         cmd = body.decode()
 
-        param = cmd.split()
+        #param = cmd.split()
         #if not (param[0] == CMD_BUSY or param[0] == CMD_INITIALIZE1 or param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
         #    return
 
         msg = "<- [DCSK] %s" % cmd
         self.log.send(self.iam, INFO, msg)
+        self.param_dcs[K] = cmd
 
-        self.dcs_data_processing(K, cmd)
+        #self.dcs_data_processing(K, cmd)
         
         
-    def dcs_data_processing(self, dc_idx, cmd):
-        param = cmd.split()
+    def dcs_data_processing(self, dc_idx):
+        if self.param_dcs[dc_idx] == None:
+            return
+        
+        param = self.param_dcs[dc_idx].split()
+        self.param_dcs[dc_idx] = None
         
         try:
             if param[0] == CMD_BUSY:
@@ -687,7 +724,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         self.set_K()
                 
             elif param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
-                
                 if not bool(int(param[1])):
                     msg = "Detector error!"
                     QMessageBox.warning(self, WARNING, msg)
@@ -823,7 +859,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
                     for i in range(DCS_CNT):
                         self.cur_cnt[i] = 0
-                    
+                                        
         except:
             self.log.send(self.iam, WARNING, "parsing error")
         

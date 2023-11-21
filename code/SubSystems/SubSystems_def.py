@@ -3,7 +3,7 @@
 """
 Created on Sep 17, 2021
 
-Modified on Apr 17, 2023
+Modified on Dec 17, 2023
 
 @author: hilee
 """
@@ -13,6 +13,7 @@ Modified on Apr 17, 2023
 COM_CNT = 6 
 PDU_IDX = 8
 TM_CNT = 8
+DCS_CNT = 3
 CONTEXT_SETTINGS = dict(help_option_names=["-h", "--help"])
 
 import os, sys
@@ -53,6 +54,10 @@ MOTOR_UT = "ut"
 
 DEFAULT_VALUE = "-999"
 
+SVC = 0
+H = 1
+K = 2
+
 # ---------------------------
 # motor
 RELATIVE_DELTA_L = 100000
@@ -60,6 +65,15 @@ RELATIVE_DETLA_S = 10
 VELOCITY_200 = "VT=109226"
 VELOCITY_1 = "VT=546"
 MOTOR_ERR = 100
+
+# ---------------------------
+# health
+HEALTH_IG2 = 0
+HEALTH_ICS = 1
+HEALTH_DCSH = 2
+HEALTH_DCSK = 3
+HEALTH_DCSS = 4
+
 
 HK_REQ_COM_STS = "ComPortStatus"
 
@@ -85,3 +99,9 @@ DT_REQ_SETUT = "SetUT"          #motor
 DT_REQ_SETLT = "SetLT"          #motor
 
 UPLOAD_Q = "UploadDBQ"    #uploader
+IG2_HEALTH = "IGRINS2Health"    #0-GOOD, 1-WARNING, 2-BAD
+
+CMD_INIT2_DONE = "Initialize2_Done" # to DCS
+CMD_INITIALIZE2_ICS = "Initialize2_ics"
+CMD_SETFSPARAM_ICS = "SetFSParam_ics"
+CMD_ACQUIRERAMP_ICS = "ACQUIRERAMP_ics"

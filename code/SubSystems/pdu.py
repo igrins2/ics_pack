@@ -2,7 +2,7 @@
 """
 Created on Nov 9, 2022
 
-Created on July 26, 2023
+Created on Nov 20, 2023
 
 @author: hilee
 """
@@ -59,6 +59,7 @@ class pdu(threading.Thread) :
             self.ip = cfg.get(HK, "pdu-ip")
             self.comport = cfg.get(HK, "pdu-port")
         
+        self.upload_interval = int(cfg.get(HK, "upload-intv"))
         #---------------------------------------------------------
         # start        
         self.comSocket = None
@@ -98,6 +99,8 @@ class pdu(threading.Thread) :
             
             msg = "connected"
             self.log.send(self.iam, INFO, msg)
+            
+            self.initPDU()
             
         except:
             self.comSocket = None
@@ -147,6 +150,8 @@ class pdu(threading.Thread) :
             self.power_status(cmd) 
                 
             self.log.send(self.iam, INFO, "powctr init is completed")
+            
+            threading.Timer(self.upload_interval, self.monit_power_status).start()
                     
         except:
             self.log.send(self.iam, ERROR, "powctr init is error")
@@ -154,6 +159,15 @@ class pdu(threading.Thread) :
             self.comStatus = False
             self.re_connect_to_component()
         
+    
+    def monit_power_status(self):
+        pow_flag = self.power_status("DN0\r")
+        msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+        self.publish_to_queue(msg)
+        
+        #if self.comStatus:
+        threading.Timer(self.upload_interval, self.monit_power_status).start()
+    
                     
     def power_status(self, cmd):
         if not self.comStatus:  return      
@@ -250,9 +264,7 @@ class pdu(threading.Thread) :
                      
         try:                                  
             if param[0] == HK_REQ_PWR_STS:
-                pow_flag = self.power_status("DN0\r")
-                msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-                self.publish_to_queue(msg)
+                self.monit_power_status()
                 
             elif param[0] == HK_REQ_PWR_ONOFF_IDX:
                 pow_flag = self.change_power(int(param[1]), param[2]) 
@@ -295,9 +307,7 @@ class pdu(threading.Thread) :
                                  
         try:                      
             if param[0] == HK_REQ_PWR_STS:
-                pow_flag = self.power_status("DN0\r")
-                msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-                self.publish_to_queue(msg)
+                self.monit_power_status()
                 
             #elif param[0] == HK_REQ_PWR_ONOFF_IDX:
             #    pow_flag = self.change_power(int(param[1]), param[2]) 
@@ -333,7 +343,7 @@ if __name__ == "__main__":
     proc.connect_to_server_dt_q()
     
     proc.connect_to_component()
-    proc.initPDU()
+    #proc.initPDU()
     
     #for i in range(1, 9):
     #proc.change_power(1, ON)
