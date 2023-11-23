@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Nov 23, 2023
+Modified on Nov 17, 2023
 
 @author: hilee
 """
@@ -192,6 +192,7 @@ class Inst_Seq(threading.Thread):
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.TEST, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.REBOOT, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.INIT, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
+        #giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.APPLY, giapi.command.ActivitySet.SET_PRESET,self._handler)
         giapi.CommandUtil.subscribeApply("ig2", giapi.command.ActivitySet.SET_PRESET_START, self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.OBSERVE, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.ABORT, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
@@ -220,8 +221,8 @@ class Inst_Seq(threading.Thread):
             
         
     def __del__(self):
-        #msg = "Closing %s" % self.iam
-        #self.log.send(self.iam, DEBUG, msg)
+        msg = "Closing %s" % self.iam
+        self.log.send(self.iam, DEBUG, msg)
                     
         for th in threading.enumerate():
             self.log.send(self.iam, INFO, th.name + " exit.")
@@ -256,74 +257,25 @@ class Inst_Seq(threading.Thread):
             # TODO. It is necessary to do a regular expression instead of using split
             # It is necessary to know if the apply detector will consume more than 300 milisenconds 
             # in that case, it would be necessary to reponse with STARTED
-            
-            # ----------------------------------------------------
-            # SequenceCommand.TEST
-            if seq_cmd == giapi.command.SequenceCommand.TEST:                
-                if activity == giapi.command.Activity.PRESET:
-                    self.log.send(self.iam, INFO, "SequenceCommand.TEST, Activity.PRESET")
-                    
-                    if not self.dcs_ready[SVC] or not self.dcs_ready[H] or not self.dcs_ready[K]:
-                        self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                        return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
-                    
-                    for idx in range(DCS_CNT):
-                        self.dcs_setparam[idx] = False
-                    
-                    self.apply_mode = TEST_MODE
-                    
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.ACCEPTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
-                
-                elif activity == giapi.command.Activity.START:
-                    self.log.send(self.iam, INFO, "SequenceCommand.TEST, Activity.START")
-                    
-                    self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_TEST}            
-                
-                    self.set_exp("all")
-                    
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
-                elif activity == giapi.command.Activity.PRESET_START:
-                    self.log.send(self.iam, INFO, "SequenceCommand.TEST, Activity.PRESET_START")
-                    
-                    self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_TEST}   
-                    
-                    if not self.dcs_ready[SVC] or not self.dcs_ready[H] or not self.dcs_ready[K]:
-                        self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                        return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
-                    
-                    for idx in range(DCS_CNT):
-                        self.dcs_setparam[idx] = False
-                    
-                    self.apply_mode = TEST_MODE
-                
-                    self.set_exp("all")
-                    
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
-                elif activity == giapi.command.Activity.CANCEL:
-                    self.log.send(self.iam, INFO, "SequenceCommand.TEST, Activity.CANCEL")
-                    self.actRequested[action_id] = {}
-                    self.stop_acquistion()
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
-                else:
-                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+            if seq_cmd == giapi.command.SequenceCommand.TEST:
+                self.log.send(self.iam, INFO, "SequenceCommand.TEST")
+                self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_TEST}
+
+                if not self.dcs_ready[SVC] or not self.dcs_ready[H] or not self.dcs_ready[K]:
+                    self.log.send(self.iam, ERROR, "instDummy.DataResponse.ERROR")
                     return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                                
+                for idx in range(DCS_CNT):
+                    self.dcs_setparam[idx] = False
                     
-            # ----------------------------------------------------
-            # SequenceCommand.REBOOT    
+                self.apply_mode = TEST_MODE
+                self.set_exp("all")
+                
+                self.log.send(self.iam, INFO, "instDummy.DataResponse.STARTED")
+                return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
+                
             elif seq_cmd == giapi.command.SequenceCommand.REBOOT:
-                if activity != giapi.command.Activity.PRESET_START:
-                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
-                    
-                self.log.send(self.iam, INFO, "SequenceCommand.REBOOT, Activity.PRESET_START")
-                
+                self.log.send(self.iam, INFO, "SequenceCommand.REBOOT")
                 self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_REBOOT}
         
                 # -----------------------------------
@@ -338,338 +290,135 @@ class Inst_Seq(threading.Thread):
                 
                 self.restart_icc()
                                 
-                self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
+                self.log.send(self.iam, INFO, "instDummy.DataResponse.STARTED")
                 return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 # -----------------------------------
-            
-            # ----------------------------------------------------
-            # SequenceCommand.INIT    
+                
             elif seq_cmd == giapi.command.SequenceCommand.INIT:
-                if activity == giapi.command.Activity.PRESET:
-                    self.log.send(self.iam, INFO, "SequenceCommand.INIT, Activity.PRESET")
+                self.log.send(self.iam, INFO, "SequenceCommand.INIT")
+                self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_INIT}
+                            
+                for idx in range(DCS_CNT):
+                    self.dcs_ready[idx] = False
                     
-                    for idx in range(DCS_CNT):
-                        self.dcs_ready[idx] = False
-                    
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.ACCEPTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
-                
-                elif activity == giapi.command.Activity.START:
-                    self.log.send(self.iam, INFO, "SequenceCommand.INIT, Activity.START")
-                
-                    for idx in range(DCS_CNT):
-                        if self.dcs_ready[idx]:
-                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
-                        
-                    self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_INIT}
-                    
-                    self.initialize2()
-                
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
-                elif activity == giapi.command.Activity.PRESET_START:
-                    self.log.send(self.iam, INFO, "SequenceCommand.INIT, Activity.PRESET_START")
-                    
-                    self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_INIT}
-                    
-                    for idx in range(DCS_CNT):
-                        self.dcs_ready[idx] = False
-                        
-                    self.initialize2()
-                
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
-                else:
-                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                    
-                                 
-            # ----------------------------------------------------
-            # SequenceCommand.APPLY                       
+                self.initialize2()
+                self.log.send(self.iam, INFO, "instDummy.DataResponse.STARTED")
+                return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
+                                                        
             elif seq_cmd == giapi.command.SequenceCommand.APPLY:
-                _exptime_sci, _FS_number_sci = 0.0, 0
-                if activity == giapi.command.Activity.PRESET:
-                    self.log.send(self.iam, INFO, "SequenceCommand.APPLY, Activity.PRESET")
-                    
-                    offset_p, offset_q = "0", "0"
-                    for k in config.getKeys():
-                        keys = config.getValue(k)
-                        # keys = ig2:dcs:expTime=1.63 / ig2:seq:state="acq" or "sci"
-                        print('keys:', keys)
-                        #print(f"SCI_MODE: {SCI_MODE} {k} == ig2:seq:state")
-                        
-                        if k == "ig2:dcs:expTime":
-                            self.cur_expTime = float(keys.c_str())
-                            print(f'after asigned {self.cur_expTime}')
-                        
-                        elif k == "ig2:seq:state":
-                            self.apply_mode = keys
-                                                        
-                        elif k == "ig2:seq:p":
-                            offset_p = keys.c_str()
-                            
-                        elif k == "ig2:seq:q":
-                            offset_q = keys.c_str()
-                    
-                    #send to ObsApp
-                    print(offset_p, offset_q)
-                    msg = "%s %s %s" % (INSTSEQ_PQ, offset_p, offset_q)
-                    self.publish_to_queue(msg)
-                    if int(offset_p) == 0 and int(offset_q) > 0:    self.frame_mode = "A"
-                    elif int(offset_p) == 0 and int(offset_q) < 0:  self.frame_mode = "B"
-                    elif int(offset_p) == 0 and int(offset_q) == 0: self.frame_mode = "ON"
-                    elif int(offset_p) != 0 and int(offset_q) != 0: self.frame_mode = "OFF"
-                    
-                    if self.apply_mode == ACQ_MODE:
-                        self.dcs_setparam[SVC] = False
-                        
-                    elif self.apply_mode == SCI_MODE:
-                        self.dcs_setparam[SVC] = False
-                        self.dcs_setparam[H] = False
-                        self.dcs_setparam[K] = False
-                        
-                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ACCEPTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
-                    
-                elif activity == giapi.command.Activity.START:
-                    self.log.send(self.iam, INFO, "SequenceCommand.APPLY, Activity.START")
-                    
-                    for idx in range(DCS_CNT):
-                        if self.dcs_setparam[idx]:
-                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
-                        
-                    self.actRequested[action_id] = {'t': t, 'response': None, 'numAct': ACT_APPLY}
-                    
-                    if self.apply_mode == ACQ_MODE:
-                        self.set_exp(self.dcs_list[SVC])
-                                
-                    elif self.apply_mode == SCI_MODE:
-                        _exptime_sci = self.cur_expTime
-                                
-                        _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
-                        _FS_number_sci = N_fowler_max
-                        while _FS_number_sci > _max_fowler_number:
-                            _FS_number_sci //= 2
-                            
-                        print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
-                        
-                        if not self.cur_ObsApp_taking:
-                            self.set_exp("all", _exptime_sci, _FS_number_sci)
-                        else:
-                            self.set_exp("H_K", _exptime_sci, _FS_number_sci)
-                            
-                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.STARTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
+                self.log.send(self.iam, INFO, "SequenceCommand.APPLY")
+                self.actRequested[action_id] = {'t': t, 'response': None, 'numAct': ACT_APPLY}
                 
-                elif activity == giapi.command.Activity.PRESET_START:
-                    self.log.send(self.iam, INFO, "SequenceCommand.APPLY, Activity.PRESET_START")
+                offset_p, offset_q = "0", "0"
+                for k in config.getKeys():
+                    keys = config.getValue(k)
+                    # keys = ig2:dcs:expTime=1.63 / ig2:seq:state="acq" or "sci"
+                    print('keys:', keys)
+                    #print(f"SCI_MODE: {SCI_MODE} {k} == ig2:seq:state")
                     
-                    self.actRequested[action_id] = {'t': t, 'response': None, 'numAct': ACT_APPLY}
+                    if k == "ig2:dcs:expTime":
+                        self.cur_expTime = float(keys.c_str())
+                        print(f'after asigned {self.cur_expTime}')
                     
-                    offset_p, offset_q = "0", "0"
-                    for k in config.getKeys():
-                        keys = config.getValue(k)
-                        # keys = ig2:dcs:expTime=1.63 / ig2:seq:state="acq" or "sci"
-                        print('keys:', keys)
-                        #print(f"SCI_MODE: {SCI_MODE} {k} == ig2:seq:state")
+                    elif k == "ig2:seq:state":
+                        self.apply_mode = keys
+                                                      
+                    elif k == "ig2:seq:p":
+                        offset_p = keys.c_str()
                         
-                        if k == "ig2:dcs:expTime":
-                            self.cur_expTime = float(keys.c_str())
-                            print(f'after asigned {self.cur_expTime}')
-                        
-                        elif k == "ig2:seq:state":
-                            self.apply_mode = keys
+                    elif k == "ig2:seq:q":
+                        offset_q = keys.c_str()
+                    
+                #send to ObsApp
+                print(offset_p, offset_q)
+                msg = "%s %s %s" % (INSTSEQ_PQ, offset_p, offset_q)
+                self.publish_to_queue(msg)
+                ti.sleep(0.1)
+                if int(offset_p) == 0 and int(offset_q) > 0:    self.frame_mode = "A"
+                elif int(offset_p) == 0 and int(offset_q) < 0:  self.frame_mode = "B"
+                elif int(offset_p) == 0 and int(offset_q) == 0: self.frame_mode = "ON"
+                elif int(offset_p) != 0 and int(offset_q) != 0: self.frame_mode = "OFF"
+                    
+                if self.apply_mode == ACQ_MODE:
+                    self.dcs_setparam[SVC] = False
+                    self.set_exp(self.dcs_list[SVC])
+                            
+                elif self.apply_mode == SCI_MODE:
+                    self.dcs_setparam[SVC] = False
+                    self.dcs_setparam[H] = False
+                    self.dcs_setparam[K] = False
                                                         
-                        elif k == "ig2:seq:p":
-                            offset_p = keys.c_str()
+                    _exptime_sci = self.cur_expTime
                             
-                        elif k == "ig2:seq:q":
-                            offset_q = keys.c_str()
-                    
-                    #send to ObsApp
-                    print(offset_p, offset_q)
-                    msg = "%s %s %s" % (INSTSEQ_PQ, offset_p, offset_q)
-                    self.publish_to_queue(msg)
-                    ti.sleep(0.1)
-                    if int(offset_p) == 0 and int(offset_q) > 0:    self.frame_mode = "A"
-                    elif int(offset_p) == 0 and int(offset_q) < 0:  self.frame_mode = "B"
-                    elif int(offset_p) == 0 and int(offset_q) == 0: self.frame_mode = "ON"
-                    elif int(offset_p) != 0 and int(offset_q) != 0: self.frame_mode = "OFF"
-                    
-                    if self.apply_mode == ACQ_MODE:
-                        self.dcs_setparam[SVC] = False
-                        self.set_exp(self.dcs_list[SVC])
-                        
-                    elif self.apply_mode == SCI_MODE:
-                        self.dcs_setparam[SVC] = False
-                        self.dcs_setparam[H] = False
-                        self.dcs_setparam[K] = False
-                                                            
-                        _exptime_sci = self.cur_expTime
+                    _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
+                    _FS_number_sci = N_fowler_max
+                    while _FS_number_sci > _max_fowler_number:
+                        _FS_number_sci //= 2
                                 
-                        _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
-                        _FS_number_sci = N_fowler_max
-                        while _FS_number_sci > _max_fowler_number:
-                            _FS_number_sci //= 2
-                            
-                        print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
+                    print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
+                    if not self.cur_ObsApp_taking:
+                        self.set_exp("all", _exptime_sci, _FS_number_sci)
+                    else:
+                        self.set_exp("H_K", _exptime_sci, _FS_number_sci)
                         
-                        if not self.cur_ObsApp_taking:
-                            self.set_exp("all", _exptime_sci, _FS_number_sci)
-                        else:
-                            self.set_exp("H_K", _exptime_sci, _FS_number_sci)
-                            
-                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.STARTED")                                                
-                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
-                else:
-                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                    
-            
-            # ----------------------------------------------------
-            # SequenceCommand.OBSERVE                                                        
+                return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
+                                                                    
             elif seq_cmd == giapi.command.SequenceCommand.OBSERVE:
-                if activity == giapi.command.Activity.PRESET:
-                    self.log.send(self.iam, INFO, "SequenceCommand.OBSERVE, Activity.PRESET")
+                self.log.send(self.iam, INFO, "SequenceCommand.OBSERVE")
+                self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_OBSERVE}
 
-                    for k in config.getKeys():                    
-                        keys = config.getValue(k)
-                        print('keys:', keys)
-                        
-                        if k == "DATA_LABEL":
-                            self.data_label = keys.c_str()
-                            
-                        else:
-                            _t = datetime.datetime.utcnow()
-                            _tmp = "%04d%02d%02d_temp.fits" % (_t.year, _t.month, _t.day)
-
-                            self.data_label = _tmp
-                            
-                    self.cur_number_svc = 1
-                    self.filepath[H-1] = ""
-                    self.filepath[K-1] = ""
-                
-                    self.svc_file_list = []
+                for k in config.getKeys():                    
+                    keys = config.getValue(k)
+                    print('keys:', keys)
                     
-                    if self.apply_mode == ACQ_MODE:
+                    if k == "DATA_LABEL":
+                        self.data_label = keys.c_str()
+                        
+                    else:
+                        _t = datetime.datetime.utcnow()
+                        _tmp = "%04d%02d%02d_temp.fits" % (_t.year, _t.month, _t.day)
+
+                        self.data_label = _tmp
+                    
+                self.send_to_GDS(giapi.data.ObservationEvent.OBS_PREP, self.data_label)
+                self.send_to_GDS(giapi.data.ObservationEvent.OBS_START_ACQ, self.data_label)
+                
+                self.cur_number_svc = 1
+                self.filepath[H-1] = ""
+                self.filepath[K-1] = ""
+                
+                self.svc_file_list = []
+                
+                if self.apply_mode == ACQ_MODE:
+                    self.acquiring[SVC] = True
+                    self.start_acquisition(self.dcs_list[SVC])
+                    
+                elif self.apply_mode == SCI_MODE:                                                    
+                    self.acquiring[H] = True
+                    self.acquiring[K] = True
+                    if not self.cur_ObsApp_taking:  
                         self.acquiring[SVC] = True
-                        
-                    elif self.apply_mode == SCI_MODE:               
-                        self.acquiring[H] = True
-                        self.acquiring[K] = True
-                        if not self.cur_ObsApp_taking:  
-                            self.acquiring[SVC] = True
-                            
+                        self.start_acquisition()
                     else:
-                        self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                        return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "") 
-                            
-                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ACCEPTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
-                
-                elif activity == giapi.command.Activity.START:
-                    self.log.send(self.iam, INFO, "SequenceCommand.OBSERVE, Activity.START")
-                        
-                    for idx in range(DCS_CNT):
-                        if not self.acquiring[idx]:
-                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
-                        
-                    self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_OBSERVE}
+                        self.start_acquisition("H_K")
                     
-                    self.send_to_GDS(giapi.data.ObservationEvent.OBS_PREP, self.data_label)
-                    self.send_to_GDS(giapi.data.ObservationEvent.OBS_START_ACQ, self.data_label)
-                    
-                    if self.apply_mode == ACQ_MODE:
-                        self.start_acquisition(self.dcs_list[SVC])
-                        
-                    elif self.apply_mode == SCI_MODE:                                                    
-                        if not self.cur_ObsApp_taking:  
-                            self.start_acquisition()
-                        else:
-                            self.start_acquisition("H_K")
-                        
-                    else:
-                        self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                        return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                       
-
-                    # request TCS info
-                    self.req_from_TCS()
-                    
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
-                elif activity == giapi.command.Activity.PRESET_START:
-                    self.log.send(self.iam, INFO, "SequenceCommand.OBSERVE, Activity.START")
-                    
-                    self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_OBSERVE}
-                    
-                    for k in config.getKeys():                    
-                        keys = config.getValue(k)
-                        print('keys:', keys)
-                        
-                        if k == "DATA_LABEL":
-                            self.data_label = keys.c_str()
-                            
-                        else:
-                            _t = datetime.datetime.utcnow()
-                            _tmp = "%04d%02d%02d_temp.fits" % (_t.year, _t.month, _t.day)
-
-                            self.data_label = _tmp
-                            
-                    self.cur_number_svc = 1
-                    self.filepath[H-1] = ""
-                    self.filepath[K-1] = ""
-                
-                    self.svc_file_list = []
-                    
-                    self.send_to_GDS(giapi.data.ObservationEvent.OBS_PREP, self.data_label)
-                    self.send_to_GDS(giapi.data.ObservationEvent.OBS_START_ACQ, self.data_label)
-                    
-                    if self.apply_mode == ACQ_MODE:
-                        self.acquiring[SVC] = True
-                        self.start_acquisition(self.dcs_list[SVC])
-                        
-                    elif self.apply_mode == SCI_MODE:                                                    
-                        self.acquiring[H] = True
-                        self.acquiring[K] = True
-                        if not self.cur_ObsApp_taking:  
-                            self.acquiring[SVC] = True
-                            self.start_acquisition()
-                        else:
-                            self.start_acquisition("H_K")
-                        
-                    else:
-                        self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                        return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                       
-
-                    # request TCS info
-                    self.req_from_TCS()
-                    
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
                 else:
-                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "") 
-            
-            # ----------------------------------------------------
-            # SequenceCommand.ABORT        
+                    self.log.send(self.iam, ERROR, "instDummy.DataResponse.ERROR")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                       
+
+                # request TCS info
+                self.req_from_TCS()
+                
+                self.log.send(self.iam, INFO, "instDummy.DataResponse.STARTED")
+                return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
+                    
             elif seq_cmd == giapi.command.SequenceCommand.ABORT:
-                if activity != giapi.command.Activity.PRESET_START:
-                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
-                
-                self.log.send(self.iam, INFO, "SequenceCommand.ABORT, Activity.PRESET_START")
-                
+                self.log.send(self.iam, INFO, "SequenceCommand.ABORT")
                 self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_ABORT}
 
                 if self.apply_mode == ACQ_MODE:
                     self.stop_acquistion(self.dcs_list[SVC])
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
+                    self.log.send(self.iam, INFO, "instDummy.DataResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                         
                 elif self.apply_mode == SCI_MODE:   
@@ -678,7 +427,7 @@ class Inst_Seq(threading.Thread):
                     else:
                         self.stop_acquistion("H_K")
                         
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
+                    self.log.send(self.iam, INFO, "instDummy.DataResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
             '''
@@ -697,25 +446,29 @@ class Inst_Seq(threading.Thread):
                 ti.sleep(0.010)
                 if self.actRequested[action_id]['response'] == giapi.HandlerResponse.COMPLETED:
                     #break
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.COMPLETED")
+                    print("instDummy.DataResponse.COMPLETED")
+                    self.log.send(self.iam, INFO, "instDummy.DataResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
                 #print(t2)
                 t2 = ti.time() - t
                 
             if self.actRequested[action_id]['response'] == giapi.HandlerResponse.ERROR:
                 print(f'Error detected time: {t2} seconds')
-                self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                self.log.send(self.iam, ERROR, "instDummy.DataResponse.ERROR")
                 return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
 
         except Exception as e:
             print (e)
-            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+            self.log.send(self.iam, ERROR, "instDummy.DataResponse.ERROR")
             return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
         
         for k in self.actRequested:
             if self.actRequested[k] is None or self.actRequested[k]['response'] == giapi.HandlerResponse.ERROR:
-                self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                self.log.send(self.iam, ERROR, "instDummy.DataResponse.ERROR")
                 return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+
+        #print("instDummy.DataResponse.COMPLETED")
+        #return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
 
     
     #--------------------------------------------------------
@@ -975,6 +728,8 @@ class Inst_Seq(threading.Thread):
                     self.response_complete(False)
                     
             elif self.apply_mode == ACQ_MODE:
+                #print("instDummy.DataResponse.ACCEPTED")
+                #instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
                 self.response_complete(res)
 
                 # request TCS info     
@@ -1071,6 +826,8 @@ class Inst_Seq(threading.Thread):
                     
             else:
                 if self.dcs_setparam[H] and self.dcs_setparam[K]:
+                    #("instDummy.DataResponse.ACCEPTED")
+                    #nstDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
                     self.response_complete(bool(int(param[1])))
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
@@ -1302,37 +1059,29 @@ class Inst_Seq(threading.Thread):
                 hdu_list.append(_new_hdul)
         
         else:
-            while True:
-                try:
-                    # H, K
-                    filepath_h = "%sIGRINS/dcsh/Fowler/%s" % (WORKING_DIR, self.filepath[H-1])
-                    filepath_k = "%sIGRINS/dcsk/Fowler/%s" % (WORKING_DIR, self.filepath[K-1])
-                    img_path_list = [filepath_h, filepath_k]
-                    for idx in range(2):
-                        _hdul = pyfits.open(img_path_list[idx])
-                        _data = _hdul[0].data
-                        
-                        #-----------------------------------------------------------
-                        _header = _hdul[0].header
-                        if idx == 0:    gain=2.5
-                        else:           gain=1.8
-                        _header.set("GAIN", gain, "[electrons/ADU], Conversion Gain")                
-                        #-----------------------------------------------------------
-                        
-                        _hdul.close()
+            # H, K
+            filepath_h = "%sIGRINS/dcsh/Fowler/%s" % (WORKING_DIR, self.filepath[H-1])
+            filepath_k = "%sIGRINS/dcsk/Fowler/%s" % (WORKING_DIR, self.filepath[K-1])
+            img_path_list = [filepath_h, filepath_k]
+            for idx in range(2):
+                _hdul = pyfits.open(img_path_list[idx])
+                _data = _hdul[0].data
+                
+                #-----------------------------------------------------------
+                _header = _hdul[0].header
+                if idx == 0:    gain=2.5
+                else:           gain=1.8
+                _header.set("GAIN", gain, "[electrons/ADU], Conversion Gain")                
+                #-----------------------------------------------------------
+                
+                _hdul.close()
 
-                        imgdata = np.rot90(_data, (idx*2)+1)
-                        if idx == 0:
-                            imgdata = np.fliplr(imgdata)
+                imgdata = np.rot90(_data, (idx*2)+1)
+                if idx == 0:
+                    imgdata = np.fliplr(imgdata)
 
-                        _new_hdul = pyfits.ImageHDU(imgdata, _header)
-                        hdu_list.append(_new_hdul)
-                        
-                    break
-                    
-                except:
-                    print("file open error!!!")
-                    ti.sleep(1)
+                _new_hdul = pyfits.ImageHDU(imgdata, _header)
+                hdu_list.append(_new_hdul)
                 
         # compressed SVC cube
         img_array = np.array(svc_list)

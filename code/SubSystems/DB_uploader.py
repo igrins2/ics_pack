@@ -1,7 +1,7 @@
 """
 ... from uploader.py from IGRINS
 
-Modified on Nov 20, 2023
+Modified on Nov 22, 2023
 
 @author: hilee, JJLee
 """
@@ -204,29 +204,41 @@ class uploader(threading.Thread):
                 break
             cmd = "ig2:sts:" + item
             if idx == 0:
-                giapi.StatusUtil.createStatusItem(cmd, giapi.type.DOUBLE)
+                if giapi.StatusUtil.createStatusItem(cmd, giapi.type.Type.DOUBLE) != giapi.status.Status.OK:
+                    self.log.send(self.iam, ERROR, "Status item couldn't be initialized.")
             else:
-                giapi.StatusUtil.createStatusItem(cmd, giapi.type.FLOAT)
+                if giapi.StatusUtil.createStatusItem(cmd, giapi.type.Type.FLOAT) != giapi.status.Status.OK:
+                    self.log.send(self.iam, ERROR, "Status item couldn't be initialized.")
             print(cmd)
 
         # create alarm items 
         for idx in range(GEA_COM_PDU, len(GEA_Items)):
             cmd = "ig2:alm:" + GEA_Items[idx]            
-            giapi.StatusUtil.createAlarmStatusItem(cmd, giapi.type.BOOLEAN)
+            giapi.StatusUtil.createAlarmStatusItem(cmd, giapi.type.Type.BOOLEAN)
             print(cmd)
        
-        giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_BENCH], giapi.type.BOOLEAN)
-        giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_GRATING], giapi.type.BOOLEAN)
-        giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETS], giapi.type.BOOLEAN)
-        giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETK], giapi.type.BOOLEAN)
-        giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETH], giapi.type.BOOLEAN)  
+        if giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_BENCH], giapi.type.Type.BOOLEAN) != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Alarm status item couldn't be initialized.")            
+        if giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_GRATING], giapi.type.Type.BOOLEAN) != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Alarm status item couldn't be initialized.")
+        if giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETS], giapi.type.Type.BOOLEAN) != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Alarm status item couldn't be initialized.")
+        if giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETK], giapi.type.Type.BOOLEAN) != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Alarm status item couldn't be initialized.")
+        if giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETH], giapi.type.Type.BOOLEAN) != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Alarm status item couldn't be initialized.")  
         
         # create health items
-        giapi.StatusUtil.createHealthStatusItem("ig2:health")
-        giapi.StatusUtil.createHealthStatusItem("ig2:ics:health")
-        giapi.StatusUtil.createHealthStatusItem("ig2:dcsh:health")
-        giapi.StatusUtil.createHealthStatusItem("ig2:dcsk:health")
-        giapi.StatusUtil.createHealthStatusItem("ig2:dcss:health")
+        if giapi.StatusUtil.createHealthStatusItem("ig2:health") != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Health status item couldn't be initialized.")
+        if giapi.StatusUtil.createHealthStatusItem("ig2:ics:health") != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Health status item couldn't be initialized.")
+        if giapi.StatusUtil.createHealthStatusItem("ig2:dcsh:health") != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Health status item couldn't be initialized.")
+        if giapi.StatusUtil.createHealthStatusItem("ig2:dcsk:health") != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Health status item couldn't be initialized.")
+        if giapi.StatusUtil.createHealthStatusItem("ig2:dcss:health") != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Health status item couldn't be initialized.")
         # ---------------------------------------------------------------------
         
         # publish queue "dewar list"
@@ -624,9 +636,11 @@ class uploader(threading.Thread):
     def alarm_com_status(self, idx):
         cmd = "ig2:alm:" + GEA_Items[idx]
         if self.hk_list[idx]:
-            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_OK, giapi.alarm.Cause.ALARM_OK) 
+            if giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_OK, giapi.alarm.Cause.ALARM_OK) != giapi.status.Status.OK:
+                self.log.send(self.iam, ERROR, "Error setting the alarm.")
         else:
-            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_FAILURE, giapi.alarm.Cause.ALARM_OTHER, "communication error") 
+            if giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_FAILURE, giapi.alarm.Cause.ALARM_OTHER, "communication error") != giapi.status.Status.OK:
+                self.log.send(self.iam, ERROR, "Error setting the alarm.")
             
             
     def alarm_temperature(self, label, idx):
@@ -654,7 +668,8 @@ class uploader(threading.Thread):
             cause = giapi.alarm.Cause.ALARM_CAUSE_HIHI
         
         if severity != None and cause != None:
-            giapi.StatusUtil.setAlarm(cmd, severity, cause)
+            if giapi.StatusUtil.setAlarm(cmd, severity, cause) != giapi.status.Status.OK:
+                self.log.send(self.iam, ERROR, "Error setting the alarm.")
         
         return severity
             
@@ -680,7 +695,8 @@ class uploader(threading.Thread):
             cause = giapi.alarm.Cause.ALARM_CAUSE_HIHI
             
         if severity != None and cause != None:
-            giapi.StatusUtil.setAlarm(cmd, severity, cause)
+            if giapi.StatusUtil.setAlarm(cmd, severity, cause) != giapi.status.Status.OK:
+                self.log.send(self.iam, ERROR, "Error setting the alarm.")
         
         return severity
             
@@ -717,13 +733,15 @@ class uploader(threading.Thread):
             if key > 20:
                 break
             cmd = "ig2:sts:" + value     
-            giapi.StatusUtil.setValueAsFloat(cmd, self.hk_list[key])
+            if giapi.StatusUtil.setValueAsFloat(cmd, self.hk_list[key]) != giapi.status.Status.OK:
+                msg = "couldn't set %s." % value
+                self.log.send(self.iam, ERROR, msg)
         
         # --------------------------------------------------------------
         # upload health items        
-        # giapi.health.GOOD
-        # giapi.health.WARNING
-        # giapi.health.BAD        
+        # giapi.health.Health.GOOD
+        # giapi.health.Health.WARNING
+        # giapi.health.Health.BAD        
         com = True
         if not self.simul:
             for idx in range(6):
@@ -731,50 +749,55 @@ class uploader(threading.Thread):
                     com = False
                     break
         
-        health = [giapi.health.GOOD for _ in range(5)]    
+        health = [giapi.health.Health.GOOD for _ in range(5)]    
         
         # ICS 
         if not com or not self.hk_list[GEA_PDU2_PWR] or self.temp_sts_bench == giapi.alarm.Severity.ALARM_FAILURE or \
             self.temp_sts_grating == giapi.alarm.Severity.ALARM_FAILURE or \
                 self.temp_sts_air == giapi.alarm.Severity.ALARM_FAILURE:
-            health[HEALTH_ICS] = giapi.health.BAD
+            health[HEALTH_ICS] = giapi.health.Health.BAD
         elif self.temp_sts_bench == giapi.alarm.Severity.ALARM_WARNING or \
             self.temp_sts_grating == giapi.alarm.Severity.ALARM_WARNING or \
                 self.temp_sts_air == giapi.alarm.Severity.ALARM_WARNING:
-            health[HEALTH_ICS] = giapi.health.WARNING
-        giapi.StatusUtil.setHealth("ig2:ics:health", health[HEALTH_ICS])
+            health[HEALTH_ICS] = giapi.health.Health.WARNING
+        if giapi.StatusUtil.setHealth("ig2:ics:health", health[HEALTH_ICS]) != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Problem setting health.")
         
         # DCSH
         if not self.hk_list[GEA_PDU1_PWR] or not self.dcs_enable[H] or self.temp_sts_detH == giapi.alarm.Severity.ALARM_FAILURE:
-            health[HEALTH_DCSH] = giapi.health.BAD
+            health[HEALTH_DCSH] = giapi.health.Health.BAD
         elif self.temp_sts_detH == giapi.alarm.Severity.ALARM_WARNING:
-            health[HEALTH_DCSH] = giapi.health.WARNING
-        giapi.StatusUtil.setHealth("ig2:dcsh:health", health[HEALTH_DCSH])
+            health[HEALTH_DCSH] = giapi.health.Health.WARNING
+        if giapi.StatusUtil.setHealth("ig2:dcsh:health", health[HEALTH_DCSH]) != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Problem setting health.")
         
         # DCSK
         if not self.hk_list[GEA_PDU1_PWR] or not self.dcs_enable[K] or self.temp_sts_detK == giapi.alarm.Severity.ALARM_FAILURE:
-            health[HEALTH_DCSK] = giapi.health.BAD
+            health[HEALTH_DCSK] = giapi.health.Health.BAD
         elif self.temp_sts_detK == giapi.alarm.Severity.ALARM_WARNING:
-            health[HEALTH_DCSK] = giapi.health.WARNING
-        giapi.StatusUtil.setHealth("ig2:dcsk:health", health[HEALTH_DCSK])
+            health[HEALTH_DCSK] = giapi.health.Health.WARNING
+        if giapi.StatusUtil.setHealth("ig2:dcsk:health", health[HEALTH_DCSK]) != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Problem setting health.")
         
         # DCSS
         if not self.hk_list[GEA_PDU1_PWR] or not self.dcs_enable[SVC] or self.temp_sts_detS == giapi.alarm.Severity.ALARM_FAILURE:
-            health[HEALTH_DCSS] = giapi.health.BAD
+            health[HEALTH_DCSS] = giapi.health.Health.BAD
         elif self.temp_sts_detS == giapi.alarm.Severity.ALARM_WARNING:
-            health[HEALTH_DCSS] = giapi.health.WARNING
-        giapi.StatusUtil.setHealth("ig2:dcss:health", health[HEALTH_DCSS])
+            health[HEALTH_DCSS] = giapi.health.Health.WARNING
+        if giapi.StatusUtil.setHealth("ig2:dcss:health", health[HEALTH_DCSS]) != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Problem setting health.")
         
         # ICS
         for idx in range(4):
-            if health[idx] == giapi.health.WARNING:
-                health[HEALTH_IG2] = giapi.health.WARNING
+            if health[idx] == giapi.health.Health.WARNING:
+                health[HEALTH_IG2] = giapi.health.Health.WARNING
                 break
         for idx in range(4):
-            if health[idx] == giapi.health.BAD:
-                health[HEALTH_IG2] = giapi.health.BAD
+            if health[idx] == giapi.health.Health.BAD:
+                health[HEALTH_IG2] = giapi.health.Health.BAD
                 break
-        giapi.StatusUtil.setHealth("ig2:health", health[HEALTH_IG2])
+        if giapi.StatusUtil.setHealth("ig2:health", health[HEALTH_IG2]) != giapi.status.Status.OK:
+            self.log.send(self.iam, ERROR, "Problem setting health.")
         
         giapi.StatusUtil.postStatus()
         

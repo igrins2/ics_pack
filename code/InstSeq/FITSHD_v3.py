@@ -9,7 +9,7 @@ FHDARR = [
 
 #['FieldName','Value(or Key Name)','Comment(s)'],
 
-['I_HDRVER' ,'S',   '0.994'      ,'version of IGRINS FITS Header'],
+#['I_HDRVER' ,'S',   '0.994'      ,'version of IGRINS FITS Header'],
 
 ['DETECTOR' ,'S',  'H2RG'                 ,'name of Detector'],
 ['TIMESYS'  ,'S',  'UTC'                  ,'Time system used in this header'],
