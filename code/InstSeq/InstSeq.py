@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Nov 23, 2023
+Modified on Nov 27, 2023
 
 @author: hilee
 """
@@ -403,15 +403,12 @@ class Inst_Seq(threading.Thread):
                         if k == "ig2:dcs:expTime":
                             self.cur_expTime = float(keys.c_str())
                             print(f'after asigned {self.cur_expTime}')
-                        
-                        elif k == "ig2:seq:state":
-                            self.apply_mode = keys
-                                                        
-                        elif k == "ig2:seq:p":
-                            offset_p = keys.c_str()
                             
-                        elif k == "ig2:seq:q":
-                            offset_q = keys.c_str()
+                            if self.cur_expTime < 1.63:     self.cur_expTime = 1.63
+                        
+                        elif k == "ig2:seq:state":  self.apply_mode = keys
+                        elif k == "ig2:seq:p":      offset_p = keys.c_str()
+                        elif k == "ig2:seq:q":      offset_q = keys.c_str()
                     
                     #send to ObsApp
                     print(offset_p, offset_q)
@@ -447,7 +444,7 @@ class Inst_Seq(threading.Thread):
                         self.set_exp(self.dcs_list[SVC])
                                 
                     elif self.apply_mode == SCI_MODE:
-                        _exptime_sci = self.cur_expTime
+                        _exptime_sci = self.cur_expTime                        
                                 
                         _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
                         _FS_number_sci = N_fowler_max
@@ -456,10 +453,8 @@ class Inst_Seq(threading.Thread):
                             
                         print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
                         
-                        if not self.cur_ObsApp_taking:
-                            self.set_exp("all", _exptime_sci, _FS_number_sci)
-                        else:
-                            self.set_exp("H_K", _exptime_sci, _FS_number_sci)
+                        if not self.cur_ObsApp_taking:  self.set_exp("all", _exptime_sci, _FS_number_sci)
+                        else:                           self.set_exp("H_K", _exptime_sci, _FS_number_sci)
                             
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
@@ -478,16 +473,12 @@ class Inst_Seq(threading.Thread):
                         
                         if k == "ig2:dcs:expTime":
                             self.cur_expTime = float(keys.c_str())
+                            if self.cur_expTime < 1.63:     self.cur_expTime = 1.63
                             print(f'after asigned {self.cur_expTime}')
                         
-                        elif k == "ig2:seq:state":
-                            self.apply_mode = keys
-                                                        
-                        elif k == "ig2:seq:p":
-                            offset_p = keys.c_str()
-                            
-                        elif k == "ig2:seq:q":
-                            offset_q = keys.c_str()
+                        elif k == "ig2:seq:state":  self.apply_mode = keys
+                        elif k == "ig2:seq:p":      offset_p = keys.c_str()
+                        elif k == "ig2:seq:q":      offset_q = keys.c_str()
                     
                     #send to ObsApp
                     print(offset_p, offset_q)
@@ -517,10 +508,8 @@ class Inst_Seq(threading.Thread):
                             
                         print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
                         
-                        if not self.cur_ObsApp_taking:
-                            self.set_exp("all", _exptime_sci, _FS_number_sci)
-                        else:
-                            self.set_exp("H_K", _exptime_sci, _FS_number_sci)
+                        if not self.cur_ObsApp_taking:  self.set_exp("all", _exptime_sci, _FS_number_sci)
+                        else:                           self.set_exp("H_K", _exptime_sci, _FS_number_sci)
                             
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.STARTED")                                                
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
@@ -587,10 +576,8 @@ class Inst_Seq(threading.Thread):
                         self.start_acquisition(self.dcs_list[SVC])
                         
                     elif self.apply_mode == SCI_MODE:                                                    
-                        if not self.cur_ObsApp_taking:  
-                            self.start_acquisition()
-                        else:
-                            self.start_acquisition("H_K")
+                        if not self.cur_ObsApp_taking:  self.start_acquisition()
+                        else:                           self.start_acquisition("H_K")
                         
                     else:
                         self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
@@ -673,10 +660,8 @@ class Inst_Seq(threading.Thread):
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                         
                 elif self.apply_mode == SCI_MODE:   
-                    if not self.cur_ObsApp_taking:
-                        self.stop_acquistion()
-                    else:
-                        self.stop_acquistion("H_K")
+                    if not self.cur_ObsApp_taking:  self.stop_acquistion()
+                    else:                           self.stop_acquistion("H_K")
                         
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
@@ -764,15 +749,9 @@ class Inst_Seq(threading.Thread):
         self.log.send(self.iam, INFO, msg)
         print(msg)    
         
-        if param[0] == OBSAPP_CAL_OFFSET:
-            self.send_to_TCS(float(param[1]), float(param[2]), int(param[3]))
-            #self.send_to_TCS(param[1], param[2])
-        
-        elif param[0] == OBSAPP_OUTOF_NUMBER_SVC:
-            self.out_of_number_svc = int(param[1])
-            
-        elif param[0] == OBSAPP_TAKING_IMG:
-            self.cur_ObsApp_taking = bool(int(param[1]))
+        if param[0] == OBSAPP_CAL_OFFSET:           self.send_to_TCS(float(param[1]), float(param[2]), int(param[3]))
+        elif param[0] == OBSAPP_OUTOF_NUMBER_SVC:   self.out_of_number_svc = int(param[1])
+        elif param[0] == OBSAPP_TAKING_IMG:         self.cur_ObsApp_taking = bool(int(param[1]))
                 
     
     def offsetCallBack(self, offsetApplied, msg): 
@@ -954,10 +933,8 @@ class Inst_Seq(threading.Thread):
                     self.response_complete(bool(int(param[1])))
     
         elif param[0] == CMD_SETFSPARAM_ICS:   
-            if self.apply_mode == None or self.cur_action_id == 0: return
-            
-            if self.cur_ObsApp_taking:
-                return
+            if self.apply_mode == None or self.cur_action_id == 0:  return
+            if self.cur_ObsApp_taking:                              return
             
             print('SVC(CMD_SETFSPARAM_ICS)', self.apply_mode) 
             
@@ -1000,8 +977,7 @@ class Inst_Seq(threading.Thread):
                     self.response_complete(res)
                        
             elif self.apply_mode == ACQ_MODE:
-                if not self.acquiring[SVC]:
-                    return
+                if not self.acquiring[SVC]:     return
                 
                 self.acquiring[SVC] = False
                 self.apply_mode = None
@@ -1015,10 +991,8 @@ class Inst_Seq(threading.Thread):
                 
                 self.acquiring[SVC] = False
                 #print("self.cur_number_svc", self.cur_number_svc)
-                if self.cur_number_svc == 1:
-                    self.svc_file_list.append(param[2])
-                if self.cur_number_svc == self.out_of_number_svc:
-                    self.cur_number_svc = 0
+                if self.cur_number_svc == 1:                        self.svc_file_list.append(param[2])
+                if self.cur_number_svc == self.out_of_number_svc:   self.cur_number_svc = 0
                 
                 self.cur_number_svc += 1
                 if not self.cur_ObsApp_taking:
@@ -1074,9 +1048,7 @@ class Inst_Seq(threading.Thread):
                     self.response_complete(bool(int(param[1])))
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
-            if not self.acquiring[idx]:
-                return   
-            
+            if not self.acquiring[idx]:     return   
             if self.apply_mode == None or self.cur_action_id == 0: return
             
             print(idx, '(CMD_ACQUIRERAMP_ICS)', self.apply_mode)
@@ -1093,10 +1065,8 @@ class Inst_Seq(threading.Thread):
                 self.filepath[idx-1] = param[2]
                 if not self.acquiring[H] and not self.acquiring[K]:
                     self.apply_mode = None
-                    if res:
-                        self.save_fits_MEF()
-                    else:
-                        self.response_complete(False)
+                    if res: self.save_fits_MEF()
+                    else:   self.response_complete(False)
             
         elif param[0] == CMD_STOPACQUISITION:
             if self.apply_mode == None or self.cur_action_id == 0: return
@@ -1112,13 +1082,10 @@ class Inst_Seq(threading.Thread):
 
 
     def response_complete(self, status=False):
-        if self.cur_action_id == 0:
-            return 
+        if self.cur_action_id == 0:     return 
         
-        if status:
-            self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.COMPLETED
-        else:
-            self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ERROR
+        if status:  self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.COMPLETED
+        else:       self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ERROR
         
         _t = ti.time() - self.actRequested[self.cur_action_id]['t'] 
 
@@ -1154,10 +1121,8 @@ class Inst_Seq(threading.Thread):
             
             
     def power_onoff(self, onoff):
-        if onoff:
-            pwr_list = "on on off off off off off off"
-        else:
-            pwr_list = "off off off off off off off off"
+        if onoff:   pwr_list = "on on off off off off off off"
+        else:       pwr_list = "off off off off off off off off"
         msg = "%s %s" % (HK_REQ_PWR_ONOFF, pwr_list)
         self.publish_to_queue(msg)
 
@@ -1175,7 +1140,7 @@ class Inst_Seq(threading.Thread):
     def set_exp(self, target, expTime=1.63, FS_number=1):  
         if target == self.dcs_list[SVC]:
             msg = "%s %s %d" % (CMD_SETFSPARAM_ICS, target, self.simulation_mode)
-        else:                      
+        else:                   
             _fowlerTime = expTime - T_frame * FS_number
             msg = "%s %s %d %.3f %d %.3f" % (CMD_SETFSPARAM_ICS, target, self.simulation_mode, expTime, FS_number, _fowlerTime)
         
@@ -1210,8 +1175,7 @@ class Inst_Seq(threading.Thread):
             
     def create_cube(self):
         self.log.send(self.iam, INFO, self.svc_file_list)
-        if len(self.svc_file_list) == 0:
-            return [], [], [], []
+        if len(self.svc_file_list) == 0:    return [], [], [], []
 
         svc_list, cutout_list = [], []
         svc_list_header, cutout_list_header = [], []
@@ -1322,8 +1286,7 @@ class Inst_Seq(threading.Thread):
                         _hdul.close()
 
                         imgdata = np.rot90(_data, (idx*2)+1)
-                        if idx == 0:
-                            imgdata = np.fliplr(imgdata)
+                        if idx == 0:    imgdata = np.fliplr(imgdata)
 
                         _new_hdul = pyfits.ImageHDU(imgdata, _header)
                         hdu_list.append(_new_hdul)
@@ -1348,10 +1311,8 @@ class Inst_Seq(threading.Thread):
             svc_list_header[0].set("SLIT_ANG", self.slit_ang, "(d) Position angle of slit in the image")
         #-----------------------------------------------------------------------
         
-        if svc_list_header == []:
-            _new_hdul = pyfits.ImageHDU()
-        else:
-            _new_hdul = pyfits.CompImageHDU(data=img_array, header=svc_list_header[0], compression_type="HCOMPRESS_1", hcomp_scale=2.5)
+        if svc_list_header == []:   _new_hdul = pyfits.ImageHDU()
+        else:                       _new_hdul = pyfits.CompImageHDU(data=img_array, header=svc_list_header[0], compression_type="HCOMPRESS_1", hcomp_scale=2.5)
         hdu_list.append(_new_hdul)
 
         # cutout SVC cube
@@ -1426,10 +1387,8 @@ class Inst_Seq(threading.Thread):
 
             numbers = list(map(int, dir_names))
 
-            if len(numbers) > 0:
-                next_idx = max(numbers) + 1
-            else:
-                next_idx = 1
+            if len(numbers) > 0:    next_idx = max(numbers) + 1
+            else:                   next_idx = 1
 
         except:
             next_idx = 1        
