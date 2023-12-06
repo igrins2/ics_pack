@@ -651,10 +651,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()
         
-        #param = cmd.split()
-        #if not (param[0] == CMD_BUSY or param[0] == CMD_INITIALIZE1 or param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
-        #    return
-
         msg = "<- [DCSS] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         self.param_dcs[SVC] = cmd
@@ -665,10 +661,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def callback_h(self, ch, method, properties, body):
         cmd = body.decode()
 
-        #param = cmd.split()
-        #if not (param[0] == CMD_BUSY or param[0] == CMD_INITIALIZE1 or param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
-        #    return
-
         msg = "<- [DCSH] %s" % cmd
         self.log.send(self.iam, INFO, msg)
         self.param_dcs[H] = cmd
@@ -678,10 +670,6 @@ class MainWindow(Ui_Dialog, QMainWindow):
     
     def callback_k(self, ch, method, properties, body):
         cmd = body.decode()
-
-        #param = cmd.split()
-        #if not (param[0] == CMD_BUSY or param[0] == CMD_INITIALIZE1 or param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS or param[0] == CMD_SETFSPARAM_ICS or param[0] == CMD_ACQUIRERAMP_ICS or param[0] == CMD_STOPACQUISITION):
-        #    return
 
         msg = "<- [DCSK] %s" % cmd
         self.log.send(self.iam, INFO, msg)

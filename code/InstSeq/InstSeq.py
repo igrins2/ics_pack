@@ -1150,7 +1150,7 @@ class Inst_Seq(threading.Thread):
     def start_acquisition(self, target="all"): 
         next_idx = self.get_next_idx(target)
         #print(next_idx)
-        msg = "%s %s %d %d" % (CMD_ACQUIRERAMP_ICS, target, self.simulation_mode, next_idx)
+        msg = "%s %s %d %d %s" % (CMD_ACQUIRERAMP_ICS, target, self.simulation_mode, next_idx, self.data_label)
         self.publish_to_queue(msg)
         
         
