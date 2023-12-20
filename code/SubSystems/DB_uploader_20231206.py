@@ -1,14 +1,13 @@
 """
 ... from uploader.py from IGRINS
 
-Modified on Dec 12, 2023
+Modified on Nov 22, 2023
 
-@author: hilee, Emma.K
+@author: hilee, JJLee
 """
 
 import enum
 import os, sys
-from socket import TIPC_SRC_DROPPABLE
 #import time as ti
 import datetime
 import pytz
@@ -29,7 +28,6 @@ import cppyy
 giapi_root=os.environ.get("GIAPI_ROOT")
 cppyy.add_include_path(f"{giapi_root}/install/include")
 cppyy.add_library_path(f"{giapi_root}/install/lib")
-cppyy.include("giapi/EpicsStatusHandler.h")
 cppyy.include("giapi/GeminiUtil.h")
 cppyy.include("giapi/giapi.h")
 cppyy.include("giapi/GiapiUtil.h")
@@ -38,11 +36,7 @@ cppyy.include("giapi/giapiexcept.h")
 cppyy.load_library("libgiapi-glue-cc")
 cppyy.add_include_path(f"{giapi_root}/src/examples/InstrumentDummyPython")
 
-#cppyy.include("InstCmdHandler.h")
-cppyy.include("InstStatusHandler.h")
-
 from cppyy.gbl import giapi
-from cppyy.gbl import instDummy
 
 #HKLogPath = WORKING_DIR + "IGRINS/Log/Web/tempweb.dat"
 
@@ -233,18 +227,6 @@ class uploader(threading.Thread):
         giapi.StatusUtil.createHealthStatusItem("ig2:dcsh:health") 
         giapi.StatusUtil.createHealthStatusItem("ig2:dcsk:health") 
         giapi.StatusUtil.createHealthStatusItem("ig2:dcss:health") 
-        
-        self._callbackStatus = self.callbackStatus
-        # for getting tcs information
-        #self._handler = instDummy.InstStatusHandler.create(self._callbackStatus)
-        
-        #pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentRA", 20)       
-        #print (f'The currentRA  is: {pStatus.getDataAsString(0)}') 
-
-        #giapi.GeminiUtil.subscribeEpicsStatus("tcs:sad:currentRA", self._handler)
-        #giapi.GeminiUtil.subscribeEpicsStatus("tcs:sad:currentDec", self._handler)
-        #giapi.GeminiUtil.subscribeEpicsStatus("tcs:sad:airMass", self._handler)
-
         # ---------------------------------------------------------------------
         
         # publish queue "dewar list"
@@ -617,25 +599,6 @@ class uploader(threading.Thread):
         self.dcs_data_processing(param, K)
         
         
-    # from tcs
-    def callbackStatus(self, t, statusItem):
-        print (f'Recieved the message type is: {t} {giapi.type.DOUBLE} {giapi.type.STRING}')
-        #print (f'{statusItem.getDataAsDouble(0)}')
-        
-        if  giapi.type.BOOLEAN == t:
-            print (f'{statusItem.getDataAsInt(0)}')
-        elif giapi.type.INT == t:
-            print (f'{statusItem.getDataAsInt(0)}')
-        if giapi.type.DOUBLE == t:
-            print (f'{statusItem.getDataAsDouble(0)}')
-        elif giapi.type.STRING == t:
-            print (f'{statusItem.getDataAsString(0)}')
-        elif giapi.type.BYTE == t:
-            print (f'{statusItem.getDataAsByte(0)}')
-        else:
-            print (f'Not defined, it is an error')
-        
-        
     def dcs_data_processing(self, param, idx):
             
         if param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
@@ -728,27 +691,6 @@ class uploader(threading.Thread):
     
     def publish_dewar_list(self):
         
-        cur_ra = ""
-        cur_dec = ""
-        cur_am = 0        
-        
-        try:
-            pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentRA", 20)
-            cur_ra = pStatus.getDataAsString(0)
-            print (f'The tcs:sad:currentRA is: {cur_ra}')
-            
-            pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentDec", 20)
-            cur_dec = pStatus.getDataAsString(0)
-            print (f'The tcs:sad:currentDec is: {cur_dec}')
-            
-            pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:airMass", 20)
-            cur_am = pStatus.getDataAsDouble(0)
-            print (f'The tcs:sad:currentDec is: {cur_am}')
-            #pass
-
-        except:
-            self.log.send(self.iam, ERROR, "Error getting tcs info")
-        
         hk_entries = [self.hk_list[GEA_VACUUM],
                       self.hk_list[GEA_BENCH],     self.hk_list[GEA_BENCH_SP],
                       self.hk_list[GEA_GRATING],   self.hk_list[GEA_GRATING_SP],
@@ -763,8 +705,7 @@ class uploader(threading.Thread):
                       self.hk_list[GEA_CHARCOALBOX],    
                       self.hk_list[GEA_CAMK],  
                       self.hk_list[GEA_SHIELDTOP],
-                      self.hk_list[GEA_AIR],
-                      cur_ra, cur_dec, cur_am]  
+                      self.hk_list[GEA_AIR]]  
         
         str_log = "    ".join(list(map(str, hk_entries)))     
         msg = "%s %s" % (UPLOAD_Q, str_log)

@@ -34,6 +34,15 @@ K = 2
 START = 0
 END = 1
 
+IS_STS_OBSTIME = "ig2:is:obstime"
+IS_STS_CURRENT = "ig2:is:currentstatus"
+IS_STS_TIMEPROG = "ig2:is:timeprogress"
+
+IDLE = "IDLE"
+EXPOSING = "EXPOSING"
+FOWLER_BACK = "FOWLER_BACK"
+CREATE_MEF = "CREATING MEF"
+
 TEST_MODE = "test"
 ACQ_MODE = "acq"
 SCI_MODE = "sci"
@@ -45,9 +54,13 @@ ACT_APPLY = 3
 ACT_OBSERVE = 4
 ACT_ABORT = 5
 
+T_br = 2
 T_minFowler = 0.168
 T_frame = 1.45479
 N_fowler_max = 16
+#T_readout = {1:0.5, 2:2, 4:3.5, 8:4.5, 16:6.5}
+T_readout = {1:0.5, 2:1.5, 4:2.5, 8:3, 16:4}
+T_fowler_cal = {1:0.586, 2:0.939, 4:1.595, 8:3.1364, 16:6.2142}
 
 #EXIT = "Exit"
 HK_REQ_PWR_ONOFF = "PowerOnOff" #pdu

@@ -45,8 +45,8 @@ class SubSystems():
         cmd = "%s/pdu.py" % path
         self.proc_sub[PDU] = subprocess.Popen(['python', cmd])               
 
-        cmd = "%s/DB_uploader.py" % path
-        self.proc_sub[UPLOADER] = subprocess.Popen(['python', cmd]) 
+        #cmd = "%s/DB_uploader.py" % path
+        #self.proc_sub[UPLOADER] = subprocess.Popen(['python', cmd]) 
         
     
     def exit_sub_system(self):

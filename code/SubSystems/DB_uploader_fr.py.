@@ -236,13 +236,13 @@ class uploader(threading.Thread):
         
         self._callbackStatus = self.callbackStatus
         # for getting tcs information
-        #self._handler = instDummy.InstStatusHandler.create(self._callbackStatus)
+        self._handler = instDummy.InstStatusHandler.create(self._callbackStatus)
         
         #pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentRA", 20)       
         #print (f'The currentRA  is: {pStatus.getDataAsString(0)}') 
 
-        #giapi.GeminiUtil.subscribeEpicsStatus("tcs:sad:currentRA", self._handler)
-        #giapi.GeminiUtil.subscribeEpicsStatus("tcs:sad:currentDec", self._handler)
+        giapi.GeminiUtil.subscribeEpicsStatus("tcs:sad:currentRA", self._handler)
+        giapi.GeminiUtil.subscribeEpicsStatus("tcs:sad:currentDec", self._handler)
         #giapi.GeminiUtil.subscribeEpicsStatus("tcs:sad:airMass", self._handler)
 
         # ---------------------------------------------------------------------
@@ -731,23 +731,25 @@ class uploader(threading.Thread):
         cur_ra = ""
         cur_dec = ""
         cur_am = 0        
-        
+
         try:
+            '''
             pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentRA", 20)
             cur_ra = pStatus.getDataAsString(0)
-            print (f'The tcs:sad:currentRA is: {cur_ra}')
+            #print (f'The tcs:sad:currentRA is: {cur_ra}')
             
             pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentDec", 20)
             cur_dec = pStatus.getDataAsString(0)
-            print (f'The tcs:sad:currentDec is: {cur_dec}')
+            #print (f'The tcs:sad:currentDec is: {cur_dec}')
             
             pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:airMass", 20)
-            cur_am = pStatus.getDataAsDouble(0)
-            print (f'The tcs:sad:currentDec is: {cur_am}')
-            #pass
+            cur_am = pStatus.getDataAsString(0)
+            #print (f'The tcs:sad:currentDec is: {cur_am}')
+            '''
+            pass
 
         except:
-            self.log.send(self.iam, ERROR, "Error getting tcs info")
+            pass
         
         hk_entries = [self.hk_list[GEA_VACUUM],
                       self.hk_list[GEA_BENCH],     self.hk_list[GEA_BENCH_SP],

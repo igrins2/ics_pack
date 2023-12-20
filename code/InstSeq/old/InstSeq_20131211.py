@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Dec 13, 2023
+Modified on Dec 08, 2023
 
 @author: hilee
 """
@@ -134,7 +134,7 @@ class Inst_Seq(threading.Thread):
         self.cur_number_svc = 0
         self.svc_file_list = []    
         
-        self.cur_ObsApp_taking = 0
+        self.cur_ObsApp_taking = False    
                 
         self.cur_expTime = 1.63
                         
@@ -155,18 +155,13 @@ class Inst_Seq(threading.Thread):
         self.frame_mode = ""    #A, B, ON, OFF
                                 
         self.obs_start_T = 0.0
-
-        self.obs_start_ut = datetime.datetime.utcnow()
-        self.obs_end_ut = datetime.datetime.utcnow()
-        
-        #self.airmass = [0.0, 0.0]
-        #self.HA = [None, None]
-        #self.LST = [None, None]
-        #self.ZD = [0.0, 0.0]
-        #self.PA = [0.0, 0.0]
+        self.airmass = [0.0, 0.0]
+        self.HA = [None, None]
+        self.LST = [None, None]
+        self.ZD = [0.0, 0.0]
+        self.PA = [0.0, 0.0]
         
         #***************************************************
-        '''
         self.FHD_TEL = dict()
         
         self.FHD_TEL["DATEOBS"] = "2023-06-12T16:21:45.037"
@@ -188,7 +183,6 @@ class Inst_Seq(threading.Thread):
 
         self.FHD_TEL["start"] = TCS_INFO
         self.FHD_TEL["end"] = TCS_INFO
-        '''
         #***************************************************
         
         _hdul = pyfits.open(WORKING_DIR + "ics_pack/code/InstSeq/slitmaskv0_igrins2.fits")
@@ -218,7 +212,7 @@ class Inst_Seq(threading.Thread):
         #print(f'Subscribing APPLY {giapi.CommandUtil.subscribeApply("ig", giapi.command.ActivitySet.SET_PRESET, self._handler)}')
         
         if self.reboot:
-            print("restart")                                 
+                                            
             self.publish_to_queue(CMD_RESTART)
             
             for idx in range(DCS_CNT):
@@ -473,7 +467,7 @@ class Inst_Seq(threading.Thread):
                             
                         print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
                         
-                        if self.cur_ObsApp_taking == 0:  self.set_exp("all", _exptime_sci, _FS_number_sci)
+                        if not self.cur_ObsApp_taking:  self.set_exp("all", _exptime_sci, _FS_number_sci)
                         else:                           self.set_exp("H_K", _exptime_sci, _FS_number_sci)
                             
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
@@ -528,7 +522,7 @@ class Inst_Seq(threading.Thread):
                             
                         print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
                         
-                        if self.cur_ObsApp_taking == 0:  self.set_exp("all", _exptime_sci, _FS_number_sci)
+                        if not self.cur_ObsApp_taking:  self.set_exp("all", _exptime_sci, _FS_number_sci)
                         else:                           self.set_exp("H_K", _exptime_sci, _FS_number_sci)
                             
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")                                                
@@ -569,7 +563,7 @@ class Inst_Seq(threading.Thread):
                     elif self.apply_mode == SCI_MODE:               
                         self.acquiring[H] = True
                         self.acquiring[K] = True
-                        if self.cur_ObsApp_taking == 0:  
+                        if not self.cur_ObsApp_taking:  
                             self.acquiring[SVC] = True
                             
                     else:
@@ -594,6 +588,7 @@ class Inst_Seq(threading.Thread):
                     self.send_to_GDS(giapi.data.ObservationEvent.OBS_START_ACQ, self.data_label)
                     
                     self.obs_time_cur = 0
+                    
                     self.setValue_to_SeqExec(IS_STS_CURRENT, EXPOSING, INFO)
                     #self.log.send(self.iam, INFO, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, EXPOSING)")
                     #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, EXPOSING)
@@ -601,14 +596,13 @@ class Inst_Seq(threading.Thread):
                     self.obs_progress = EXPOSING
                     threading.Timer(1, self.exp_progress).start()
                     
-                    self.obs_start_ut = datetime.datetime.utcnow()
                     self.obs_start_T = ti.time()
                     
                     if self.apply_mode == ACQ_MODE:
                         self.start_acquisition(self.dcs_list[SVC])
                         
                     elif self.apply_mode == SCI_MODE:                                                    
-                        if self.cur_ObsApp_taking == 0:  self.start_acquisition()
+                        if not self.cur_ObsApp_taking:  self.start_acquisition()
                         else:                           self.start_acquisition("H_K")
                         
                     else:
@@ -621,7 +615,7 @@ class Inst_Seq(threading.Thread):
                         return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                       
 
                     # request TCS info
-                    #self.req_from_TCS()
+                    self.req_from_TCS()
                     
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
@@ -661,7 +655,6 @@ class Inst_Seq(threading.Thread):
                     self.obs_progress = EXPOSING
                     threading.Timer(1, self.exp_progress).start()
                     
-                    self.obs_start_ut = datetime.datetime.utcnow()
                     self.obs_start_T = ti.time()
                     
                     if self.apply_mode == ACQ_MODE:
@@ -671,7 +664,7 @@ class Inst_Seq(threading.Thread):
                     elif self.apply_mode == SCI_MODE:                                                    
                         self.acquiring[H] = True
                         self.acquiring[K] = True
-                        if self.cur_ObsApp_taking == 0:  
+                        if not self.cur_ObsApp_taking:  
                             self.acquiring[SVC] = True
                             self.start_acquisition()
                         else:
@@ -687,7 +680,7 @@ class Inst_Seq(threading.Thread):
                         return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                       
 
                     # request TCS info
-                    #self.req_from_TCS()
+                    self.req_from_TCS()
                     
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
@@ -712,7 +705,10 @@ class Inst_Seq(threading.Thread):
                 
                 if self.actRequested[self.cur_action_id_old]['response'] != giapi.HandlerResponse.COMPLETED:
                     print(f'Sending completed of {self.cur_action_id_old}')
-                    giapi.CommandUtil.postCompletionInfo(self.cur_action_id_old, giapi.HandlerResponse.createError("ABORTED by the user"))     
+                    giapi.CommandUtil.postCompletionInfo(self.cur_action_id_old, giapi.HandlerResponse.create(giapi.HandlerResponse.COMPLETED ))     
+                print (f' the OBSERVER was completed, sleeping 30 secs')
+                #ti.sleep(0.300)
+                print (f' going to stop the detectors')
                 self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_ABORT}
                 self.stop_acquistion()
                 print (f' responded STARTED')
@@ -827,7 +823,7 @@ class Inst_Seq(threading.Thread):
         
         if param[0] == OBSAPP_CAL_OFFSET:           self.send_to_TCS(float(param[1]), float(param[2]), int(param[3]))
         elif param[0] == OBSAPP_OUTOF_NUMBER_SVC:   self.out_of_number_svc = int(param[1])
-        elif param[0] == OBSAPP_TAKING_IMG:         self.cur_ObsApp_taking = int(param[1])
+        elif param[0] == OBSAPP_TAKING_IMG:         self.cur_ObsApp_taking = bool(int(param[1]))
                 
     
     def offsetCallBack(self, offsetApplied, msg): 
@@ -851,7 +847,7 @@ class Inst_Seq(threading.Thread):
         except:
             self.log.send(self.iam, WARNING, "Time out!!!")
             
-    '''        
+            
     def req_from_TCS(self):
         
         return
@@ -879,10 +875,65 @@ class Inst_Seq(threading.Thread):
         print(giapi.TcsContext.aoprms)
         print(giapi.TcsContext.m2xy)
         
-        print(f'Finished! result is: {res}') 
+        print(f'Finished! result is: {res}')
+        
+        '''
+        #port, rma, PA, RA, Dec, AM, HA, LST, ZD                    
+        for info in param:
+            val = info.split('=')
+            if info[0] == "ag:port:igrins2":
+                self.tcs_info = {'port': val[1]}
+            elif info[0] == "tcs:currentRMA":
+                self.tcs_info = {'rma': val[1]}
+            elif info[0] == "tcs:instrPA":
+                self.tcs_info = {'PA': val[1]}
+            elif info[0] == "tcs:sad:currentRA":
+                self.tcs_info = {'RA': val[1]}
+            elif info[0] == "tcs:sad:currentDec":
+                self.tcs_info = {'Dec': val[1]}
+            elif info[0] == "tcs:sad:airMassNow":
+                self.tcs_info = {'AM': val[1]}
+            elif info[0] == "tcs:sad:currentHAString":
+                self.tcs_info = {'HA': val[1]}
+            elif info[0] == "tcs:sad:LST":
+                self.tcs_info = {'LST': val[1]}
+            elif info[0] == "tcs:sad:currentZD":
+                self.tcs_info = {'ZD': val[1]}
+        '''
+        '''
+        struct TcsContext {
+            double time;      //Gemini raw time
+            double x,y,z;     //Cartesian elements of mount pre-flexure az/el
+            //Telescope Parameters structure
+            struct Tel {
+                double fl;    //Telescope focal length (mm)
+                double rma;   //Rotator mechanical angle (rads)
+                double an;    //Azimuth axis tilt NS (rads)
+                double aw;    //Azimuth axis tilt EW (rads)
+                double pnpae; //Az/El nonperpendicularity (rads)
+                double ca;    //Net left-right(horizontal) collimation (rads)
+                double ce;    //Net up-down(vertical) collimation (rads)
+                double pox;   //Pointing origin x-component (mm)
+                double poy;   //Pointing origin y-component (mm)
+            } tel;
+            double aoprms[15]; //Target independent apparent to observed parameters
+            double m2xy[3][2]; //M2 tip/tilt (3 chop states)
+            //Point Origin structure
+            struct PO {
+                double mx; //Mount point origin in X
+                double my; //Mount point origin in Y
+                double ax; //Source chop A pointing origin in X
+                double ay; //Source chop A pointing origin in Y
+                double bx; //Source chop B pointing origin in X
+                double by; //Source chop B pointing origin in Y
+                double cx; //Source chop C pointing origin in X
+                double cy; //Source chop C pointing origin in Y
+            } po;
+            double ao2t[6]; //Optical distortion coefficients (Not used to date)
+        };
+        '''
         
         return tcsContext
-    '''
                       
     #--------------------------------------------------------
     # dcs queue
@@ -955,7 +1006,7 @@ class Inst_Seq(threading.Thread):
     
         elif param[0] == CMD_SETFSPARAM_ICS:   
             if self.apply_mode == None or self.cur_action_id == 0:  return
-            if self.cur_ObsApp_taking != 0:                              return
+            if self.cur_ObsApp_taking:                              return
             
             print('SVC(CMD_SETFSPARAM_ICS)', self.apply_mode) 
             
@@ -1021,7 +1072,7 @@ class Inst_Seq(threading.Thread):
                 if self.cur_number_svc == self.out_of_number_svc:   self.cur_number_svc = 0
                 
                 self.cur_number_svc += 1
-                if self.cur_ObsApp_taking == 0:
+                if not self.cur_ObsApp_taking:
                     self.acquiring[SVC] = True
                     self.start_acquisition(self.dcs_list[SVC])
             
@@ -1186,30 +1237,21 @@ class Inst_Seq(threading.Thread):
         self.publish_to_queue(msg)
         
         #expected time
-        _dcs_t = T_br + (T_frame + _fowlerTime + (FS_number * 2 * T_frame)) + T_readout[FS_number] + T_fowler_cal[FS_number] + np.log(expTime)
-        #_svc_cnt = (_dcs_t / 8) / self.out_of_number_svc
-        #_mef = 0.6 * _svc_cnt + 0.3
-        _svc_cnt = int((_dcs_t / 8.8) / self.out_of_number_svc + 0.5)
-        _cube = 0.033 * _svc_cnt - 0.1577
-        _mef = 0.32 * _svc_cnt + 0.3
+        _dcs_t = T_br + (T_frame + _fowlerTime + (FS_number * 2 * T_frame)) # + (FS_number * 2 * 0.125) + T_fowler_cal[FS_number]
+        _svc_cnt = (_dcs_t / 8) / self.out_of_number_svc
+        _mef = 0.6 * _svc_cnt + 0.3
 
-        if _cube < 0:   _cube = 0
-        self.obs_time = _dcs_t + _cube + _mef
+        self.obs_time = _dcs_t + _mef
         self.obs_time_readout = expTime
-        self.obs_time_createMEF = self.obs_time - _mef - _cube
+        self.obs_time_createMEF = self.obs_time - _mef
         
-        msg = "expected cube T: %f" % _cube
-        self.log.send(self.iam, DEBUG, msg)
-
-        msg = "expected MEF T: %f" % _mef
-        self.log.send(self.iam, DEBUG, msg)
-        #print(self.obs_time, self.obs_time_readout, self.obs_time_createMEF)
+        print(self.obs_time, self.obs_time_readout, self.obs_time_createMEF)
         
         self.log.send(self.iam, INFO, f"giapi.StatusUtil.setValueAsFloat(IS_STS_OBSTIME, {self.obs_time})")
         giapi.StatusUtil.setValueAsFloat(IS_STS_OBSTIME, self.obs_time)  
 
         self.log.send(self.iam, INFO, f"giapi.StatusUtil.setValueAsInt(IS_STS_TIMEPROG, {int(self.obs_time)})")
-        giapi.StatusUtil.setValueAsInt(IS_STS_TIMEPROG, int(self.obs_time + 0.5))
+        giapi.StatusUtil.setValueAsInt(IS_STS_TIMEPROG, int(self.obs_time))
         giapi.StatusUtil.postStatus()
         
         msg = "expected total T: %f" % self.obs_time
@@ -1228,13 +1270,13 @@ class Inst_Seq(threading.Thread):
         if not self.acquiring[H] or not self.acquiring[K]:
             return
 
-        if self.obs_progress != IDLE: #0 <= self.obs_time_cur < self.obs_time and self.obs_progress != IDLE:                
+        if 0 <= self.obs_time_cur < self.obs_time and self.obs_progress != IDLE:                
             if self.obs_progress == EXPOSING and self.obs_time_readout <= self.obs_time_cur <= self.obs_time_createMEF:
-                self.setValue_to_SeqExec(IS_STS_CURRENT, FOWLER_BACK, INFO)
+                self.setValue_to_SeqExec(IS_STS_CURRENT, READOUT, INFO)
                 #self.log.send(self.iam, INFO, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, READOUT)")
                 #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, READOUT) 
                 #giapi.StatusUtil.postStatus()
-                self.obs_progress = FOWLER_BACK
+                self.obs_progress = READOUT
                 
             self.log.send(self.iam, INFO, f"giapi.StatusUtil.setValueAsInt(IS_STS_TIMEPROG, {int(self.obs_time) - self.obs_time_cur})")
             giapi.StatusUtil.setValueAsInt(IS_STS_TIMEPROG, int(self.obs_time) - self.obs_time_cur)
@@ -1244,7 +1286,7 @@ class Inst_Seq(threading.Thread):
             
             threading.Timer(1, self.exp_progress).start()
         
-    '''    
+        
     def input_TCS_info_header(self):
         ValHD=[]
         for ARR in LFHD.FHDARR:
@@ -1262,7 +1304,6 @@ class Inst_Seq(threading.Thread):
             ValHD.append((ARR[0], v, ARR[3]))
             
         return ValHD
-    '''
             
             
     def create_cube(self):
@@ -1306,7 +1347,7 @@ class Inst_Seq(threading.Thread):
             
             svc_list_header.append(hdu_list[1].header)
             cutout_list_header.append(hdu_list[2].header)
-           
+            
         self.svc_file_list = []
                 
         return svc_list, cutout_list, svc_list_header, cutout_list_header                
@@ -1318,11 +1359,9 @@ class Inst_Seq(threading.Thread):
             if self.acquiring[SVC]:     return
         else:
             if self.acquiring[H] or self.acquiring[K]:  return
-        
-        self.obs_end_ut = datetime.datetime.utcnow()
-
+            
         # request TCS info
-        #self.req_from_TCS()
+        self.req_from_TCS()
         
         self.send_to_GDS(giapi.data.ObservationEvent.OBS_END_ACQ, self.data_label)
         self.send_to_GDS(giapi.data.ObservationEvent.OBS_START_DSET_WRITE, self.data_label)
@@ -1361,27 +1400,14 @@ class Inst_Seq(threading.Thread):
         Primary_hdu = pyfits.PrimaryHDU()
         
         #-----------------------------------------------------------
-        #Primary_hdu.header.set("INSTRUME", "IGRINS-2", "Instrument used to acquire data")
-        #Primary_hdu.header.set("TIMESYS", "UTC", "Time system used in this header")
-       
-        _t = self.obs_start_ut
-        _obs_start_t = "%02d:%02d:%02d.%04d" % (_t.hour, _t.minute, _t.second, _t.microsecond)
-        Primary_hdu.header.set("UTSTART", _obs_start_t, "UT at observation start")
-
-        _t = self.obs_end_ut
-        _obs_end_t = "%02d:%02d:%02d.%04d" % (_t.hour, _t.minute, _t.second, _t.microsecond)
-        Primary_hdu.header.set("UTEND", _obs_end_t, "UT at observation end")
-       
-        _onoff = "off"
-        if self.cur_ObsApp_taking == 2:
-            _onoff = "on"
-        Primary_hdu.header.set("SLOWGUID", _onoff, "Autoguiding on/off log")
-
-        #ValHD = self.input_TCS_info_header()
+        Primary_hdu.header.set("INSTRUME", "IGRINS-2", "Instrument used to acquire data")
+        Primary_hdu.header.set("OBJTYPE", "TAR", "Type of exposure (FLAT/SKY/TAR)")  
+        Primary_hdu.header.set("FRMTYPE", self.frame_mode, "Type of Frames (A/B/ON/OFF)")
         
-        #InsHdInd = 7    # need to check
-        #for i, hdrTup in enumerate(ValHD):
-        #    Primary_hdu.header.insert(InsHdInd+i,hdrTup)
+        ValHD = self.input_TCS_info_header()
+        InsHdInd = 7    # need to check
+        for i, hdrTup in enumerate(ValHD):
+            Primary_hdu.header.insert(InsHdInd+i,hdrTup)
         #-----------------------------------------------------------
             
         hdu_list.append(Primary_hdu)
@@ -1446,8 +1472,7 @@ class Inst_Seq(threading.Thread):
         #-----------------------------------------------------------------------
         
         if svc_list_header == []:   _new_hdul = pyfits.ImageHDU()
-        else:                       _new_hdul = pyfits.CompImageHDU(data=img_array, compression_type="HCOMPRESS_1", hcomp_scale=2.5)
-        #else:                       _new_hdul = pyfits.CompImageHDU(data=img_array, header=svc_list_header[0], compression_type="HCOMPRESS_1", hcomp_scale=2.5)
+        else:                       _new_hdul = pyfits.CompImageHDU(data=img_array, header=svc_list_header[0], compression_type="HCOMPRESS_1", hcomp_scale=2.5)
         hdu_list.append(_new_hdul)
 
         # cutout SVC cube
@@ -1463,8 +1488,8 @@ class Inst_Seq(threading.Thread):
         cols = []
         for idx in range(len(svc_list)):
             if svc_list_header != []:
-                table = pyfits.Column(name=str(idx+1), format='20000A', array=[str(svc_list_header[idx])], ascii=False)
-                #table = pyfits.Column(name=str(idx+1), format='20000A', array=[str(cutout_list_header[idx])], ascii=False)
+                #table = pyfits.Column(name=str(idx+1), format='20000A', array=[str(svc_list_header[idx])], ascii=False)
+                table = pyfits.Column(name=str(idx+1), format='20000A', array=[str(cutout_list_header[idx])], ascii=False)
                 cols.append(table) 
         hdu_table = pyfits.BinTableHDU.from_columns(cols)
         hdu_list.append(hdu_table)
@@ -1494,14 +1519,9 @@ class Inst_Seq(threading.Thread):
         self.filepath[H-1] = ""
         self.filepath[K-1] = ""
         self.frame_mode = ""
-        
-        self.log.send(self.iam, INFO, f"giapi.StatusUtil.setValueAsInt(IS_STS_TIMEPROG, 0)")
-        giapi.StatusUtil.setValueAsInt(IS_STS_TIMEPROG, 0)
-        self.obs_time_cur = -1
-
         self.response_complete(True)
-        self.setValue_to_SeqExec(IS_STS_CURRENT, IDLE, INFO)
         
+        self.setValue_to_SeqExec(IS_STS_CURRENT, IDLE, INFO)
         #self.log.send(self.iam, INFO, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, IDLE)")
         #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, IDLE)
         #giapi.StatusUtil.postStatus()
