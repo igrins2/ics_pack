@@ -3,7 +3,7 @@
 """
 Created on Jun 28, 2022
 
-Modified on July 03, 2022
+Modified on Aug 9, 2022
 
 @author: hilee
 """
@@ -53,6 +53,7 @@ T_frame = 1.45479
 T_exp = 1.63
 T_minFowler = 0.168
 T_br = 2
+N_fowler_max = 16
 
 # for cal motor moving position
 COM_CNT = 3
@@ -98,7 +99,7 @@ OFF = "off"
 #LAMP_FLAT = [OFF, ON, OFF, OFF, ON, OFF, ON, OFF, OFF]
 #LAMP_THAR = [OFF, OFF, OFF, ON, OFF, ON, OFF, OFF, OFF]
 
-LAMP_FLAT = [OFF, ON, OFF, OFF, OFF, ON, OFF, OFF, ON, OFF]
+LAMP_FLAT = [OFF, ON, OFF, OFF, OFF, ON, OFF, ON, ON, OFF]
 LAMP_THAR = [OFF, OFF, OFF, ON, OFF, OFF, ON, OFF, OFF, OFF]
 
 MUX_TYPE = 2
@@ -115,6 +116,7 @@ DT_REQ_INITMOTOR = "InitMotor"  #motor
 DT_REQ_MOVEMOTOR = "MoveMotor"  #motor
 DT_REQ_MOTORGO = "MotorGo"      #motor
 DT_REQ_MOTORBACK = "MotorBack"  #motor
+DT_REQ_STOP = "StopMotor"       #motor
 
 DT_REQ_SETUT = "SetUT"          #motor
 DT_REQ_SETLT = "SetLT"          #motor
@@ -124,6 +126,9 @@ ALIVE = "Alive" # from EngTools
 
 DT_STATUS = "DTStatus"
 
+CMD_BUSY = "Busy"
+
+CMD_INITIALIZE1 = "Initialize1" 
 CMD_INIT2_DONE = "Initialize2_Done" # to DCS
 CMD_INITIALIZE2_ICS = "Initialize2_ics" 
 CMD_SETFSPARAM_ICS = "SetFSParam_ics"

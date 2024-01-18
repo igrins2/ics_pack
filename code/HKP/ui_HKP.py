@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'HKPzpVfkr.ui'
+## Form generated from reading UI file 'HKPyHAYLK.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.3.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -24,7 +24,7 @@ class Ui_Dialog(object):
     def setupUi(self, Dialog):
         if not Dialog.objectName():
             Dialog.setObjectName(u"Dialog")
-        Dialog.resize(686, 498)
+        Dialog.resize(782, 498)
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -33,7 +33,7 @@ class Ui_Dialog(object):
         #Dialog.setSizeGripEnabled(False)
         self.label_27 = QLabel(Dialog)
         self.label_27.setObjectName(u"label_27")
-        self.label_27.setGeometry(QRect(430, 7, 111, 20))
+        self.label_27.setGeometry(QRect(530, 7, 111, 20))
         font = QFont()
         font.setPointSize(10)
         self.label_27.setFont(font)
@@ -41,7 +41,7 @@ class Ui_Dialog(object):
         self.label_27.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
         self.sts_updated = QLabel(Dialog)
         self.sts_updated.setObjectName(u"sts_updated")
-        self.sts_updated.setGeometry(QRect(540, 7, 141, 21))
+        self.sts_updated.setGeometry(QRect(640, 7, 141, 21))
         self.sts_updated.setFont(font)
         self.label_29 = QLabel(Dialog)
         self.label_29.setObjectName(u"label_29")
@@ -60,7 +60,7 @@ class Ui_Dialog(object):
         self.sts_pdu_off.setFont(font1)
         self.sts_interval = QLabel(Dialog)
         self.sts_interval.setObjectName(u"sts_interval")
-        self.sts_interval.setGeometry(QRect(489, 30, 171, 20))
+        self.sts_interval.setGeometry(QRect(589, 30, 171, 20))
         self.sts_interval.setFont(font)
         self.sts_pdu3 = QLabel(Dialog)
         self.sts_pdu3.setObjectName(u"sts_pdu3")
@@ -222,7 +222,7 @@ class Ui_Dialog(object):
         self.sts_monitor14.setFont(font6)
         self.label_34 = QLabel(Dialog)
         self.label_34.setObjectName(u"label_34")
-        self.label_34.setGeometry(QRect(480, 469, 171, 20))
+        self.label_34.setGeometry(QRect(580, 469, 171, 20))
         self.label_34.setFont(font3)
         self.sts_monitor10 = QLabel(Dialog)
         self.sts_monitor10.setObjectName(u"sts_monitor10")
@@ -242,7 +242,7 @@ class Ui_Dialog(object):
         self.sts_vacuum.setFont(font6)
         self.sts_monitor_error = QLabel(Dialog)
         self.sts_monitor_error.setObjectName(u"sts_monitor_error")
-        self.sts_monitor_error.setGeometry(QRect(651, 470, 20, 20))
+        self.sts_monitor_error.setGeometry(QRect(751, 470, 20, 20))
         self.sts_monitor_error.setFont(font6)
         self.sts_monitor7 = QLabel(Dialog)
         self.sts_monitor7.setObjectName(u"sts_monitor7")
@@ -291,8 +291,8 @@ class Ui_Dialog(object):
         self.label_11.setGeometry(QRect(271, 58, 121, 17))
         self.label_11.setFont(font3)
         self.tb_Monitor = QTableWidget(Dialog)
-        if (self.tb_Monitor.columnCount() < 4):
-            self.tb_Monitor.setColumnCount(4)
+        if (self.tb_Monitor.columnCount() < 5):
+            self.tb_Monitor.setColumnCount(5)
         __qtablewidgetitem18 = QTableWidgetItem()
         __qtablewidgetitem18.setFont(font2);
         self.tb_Monitor.setHorizontalHeaderItem(0, __qtablewidgetitem18)
@@ -305,234 +305,293 @@ class Ui_Dialog(object):
         __qtablewidgetitem21 = QTableWidgetItem()
         __qtablewidgetitem21.setFont(font2);
         self.tb_Monitor.setHorizontalHeaderItem(3, __qtablewidgetitem21)
+        __qtablewidgetitem22 = QTableWidgetItem()
+        __qtablewidgetitem22.setFont(font2);
+        self.tb_Monitor.setHorizontalHeaderItem(4, __qtablewidgetitem22)
         if (self.tb_Monitor.rowCount() < 14):
             self.tb_Monitor.setRowCount(14)
-        __qtablewidgetitem22 = QTableWidgetItem()
-        __qtablewidgetitem22.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
-        __qtablewidgetitem22.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(0, 0, __qtablewidgetitem22)
         __qtablewidgetitem23 = QTableWidgetItem()
-        __qtablewidgetitem23.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem23.setTextAlignment(Qt.AlignCenter);
         __qtablewidgetitem23.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(0, 1, __qtablewidgetitem23)
+        self.tb_Monitor.setItem(0, 0, __qtablewidgetitem23)
         __qtablewidgetitem24 = QTableWidgetItem()
         __qtablewidgetitem24.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem24.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(0, 2, __qtablewidgetitem24)
+        self.tb_Monitor.setItem(0, 1, __qtablewidgetitem24)
         __qtablewidgetitem25 = QTableWidgetItem()
         __qtablewidgetitem25.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem25.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(0, 3, __qtablewidgetitem25)
+        self.tb_Monitor.setItem(0, 2, __qtablewidgetitem25)
         __qtablewidgetitem26 = QTableWidgetItem()
         __qtablewidgetitem26.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem26.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(1, 0, __qtablewidgetitem26)
+        self.tb_Monitor.setItem(0, 3, __qtablewidgetitem26)
         __qtablewidgetitem27 = QTableWidgetItem()
         __qtablewidgetitem27.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem27.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(1, 1, __qtablewidgetitem27)
+        self.tb_Monitor.setItem(0, 4, __qtablewidgetitem27)
         __qtablewidgetitem28 = QTableWidgetItem()
-        __qtablewidgetitem28.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
-        __qtablewidgetitem28.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(1, 2, __qtablewidgetitem28)
+        __qtablewidgetitem28.setTextAlignment(Qt.AlignCenter);
+        __qtablewidgetitem28.setFlags(Qt.ItemIsDropEnabled|Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(1, 0, __qtablewidgetitem28)
         __qtablewidgetitem29 = QTableWidgetItem()
         __qtablewidgetitem29.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem29.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(1, 3, __qtablewidgetitem29)
+        self.tb_Monitor.setItem(1, 1, __qtablewidgetitem29)
         __qtablewidgetitem30 = QTableWidgetItem()
         __qtablewidgetitem30.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem30.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(2, 0, __qtablewidgetitem30)
+        self.tb_Monitor.setItem(1, 2, __qtablewidgetitem30)
         __qtablewidgetitem31 = QTableWidgetItem()
         __qtablewidgetitem31.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem31.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(2, 1, __qtablewidgetitem31)
+        self.tb_Monitor.setItem(1, 3, __qtablewidgetitem31)
         __qtablewidgetitem32 = QTableWidgetItem()
         __qtablewidgetitem32.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem32.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(2, 2, __qtablewidgetitem32)
+        self.tb_Monitor.setItem(1, 4, __qtablewidgetitem32)
         __qtablewidgetitem33 = QTableWidgetItem()
-        __qtablewidgetitem33.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem33.setTextAlignment(Qt.AlignCenter);
         __qtablewidgetitem33.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(2, 3, __qtablewidgetitem33)
+        self.tb_Monitor.setItem(2, 0, __qtablewidgetitem33)
         __qtablewidgetitem34 = QTableWidgetItem()
         __qtablewidgetitem34.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem34.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(3, 0, __qtablewidgetitem34)
+        self.tb_Monitor.setItem(2, 1, __qtablewidgetitem34)
         __qtablewidgetitem35 = QTableWidgetItem()
         __qtablewidgetitem35.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem35.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(3, 1, __qtablewidgetitem35)
+        self.tb_Monitor.setItem(2, 2, __qtablewidgetitem35)
         __qtablewidgetitem36 = QTableWidgetItem()
         __qtablewidgetitem36.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem36.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(3, 2, __qtablewidgetitem36)
+        self.tb_Monitor.setItem(2, 3, __qtablewidgetitem36)
         __qtablewidgetitem37 = QTableWidgetItem()
         __qtablewidgetitem37.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem37.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(3, 3, __qtablewidgetitem37)
+        self.tb_Monitor.setItem(2, 4, __qtablewidgetitem37)
         __qtablewidgetitem38 = QTableWidgetItem()
-        __qtablewidgetitem38.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem38.setTextAlignment(Qt.AlignCenter);
         __qtablewidgetitem38.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(4, 0, __qtablewidgetitem38)
+        self.tb_Monitor.setItem(3, 0, __qtablewidgetitem38)
         __qtablewidgetitem39 = QTableWidgetItem()
         __qtablewidgetitem39.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem39.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(4, 1, __qtablewidgetitem39)
+        self.tb_Monitor.setItem(3, 1, __qtablewidgetitem39)
         __qtablewidgetitem40 = QTableWidgetItem()
         __qtablewidgetitem40.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem40.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(4, 2, __qtablewidgetitem40)
+        self.tb_Monitor.setItem(3, 2, __qtablewidgetitem40)
         __qtablewidgetitem41 = QTableWidgetItem()
         __qtablewidgetitem41.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem41.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(4, 3, __qtablewidgetitem41)
+        self.tb_Monitor.setItem(3, 3, __qtablewidgetitem41)
         __qtablewidgetitem42 = QTableWidgetItem()
         __qtablewidgetitem42.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem42.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(5, 0, __qtablewidgetitem42)
+        self.tb_Monitor.setItem(3, 4, __qtablewidgetitem42)
         __qtablewidgetitem43 = QTableWidgetItem()
-        __qtablewidgetitem43.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
-        __qtablewidgetitem43.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(5, 1, __qtablewidgetitem43)
+        __qtablewidgetitem43.setTextAlignment(Qt.AlignCenter);
+        __qtablewidgetitem43.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(4, 0, __qtablewidgetitem43)
         __qtablewidgetitem44 = QTableWidgetItem()
         __qtablewidgetitem44.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem44.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(5, 2, __qtablewidgetitem44)
+        self.tb_Monitor.setItem(4, 1, __qtablewidgetitem44)
         __qtablewidgetitem45 = QTableWidgetItem()
         __qtablewidgetitem45.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem45.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(5, 3, __qtablewidgetitem45)
+        self.tb_Monitor.setItem(4, 2, __qtablewidgetitem45)
         __qtablewidgetitem46 = QTableWidgetItem()
         __qtablewidgetitem46.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem46.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(6, 0, __qtablewidgetitem46)
+        self.tb_Monitor.setItem(4, 3, __qtablewidgetitem46)
         __qtablewidgetitem47 = QTableWidgetItem()
         __qtablewidgetitem47.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem47.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(6, 1, __qtablewidgetitem47)
+        self.tb_Monitor.setItem(4, 4, __qtablewidgetitem47)
         __qtablewidgetitem48 = QTableWidgetItem()
-        __qtablewidgetitem48.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem48.setTextAlignment(Qt.AlignCenter);
         __qtablewidgetitem48.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(6, 2, __qtablewidgetitem48)
+        self.tb_Monitor.setItem(5, 0, __qtablewidgetitem48)
         __qtablewidgetitem49 = QTableWidgetItem()
         __qtablewidgetitem49.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem49.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(6, 3, __qtablewidgetitem49)
+        self.tb_Monitor.setItem(5, 1, __qtablewidgetitem49)
         __qtablewidgetitem50 = QTableWidgetItem()
         __qtablewidgetitem50.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem50.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(7, 0, __qtablewidgetitem50)
+        self.tb_Monitor.setItem(5, 2, __qtablewidgetitem50)
         __qtablewidgetitem51 = QTableWidgetItem()
         __qtablewidgetitem51.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem51.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(7, 1, __qtablewidgetitem51)
+        self.tb_Monitor.setItem(5, 3, __qtablewidgetitem51)
         __qtablewidgetitem52 = QTableWidgetItem()
         __qtablewidgetitem52.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem52.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(7, 2, __qtablewidgetitem52)
+        self.tb_Monitor.setItem(5, 4, __qtablewidgetitem52)
         __qtablewidgetitem53 = QTableWidgetItem()
-        __qtablewidgetitem53.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem53.setTextAlignment(Qt.AlignCenter);
         __qtablewidgetitem53.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(7, 3, __qtablewidgetitem53)
+        self.tb_Monitor.setItem(6, 0, __qtablewidgetitem53)
         __qtablewidgetitem54 = QTableWidgetItem()
         __qtablewidgetitem54.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
-        __qtablewidgetitem54.setFlags(Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(8, 0, __qtablewidgetitem54)
+        __qtablewidgetitem54.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(6, 1, __qtablewidgetitem54)
         __qtablewidgetitem55 = QTableWidgetItem()
         __qtablewidgetitem55.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem55.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(8, 1, __qtablewidgetitem55)
+        self.tb_Monitor.setItem(6, 2, __qtablewidgetitem55)
         __qtablewidgetitem56 = QTableWidgetItem()
         __qtablewidgetitem56.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem56.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(8, 2, __qtablewidgetitem56)
+        self.tb_Monitor.setItem(6, 3, __qtablewidgetitem56)
         __qtablewidgetitem57 = QTableWidgetItem()
         __qtablewidgetitem57.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem57.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(8, 3, __qtablewidgetitem57)
+        self.tb_Monitor.setItem(6, 4, __qtablewidgetitem57)
         __qtablewidgetitem58 = QTableWidgetItem()
-        __qtablewidgetitem58.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
-        __qtablewidgetitem58.setFlags(Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(9, 0, __qtablewidgetitem58)
+        __qtablewidgetitem58.setTextAlignment(Qt.AlignCenter);
+        __qtablewidgetitem58.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(7, 0, __qtablewidgetitem58)
         __qtablewidgetitem59 = QTableWidgetItem()
         __qtablewidgetitem59.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem59.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(9, 1, __qtablewidgetitem59)
+        self.tb_Monitor.setItem(7, 1, __qtablewidgetitem59)
         __qtablewidgetitem60 = QTableWidgetItem()
         __qtablewidgetitem60.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem60.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(9, 2, __qtablewidgetitem60)
+        self.tb_Monitor.setItem(7, 2, __qtablewidgetitem60)
         __qtablewidgetitem61 = QTableWidgetItem()
         __qtablewidgetitem61.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem61.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(9, 3, __qtablewidgetitem61)
+        self.tb_Monitor.setItem(7, 3, __qtablewidgetitem61)
         __qtablewidgetitem62 = QTableWidgetItem()
         __qtablewidgetitem62.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
-        __qtablewidgetitem62.setFlags(Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(10, 0, __qtablewidgetitem62)
+        __qtablewidgetitem62.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(7, 4, __qtablewidgetitem62)
         __qtablewidgetitem63 = QTableWidgetItem()
-        __qtablewidgetitem63.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem63.setTextAlignment(Qt.AlignCenter);
         __qtablewidgetitem63.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(10, 1, __qtablewidgetitem63)
+        self.tb_Monitor.setItem(8, 0, __qtablewidgetitem63)
         __qtablewidgetitem64 = QTableWidgetItem()
         __qtablewidgetitem64.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem64.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(10, 2, __qtablewidgetitem64)
+        self.tb_Monitor.setItem(8, 1, __qtablewidgetitem64)
         __qtablewidgetitem65 = QTableWidgetItem()
         __qtablewidgetitem65.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem65.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(10, 3, __qtablewidgetitem65)
+        self.tb_Monitor.setItem(8, 2, __qtablewidgetitem65)
         __qtablewidgetitem66 = QTableWidgetItem()
         __qtablewidgetitem66.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
-        __qtablewidgetitem66.setFlags(Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(11, 0, __qtablewidgetitem66)
+        __qtablewidgetitem66.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(8, 3, __qtablewidgetitem66)
         __qtablewidgetitem67 = QTableWidgetItem()
         __qtablewidgetitem67.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem67.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(11, 1, __qtablewidgetitem67)
+        self.tb_Monitor.setItem(8, 4, __qtablewidgetitem67)
         __qtablewidgetitem68 = QTableWidgetItem()
-        __qtablewidgetitem68.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem68.setTextAlignment(Qt.AlignCenter);
         __qtablewidgetitem68.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(11, 2, __qtablewidgetitem68)
+        self.tb_Monitor.setItem(9, 0, __qtablewidgetitem68)
         __qtablewidgetitem69 = QTableWidgetItem()
         __qtablewidgetitem69.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem69.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(11, 3, __qtablewidgetitem69)
+        self.tb_Monitor.setItem(9, 1, __qtablewidgetitem69)
         __qtablewidgetitem70 = QTableWidgetItem()
         __qtablewidgetitem70.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
-        __qtablewidgetitem70.setFlags(Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(12, 0, __qtablewidgetitem70)
+        __qtablewidgetitem70.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(9, 2, __qtablewidgetitem70)
         __qtablewidgetitem71 = QTableWidgetItem()
         __qtablewidgetitem71.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem71.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(12, 1, __qtablewidgetitem71)
+        self.tb_Monitor.setItem(9, 3, __qtablewidgetitem71)
         __qtablewidgetitem72 = QTableWidgetItem()
         __qtablewidgetitem72.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem72.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(12, 2, __qtablewidgetitem72)
+        self.tb_Monitor.setItem(9, 4, __qtablewidgetitem72)
         __qtablewidgetitem73 = QTableWidgetItem()
-        __qtablewidgetitem73.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem73.setTextAlignment(Qt.AlignCenter);
         __qtablewidgetitem73.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(12, 3, __qtablewidgetitem73)
+        self.tb_Monitor.setItem(10, 0, __qtablewidgetitem73)
         __qtablewidgetitem74 = QTableWidgetItem()
         __qtablewidgetitem74.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
-        __qtablewidgetitem74.setFlags(Qt.ItemIsDragEnabled|Qt.ItemIsDropEnabled|Qt.ItemIsUserCheckable|Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(13, 0, __qtablewidgetitem74)
+        __qtablewidgetitem74.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(10, 1, __qtablewidgetitem74)
         __qtablewidgetitem75 = QTableWidgetItem()
         __qtablewidgetitem75.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem75.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(13, 1, __qtablewidgetitem75)
+        self.tb_Monitor.setItem(10, 2, __qtablewidgetitem75)
         __qtablewidgetitem76 = QTableWidgetItem()
         __qtablewidgetitem76.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem76.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(13, 2, __qtablewidgetitem76)
+        self.tb_Monitor.setItem(10, 3, __qtablewidgetitem76)
         __qtablewidgetitem77 = QTableWidgetItem()
         __qtablewidgetitem77.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
         __qtablewidgetitem77.setFlags(Qt.ItemIsEnabled);
-        self.tb_Monitor.setItem(13, 3, __qtablewidgetitem77)
+        self.tb_Monitor.setItem(10, 4, __qtablewidgetitem77)
+        __qtablewidgetitem78 = QTableWidgetItem()
+        __qtablewidgetitem78.setTextAlignment(Qt.AlignCenter);
+        __qtablewidgetitem78.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(11, 0, __qtablewidgetitem78)
+        __qtablewidgetitem79 = QTableWidgetItem()
+        __qtablewidgetitem79.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem79.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(11, 1, __qtablewidgetitem79)
+        __qtablewidgetitem80 = QTableWidgetItem()
+        __qtablewidgetitem80.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem80.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(11, 2, __qtablewidgetitem80)
+        __qtablewidgetitem81 = QTableWidgetItem()
+        __qtablewidgetitem81.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem81.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(11, 3, __qtablewidgetitem81)
+        __qtablewidgetitem82 = QTableWidgetItem()
+        __qtablewidgetitem82.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem82.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(11, 4, __qtablewidgetitem82)
+        __qtablewidgetitem83 = QTableWidgetItem()
+        __qtablewidgetitem83.setTextAlignment(Qt.AlignCenter);
+        __qtablewidgetitem83.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(12, 0, __qtablewidgetitem83)
+        __qtablewidgetitem84 = QTableWidgetItem()
+        __qtablewidgetitem84.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem84.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(12, 1, __qtablewidgetitem84)
+        __qtablewidgetitem85 = QTableWidgetItem()
+        __qtablewidgetitem85.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem85.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(12, 2, __qtablewidgetitem85)
+        __qtablewidgetitem86 = QTableWidgetItem()
+        __qtablewidgetitem86.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem86.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(12, 3, __qtablewidgetitem86)
+        __qtablewidgetitem87 = QTableWidgetItem()
+        __qtablewidgetitem87.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem87.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(12, 4, __qtablewidgetitem87)
+        __qtablewidgetitem88 = QTableWidgetItem()
+        __qtablewidgetitem88.setTextAlignment(Qt.AlignCenter);
+        __qtablewidgetitem88.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(13, 0, __qtablewidgetitem88)
+        __qtablewidgetitem89 = QTableWidgetItem()
+        __qtablewidgetitem89.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem89.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(13, 1, __qtablewidgetitem89)
+        __qtablewidgetitem90 = QTableWidgetItem()
+        __qtablewidgetitem90.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem90.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(13, 2, __qtablewidgetitem90)
+        __qtablewidgetitem91 = QTableWidgetItem()
+        __qtablewidgetitem91.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem91.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(13, 3, __qtablewidgetitem91)
+        __qtablewidgetitem92 = QTableWidgetItem()
+        __qtablewidgetitem92.setTextAlignment(Qt.AlignTrailing|Qt.AlignVCenter);
+        __qtablewidgetitem92.setFlags(Qt.ItemIsEnabled);
+        self.tb_Monitor.setItem(13, 4, __qtablewidgetitem92)
         self.tb_Monitor.setObjectName(u"tb_Monitor")
-        self.tb_Monitor.setGeometry(QRect(270, 87, 401, 371))
+        self.tb_Monitor.setGeometry(QRect(270, 87, 501, 371))
         self.tb_Monitor.setFont(font3)
         self.tb_Monitor.setFocusPolicy(Qt.NoFocus)
         self.tb_Monitor.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -544,7 +603,7 @@ class Ui_Dialog(object):
         self.tb_Monitor.setGridStyle(Qt.DotLine)
         self.tb_Monitor.setSortingEnabled(False)
         self.tb_Monitor.setRowCount(14)
-        self.tb_Monitor.setColumnCount(4)
+        self.tb_Monitor.setColumnCount(5)
         self.tb_Monitor.horizontalHeader().setCascadingSectionResizes(False)
         self.tb_Monitor.horizontalHeader().setMinimumSectionSize(0)
         self.tb_Monitor.horizontalHeader().setDefaultSectionSize(100)
@@ -567,7 +626,7 @@ class Ui_Dialog(object):
         self.chk_alert.setFont(font3)
         self.sts_monitor_ok = QLabel(Dialog)
         self.sts_monitor_ok.setObjectName(u"sts_monitor_ok")
-        self.sts_monitor_ok.setGeometry(QRect(580, 470, 19, 20))
+        self.sts_monitor_ok.setGeometry(QRect(680, 470, 19, 20))
         self.sts_monitor_ok.setFont(font6)
         self.sts_monitor6 = QLabel(Dialog)
         self.sts_monitor6.setObjectName(u"sts_monitor6")
@@ -579,7 +638,7 @@ class Ui_Dialog(object):
         self.label_2.setFont(font5)
         self.alert_status = QLabel(Dialog)
         self.alert_status.setObjectName(u"alert_status")
-        self.alert_status.setGeometry(QRect(590, 54, 81, 25))
+        self.alert_status.setGeometry(QRect(690, 54, 81, 25))
         font7 = QFont()
         font7.setUnderline(False)
         font7.setStrikeOut(False)
@@ -715,13 +774,15 @@ class Ui_Dialog(object):
         self.sts_monitor12.setText(QCoreApplication.translate("Dialog", u"\u26ab", None))
         self.label_11.setText(QCoreApplication.translate("Dialog", u"Vacuum Pressure", None))
         ___qtablewidgetitem10 = self.tb_Monitor.horizontalHeaderItem(0)
-        ___qtablewidgetitem10.setText(QCoreApplication.translate("Dialog", u"Temperature", None));
+        ___qtablewidgetitem10.setText(QCoreApplication.translate("Dialog", u"TC / TM", None));
         ___qtablewidgetitem11 = self.tb_Monitor.horizontalHeaderItem(1)
-        ___qtablewidgetitem11.setText(QCoreApplication.translate("Dialog", u"Current", None));
+        ___qtablewidgetitem11.setText(QCoreApplication.translate("Dialog", u"Temperature", None));
         ___qtablewidgetitem12 = self.tb_Monitor.horizontalHeaderItem(2)
-        ___qtablewidgetitem12.setText(QCoreApplication.translate("Dialog", u"Set Point", None));
+        ___qtablewidgetitem12.setText(QCoreApplication.translate("Dialog", u"Current", None));
         ___qtablewidgetitem13 = self.tb_Monitor.horizontalHeaderItem(3)
-        ___qtablewidgetitem13.setText(QCoreApplication.translate("Dialog", u"Heat Power", None));
+        ___qtablewidgetitem13.setText(QCoreApplication.translate("Dialog", u"Set Point", None));
+        ___qtablewidgetitem14 = self.tb_Monitor.horizontalHeaderItem(4)
+        ___qtablewidgetitem14.setText(QCoreApplication.translate("Dialog", u"Heat Power", None));
 
         __sortingEnabled1 = self.tb_Monitor.isSortingEnabled()
         self.tb_Monitor.setSortingEnabled(False)

@@ -208,7 +208,7 @@ class monitor(threading.Thread) :
                 except:
                     msg += DEFAULT_VALUE
                     
-        elif self.iam == "vm":
+        elif self.iam == "vm" and len(vm) <= 10:
             msg = "%s %s" % (HK_REQ_GETVALUE, vm)
         self.publish_to_queue(msg) 
 

@@ -51,7 +51,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def __init__(self):
         super().__init__()
     
-        self.setFixedSize(686, 498)
+        self.setFixedSize(782, 498)
         
         self.iam = HK     
         
@@ -86,10 +86,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
         #self.alert_label = self.cfg.get(HK, "hk-alert-label")  
         #self.alert_temperature = int(self.cfg.get(HK, "hk-alert-temperature"))
         
-        self.tb_Monitor.setColumnWidth(0, self.tb_Monitor.width()/32 * 11)
-        self.tb_Monitor.setColumnWidth(1, self.tb_Monitor.width()/32 * 7)
-        self.tb_Monitor.setColumnWidth(2, self.tb_Monitor.width()/32 * 7)
-        self.tb_Monitor.setColumnWidth(3, self.tb_Monitor.width()/32 * 7)
+        self.tb_Monitor.setColumnWidth(0, self.tb_Monitor.width()/33 * 5)
+        self.tb_Monitor.setColumnWidth(1, self.tb_Monitor.width()/33 * 8)
+        self.tb_Monitor.setColumnWidth(2, self.tb_Monitor.width()/33 * 6)
+        self.tb_Monitor.setColumnWidth(3, self.tb_Monitor.width()/33 * 7)
+        self.tb_Monitor.setColumnWidth(4, self.tb_Monitor.width()/33 * 7)
                             
         self.power_status = [OFF for _ in range(PDU_IDX)]
         self.com_status = [True for _ in range(COM_CNT)]
@@ -215,29 +216,32 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         # init TMonitor        
         self.monitor = [[] for _ in range(14)]
+        ctrl = ["TC1 A", "TC1 B", "TC3 B", "TC2 B", "TC2 A", "TC3 A", 
+                "TM 6", "TM 1", "TM 2", "TM 3", "TM 4", "TM 5", "TM 7", "TM 8"]
+        ctrl_name = [self.temp_list[0], self.temp_list[1], self.temp_list[5], self.temp_list[3],
+                    self.temp_list[2], self.temp_list[4], self.temp_list[11], self.temp_list[6],
+                    self.temp_list[7], self.temp_list[8], self.temp_list[9], self.temp_list[10],
+                    self.temp_list[12], self.temp_list[13]]
+    
         for i in range(14):
-            name = ""
-            if i < 6:
-                name = "%s (C)" % self.temp_list[i]
-            else:
-                name = "%s (M)" % self.temp_list[i]
-            self.tb_Monitor.item(i, 0).setText(name)
+            self.tb_Monitor.item(i, 0).setText(ctrl[i])
+            self.tb_Monitor.item(i, 1).setText(ctrl_name[i])
         
         for i in range(3):
-            self.monitor[0].append(self.tb_Monitor.item(0, i+1))
-            self.monitor[1].append(self.tb_Monitor.item(1, i+1))
-            self.monitor[2].append(self.tb_Monitor.item(2, i+1))
-            self.monitor[3].append(self.tb_Monitor.item(3, i+1))
-            self.monitor[5].append(self.tb_Monitor.item(5, i+1))
+            self.monitor[0].append(self.tb_Monitor.item(0, i+2))
+            self.monitor[1].append(self.tb_Monitor.item(1, i+2))
+            self.monitor[2].append(self.tb_Monitor.item(2, i+2))
+            self.monitor[3].append(self.tb_Monitor.item(3, i+2))
+            self.monitor[4].append(self.tb_Monitor.item(4, i+2))
             
-        self.monitor[4].append(self.tb_Monitor.item(4, 1)) 
+        self.monitor[5].append(self.tb_Monitor.item(5, 2)) 
         
         for i in range(TM_CNT):
-            self.monitor[TM_1+i].append(self.tb_Monitor.item(TM_1+i, 1))
+            self.monitor[TM_1+i].append(self.tb_Monitor.item(TM_1+i, 2))
             
-        self.monlist = [self.sts_monitor1, self.sts_monitor2, self.sts_monitor3, self.sts_monitor4,
-                        self.sts_monitor5, self.sts_monitor6, self.sts_monitor7, self.sts_monitor8,
-                        self.sts_monitor9, self.sts_monitor10, self.sts_monitor11, self.sts_monitor12,
+        self.monlist = [self.sts_monitor1, self.sts_monitor2, self.sts_monitor6, self.sts_monitor4,
+                        self.sts_monitor3, self.sts_monitor5, self.sts_monitor12, self.sts_monitor7,
+                        self.sts_monitor8, self.sts_monitor9, self.sts_monitor10, self.sts_monitor11,
                         self.sts_monitor13, self.sts_monitor14] 
                 
         #btn_txt = "Send Alert (T_%s>%d)" % (self.alert_label, self.alert_temperature)
@@ -803,31 +807,34 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.monitor[0][1].setText(self.set_point[0])
         self.monitor[1][1].setText(self.set_point[1])       
-        self.monitor[2][1].setText(self.set_point[2])
+        self.monitor[2][1].setText(self.set_point[4])
         self.monitor[3][1].setText(self.set_point[3])
-        self.monitor[5][1].setText(self.set_point[4])
+        self.monitor[4][1].setText(self.set_point[2])
                
         # show value and color         
-        self.QShowValue(TMC1_A, 0, label_list[TMC1_A])
-        self.QShowValue(TMC1_B, 0, label_list[TMC1_B])
-        self.monitor[TMC1_A][2].setText(self.heatlabel[label_list[TMC1_A]])
-        self.monitor[TMC1_B][2].setText(self.heatlabel[label_list[TMC1_B]])
-            
-        self.QShowValue(TMC2_A, 0, label_list[TMC2_A])
-        self.QShowValue(TMC2_B, 0, label_list[TMC2_B])
-        self.monitor[TMC2_A][2].setText(self.heatlabel[label_list[TMC2_A]])
-        self.monitor[TMC2_B][2].setText(self.heatlabel[label_list[TMC2_B]])
-                
-        self.QShowValue(TMC3_A, 0, label_list[TMC3_A], False)
-        self.QShowValue(TMC3_B, 0, label_list[TMC3_B])
-        self.monitor[TMC3_B][2].setText(self.heatlabel[label_list[TMC3_B]])
+        self.QShowValue(0, 0, label_list[TMC1_A])
+        self.QShowValue(1, 0, label_list[TMC1_B])
+        self.QShowValue(2, 0, label_list[TMC3_B])
+        self.QShowValue(3, 0, label_list[TMC2_B])
+        self.QShowValue(4, 0, label_list[TMC2_A])
+
+        self.monitor[0][2].setText(self.heatlabel[label_list[TMC1_A]])
+        self.monitor[1][2].setText(self.heatlabel[label_list[TMC1_B]])
+        self.monitor[2][2].setText(self.heatlabel[label_list[TMC3_B]])
+        self.monitor[3][2].setText(self.heatlabel[label_list[TMC2_B]])
+        self.monitor[4][2].setText(self.heatlabel[label_list[TMC2_A]])      
+        
+        self.QShowValue(5, 0, label_list[TMC3_A], False)
+        self.QShowValue(6, 0, label_list[TM_1+5], False)
 
         # for all
-        for i in range(TM_CNT):
-            if i == 7:
+        for i in range(1, TM_CNT):
+            if i == 6:
+                self.QShowValue(TM_1+i, 0, label_list[TM_1+i], False)
+            elif i == 7:
                 self.QShowValue(TM_1+i, 0, label_list[TM_1+i])
             else:
-                self.QShowValue(TM_1+i, 0, label_list[TM_1+i], False)
+                self.QShowValue(TM_1+i, 0, label_list[TM_1+i-1], False)
                 
         # from VM
         if self.dpvalue == DEFAULT_VALUE:

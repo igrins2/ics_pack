@@ -102,7 +102,6 @@ class HK_cli(threading.Thread):
         
         for idx in range(COM_CNT+2):
             th = threading.Thread(target=self.consumer[idx].start_consumer)
-            th.daemon = True
             th.start()
                 
                  
