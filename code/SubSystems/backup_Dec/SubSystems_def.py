@@ -3,7 +3,7 @@
 """
 Created on Sep 17, 2021
 
-Modified on Jan 4, 2024
+Modified on Dec 17, 2023
 
 @author: hilee
 """
@@ -101,7 +101,6 @@ DT_REQ_SETLT = "SetLT"          #motor
 UPLOAD_Q = "UploadDBQ"    #uploader
 IG2_HEALTH = "IGRINS2Health"    #0-GOOD, 1-WARNING, 2-BAD
 
-INSTSEQ_TCS_INFO_PA = "TCSInfoPA"   #add 20240104
 CMD_INIT2_DONE = "Initialize2_Done" # to DCS
 CMD_INITIALIZE2_ICS = "Initialize2_ics"
 CMD_SETFSPARAM_ICS = "SetFSParam_ics"

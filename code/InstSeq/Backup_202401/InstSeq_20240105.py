@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Jan 5, 2024
+Modified on Jan 4, 2024
 
 @author: hilee
 """
@@ -367,7 +367,6 @@ class Inst_Seq(threading.Thread):
             # ----------------------------------------------------
             # SequenceCommand.INIT    
             elif seq_cmd == giapi.command.SequenceCommand.INIT:
-                
                 if activity == giapi.command.Activity.PRESET:
                     self.log.send(self.iam, INFO, "SequenceCommand.INIT, Activity.PRESET")
                     
@@ -1075,7 +1074,7 @@ class Inst_Seq(threading.Thread):
                 if self.cur_number_svc == self.out_of_number_svc:   self.cur_number_svc = 0
                 
                 self.cur_number_svc += 1
-                if self.cur_ObsApp_taking == 0 and self.acquiring[H] and self.acquiring[K]:     #add 20240105
+                if self.cur_ObsApp_taking == 0:
                     self.acquiring[SVC] = True
                     ti.sleep(1) #for test
                     self.start_acquisition(self.dcs_list[SVC])

@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Jan 5, 2024
+Modified on Dec 13, 2023
 
 @author: hilee
 """
@@ -158,9 +158,6 @@ class Inst_Seq(threading.Thread):
 
         self.obs_start_ut = datetime.datetime.utcnow()
         self.obs_end_ut = datetime.datetime.utcnow()
-
-        #add 20240104
-        self.stop_by_ObsApp = False
         
         #self.airmass = [0.0, 0.0]
         #self.HA = [None, None]
@@ -367,7 +364,6 @@ class Inst_Seq(threading.Thread):
             # ----------------------------------------------------
             # SequenceCommand.INIT    
             elif seq_cmd == giapi.command.SequenceCommand.INIT:
-                
                 if activity == giapi.command.Activity.PRESET:
                     self.log.send(self.iam, INFO, "SequenceCommand.INIT, Activity.PRESET")
                     
@@ -451,12 +447,7 @@ class Inst_Seq(threading.Thread):
                         self.dcs_setparam[H] = False
                         self.dcs_setparam[K] = False
                         
-                    # add 20240104    
-                    elif self.apply_mode == DAYCAL_MODE:
-                        self.dcs_setparam[H] = False
-                        self.dcs_setparam[K] = False    
-                        
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.ACCEPTED")
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ACCEPTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.ACCEPTED, "")
                     
                 elif activity == giapi.command.Activity.START:
@@ -484,19 +475,6 @@ class Inst_Seq(threading.Thread):
                         
                         if self.cur_ObsApp_taking == 0:  self.set_exp("all", _exptime_sci, _FS_number_sci)
                         else:                           self.set_exp("H_K", _exptime_sci, _FS_number_sci)
-                        
-                    # add 20240104
-                    elif self.apply_mode == DAYCAL_MODE:
-                        _exptime_sci = self.cur_expTime                        
-                                
-                        _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
-                        _FS_number_sci = N_fowler_max
-                        while _FS_number_sci > _max_fowler_number:
-                            _FS_number_sci //= 2
-                            
-                        print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
-                        
-                        self.set_exp("H_K", _exptime_sci, _FS_number_sci)
                             
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
@@ -552,23 +530,7 @@ class Inst_Seq(threading.Thread):
                         
                         if self.cur_ObsApp_taking == 0:  self.set_exp("all", _exptime_sci, _FS_number_sci)
                         else:                           self.set_exp("H_K", _exptime_sci, _FS_number_sci)
-                        
-                    elif self.apply_mode == DAYCAL_MODE:
-                        self.dcs_setparam[H] = False
-                        self.dcs_setparam[K] = False
-                        
-                        _exptime_sci = self.cur_expTime                        
-                                
-                        _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
-                        _FS_number_sci = N_fowler_max
-                        while _FS_number_sci > _max_fowler_number:
-                            _FS_number_sci //= 2
                             
-                        print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
-                        
-                        self.set_exp("H_K", _exptime_sci, _FS_number_sci)
-                            
-                    self.log.send(self.iam, DEBUG, self.apply_mode)
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")                                                
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
@@ -609,10 +571,6 @@ class Inst_Seq(threading.Thread):
                         self.acquiring[K] = True
                         if self.cur_ObsApp_taking == 0:  
                             self.acquiring[SVC] = True
-                    
-                    elif self.apply_mode == DAYCAL_MODE:
-                        self.acquiring[H] = True
-                        self.acquiring[K] = True
                             
                     else:
                         self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
@@ -652,9 +610,6 @@ class Inst_Seq(threading.Thread):
                     elif self.apply_mode == SCI_MODE:                                                    
                         if self.cur_ObsApp_taking == 0:  self.start_acquisition()
                         else:                           self.start_acquisition("H_K")
-
-                    elif self.apply_mode == DAYCAL_MODE:
-                        self.start_acquisition("H_K")
                         
                     else:
                         self.setValue_to_SeqExec(IS_STS_CURRENT, ERROR, ERROR)
@@ -672,7 +627,7 @@ class Inst_Seq(threading.Thread):
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
                 elif activity == giapi.command.Activity.PRESET_START:
-                    self.log.send(self.iam, INFO, "SequenceCommand.OBSERVE, Activity.PRESET_START")
+                    self.log.send(self.iam, INFO, "SequenceCommand.OBSERVE, Activity.START")
                     self.cur_action_id_old = action_id
                     self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_OBSERVE}
                     
@@ -721,11 +676,6 @@ class Inst_Seq(threading.Thread):
                             self.start_acquisition()
                         else:
                             self.start_acquisition("H_K")
-
-                    elif self.apply_mode == DAYCAL_MODE:
-                        self.acquiring[H] = True
-                        self.acquiring[K] = True
-                        self.start_acquisition("H_K")
                         
                     else:
                         self.setValue_to_SeqExec(IS_STS_CURRENT, ERROR, ERROR)
@@ -878,9 +828,7 @@ class Inst_Seq(threading.Thread):
         if param[0] == OBSAPP_CAL_OFFSET:           self.send_to_TCS(float(param[1]), float(param[2]), int(param[3]))
         elif param[0] == OBSAPP_OUTOF_NUMBER_SVC:   self.out_of_number_svc = int(param[1])
         elif param[0] == OBSAPP_TAKING_IMG:         self.cur_ObsApp_taking = int(param[1])
-        elif param[0] == CMD_STOPACQUISITION:       self.stop_by_ObsApp = True
                 
-
     
     def offsetCallBack(self, offsetApplied, msg): 
         print(f'The offset was applied: {offsetApplied}')
@@ -1053,9 +1001,7 @@ class Inst_Seq(threading.Thread):
                 if not self.acquiring[SVC]:     return
                 
                 self.acquiring[SVC] = False
-                #add 20240104
-                if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                    self.apply_mode = None
+                self.apply_mode = None
                 if res:
                     self.svc_file_list.append(param[2])
                     self.save_fits_MEF(self.dcs_list[SVC])
@@ -1075,19 +1021,13 @@ class Inst_Seq(threading.Thread):
                 if self.cur_number_svc == self.out_of_number_svc:   self.cur_number_svc = 0
                 
                 self.cur_number_svc += 1
-                if self.cur_ObsApp_taking == 0 and self.acquiring[H] and self.acquiring[K]:     #add 20240105
+                if self.cur_ObsApp_taking == 0:
                     self.acquiring[SVC] = True
-                    ti.sleep(1) #for test
                     self.start_acquisition(self.dcs_list[SVC])
             
         elif param[0] == CMD_STOPACQUISITION:
             if self.apply_mode == None or self.cur_action_id == 0: return
             
-            #add 20240104
-            if self.stop_by_ObsApp:
-                self.stop_by_ObsApp = False
-                return
-
             print('SVC(CMD_STOPACQUISITION)', self.apply_mode)
             
             self.acquiring[SVC] = False
@@ -1149,9 +1089,7 @@ class Inst_Seq(threading.Thread):
                     self.apply_mode = None
                     self.response_complete(res)
                 
-            #change 20240104    
-            #if self.apply_mode == SCI_MODE:
-            else:
+            if self.apply_mode == SCI_MODE:
                 self.filepath[idx-1] = param[2]
                 if not self.acquiring[H] and not self.acquiring[K]:
                     self.apply_mode = None

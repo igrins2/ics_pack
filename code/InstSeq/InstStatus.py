@@ -83,6 +83,9 @@ for i in range(10):
 #giapi.GeminiUtil.subscribeEpicsStatus(channel[7], handler)
 
 w_t = 5
+pStatus = giapi.GeminiUtil.getChannel("tcs:sad:instrPA", 20)
+cur_pa = pStatus.getDataAsDouble(0)
+print (f'************* The tcs:sad:instrPA is: {cur_pa}')
 
 while True:
     #print(f'Father sleeping')

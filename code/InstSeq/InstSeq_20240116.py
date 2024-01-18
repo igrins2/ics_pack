@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Jan 5, 2024
+Modified on Jan 16, 2024
 
 @author: hilee
 """
@@ -136,10 +136,10 @@ class Inst_Seq(threading.Thread):
         
         self.cur_ObsApp_taking = 0
                 
-        self.cur_expTime = 1.63
+        self.cur_expTime = 0
                         
         self.dcs_list = ["DCSS", "DCSH", "DCSK"]    # for receive
-        self.dcs_ready = [False for _ in range(DCS_CNT)]
+        self.dcs_ready = [True for _ in range(DCS_CNT)]  #for test, future to False
         self.dcs_setparam = [False for _ in range(DCS_CNT)]
         self.acquiring = [False for _ in range(DCS_CNT)]
         self.rebooting = [False for _ in range(DCS_CNT)]
@@ -325,7 +325,7 @@ class Inst_Seq(threading.Thread):
                     
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
+
                 elif activity == giapi.command.Activity.CANCEL:
                     self.log.send(self.iam, INFO, "SequenceCommand.TEST, Activity.CANCEL")
                     self.actRequested[action_id] = {}
@@ -404,7 +404,6 @@ class Inst_Seq(threading.Thread):
                 
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
                 else:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
                     return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                    
@@ -428,8 +427,11 @@ class Inst_Seq(threading.Thread):
                             self.cur_expTime = float(keys.c_str())
                             print(f'after asigned {self.cur_expTime}')
                             
-                            if self.cur_expTime < 1.63:     self.cur_expTime = 1.63
-                        
+                            #modify 20240110
+                            if self.cur_expTime < 1.63:
+                                self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                                return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                                                    
                         elif k == "ig2:seq:state":  self.apply_mode = keys
                         elif k == "ig2:seq:p":      offset_p = float(keys.c_str())
                         elif k == "ig2:seq:q":      offset_q = float(keys.c_str())
@@ -444,15 +446,31 @@ class Inst_Seq(threading.Thread):
                     elif offset_p != 0 and offset_q != 0: self.frame_mode = "OFF"
                     
                     if self.apply_mode == ACQ_MODE:
+                        #add 20240110
+                        if not self.dcs_ready[SVC]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
                         self.dcs_setparam[SVC] = False
                         
                     elif self.apply_mode == SCI_MODE:
-                        self.dcs_setparam[SVC] = False
+                        #add 20240110
+                        if not self.dcs_ready[H] or not self.dcs_ready[K]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
                         self.dcs_setparam[H] = False
                         self.dcs_setparam[K] = False
                         
+                        if self.cur_ObsApp_taking == 0:  
+                            if not self.dcs_ready[SVC]:
+                                self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                                return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                            self.dcs_setparam[SVC] = False
+                        
                     # add 20240104    
                     elif self.apply_mode == DAYCAL_MODE:
+                        if not self.dcs_ready[H] or not self.dcs_ready[K]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
                         self.dcs_setparam[H] = False
                         self.dcs_setparam[K] = False    
                         
@@ -470,9 +488,21 @@ class Inst_Seq(threading.Thread):
                     self.actRequested[action_id] = {'t': t, 'response': None, 'numAct': ACT_APPLY}
                     
                     if self.apply_mode == ACQ_MODE:
+                         #add 20240110
+                        if not self.dcs_ready[SVC] or self.dcs_setparam[SVC]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                            
                         self.set_exp(self.dcs_list[SVC])
                                 
                     elif self.apply_mode == SCI_MODE:
+                        #add 20240110
+                        if not self.dcs_ready[H] or not self.dcs_ready[K]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                        if self.dcs_setparam[H] or self.dcs_setparam[K]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                                                
                         _exptime_sci = self.cur_expTime                        
                                 
                         _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
@@ -482,11 +512,26 @@ class Inst_Seq(threading.Thread):
                             
                         print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
                         
-                        if self.cur_ObsApp_taking == 0:  self.set_exp("all", _exptime_sci, _FS_number_sci)
-                        else:                           self.set_exp("H_K", _exptime_sci, _FS_number_sci)
+                        if self.cur_ObsApp_taking == 0:
+                            if not self.dcs_ready[SVC] or self.dcs_setparam[SVC]:
+                                self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                                return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                            
+                            self.set_exp("all", _exptime_sci, _FS_number_sci)
+                            
+                        else:
+                            self.set_exp("H_K", _exptime_sci, _FS_number_sci)
                         
                     # add 20240104
                     elif self.apply_mode == DAYCAL_MODE:
+                        #add 20240110
+                        if not self.dcs_ready[H] or not self.dcs_ready[K]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                        if self.dcs_setparam[H] or self.dcs_setparam[K]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                        
                         _exptime_sci = self.cur_expTime                        
                                 
                         _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
@@ -515,7 +560,12 @@ class Inst_Seq(threading.Thread):
                         
                         if k == "ig2:dcs:expTime":
                             self.cur_expTime = float(keys.c_str())
-                            if self.cur_expTime < 1.63:     self.cur_expTime = 1.63
+                            
+                            #modify 20240110
+                            if self.cur_expTime < 1.63:
+                                self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                                return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+
                             print(f'after asigned {self.cur_expTime}')
                         
                         elif k == "ig2:seq:state":  self.apply_mode = keys
@@ -531,16 +581,24 @@ class Inst_Seq(threading.Thread):
                     elif offset_p == 0 and offset_q < 0:  self.frame_mode = "B"
                     elif offset_p == 0 and offset_q == 0: self.frame_mode = "ON"
                     elif offset_p != 0 and offset_q != 0: self.frame_mode = "OFF"
-                    
+                                        
                     if self.apply_mode == ACQ_MODE:
+                        #add 20240110
+                        if not self.dcs_ready[SVC]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                        
                         self.dcs_setparam[SVC] = False
                         self.set_exp(self.dcs_list[SVC])
                         
                     elif self.apply_mode == SCI_MODE:
-                        self.dcs_setparam[SVC] = False
+                        #add 20240110
+                        if not self.dcs_ready[H] or not self.dcs_ready[K]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
                         self.dcs_setparam[H] = False
                         self.dcs_setparam[K] = False
-                                                            
+                                                                                    
                         _exptime_sci = self.cur_expTime
                                 
                         _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
@@ -550,10 +608,22 @@ class Inst_Seq(threading.Thread):
                             
                         print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
                         
-                        if self.cur_ObsApp_taking == 0:  self.set_exp("all", _exptime_sci, _FS_number_sci)
-                        else:                           self.set_exp("H_K", _exptime_sci, _FS_number_sci)
+                        if self.cur_ObsApp_taking == 0:  
+                            if not self.dcs_ready[SVC]:
+                                self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                                return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                            self.dcs_setparam[SVC] = False                        
+                            
+                            self.set_exp("all", _exptime_sci, _FS_number_sci)
+                        else:
+                            self.set_exp("H_K", _exptime_sci, _FS_number_sci)
                         
                     elif self.apply_mode == DAYCAL_MODE:
+                        #add 20240110
+                        if not self.dcs_ready[H] or not self.dcs_ready[K]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                        
                         self.dcs_setparam[H] = False
                         self.dcs_setparam[K] = False
                         
@@ -590,10 +660,8 @@ class Inst_Seq(threading.Thread):
                             self.data_label = keys.c_str()
                             
                         else:
-                            _t = datetime.datetime.utcnow()
-                            _tmp = "%04d%02d%02d_temp.fits" % (_t.year, _t.month, _t.day)
-
-                            self.data_label = _tmp
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
                             
                     self.cur_number_svc = 1
                     self.filepath[H-1] = ""
@@ -684,10 +752,8 @@ class Inst_Seq(threading.Thread):
                             self.data_label = keys.c_str()
                             
                         else:
-                            _t = datetime.datetime.utcnow()
-                            _tmp = "%04d%02d%02d_temp.fits" % (_t.year, _t.month, _t.day)
-
-                            self.data_label = _tmp
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
                             
                     self.cur_number_svc = 1
                     self.filepath[H-1] = ""
@@ -704,25 +770,60 @@ class Inst_Seq(threading.Thread):
                     #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, EXPOSING)
                     #giapi.StatusUtil.postStatus()
                     self.obs_progress = EXPOSING
-                    threading.Timer(1, self.exp_progress).start()
+                    #threading.Timer(1, self.exp_progress).start()
                     
                     self.obs_start_ut = datetime.datetime.utcnow()
                     self.obs_start_T = ti.time()
                     
                     if self.apply_mode == ACQ_MODE:
+                        #add 20240110
+                        if not self.dcs_ready[SVC] or self.acquiring[SVC]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                     
+                        threading.Timer(1, self.exp_progress).start()
+
                         self.acquiring[SVC] = True
                         self.start_acquisition(self.dcs_list[SVC])
                         
-                    elif self.apply_mode == SCI_MODE:                                                    
+                    elif self.apply_mode == SCI_MODE:     
+                        #add 20240110
+                        #if not self.dcs_ready[H] or not self.dcs_ready[K]:
+                        #    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                        #    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                        #if self.acquiring[H] or self.acquiring[K]:
+                        #    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                        #    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+
                         self.acquiring[H] = True
                         self.acquiring[K] = True
+                        
                         if self.cur_ObsApp_taking == 0:  
+                            #add 20240110
+                            if not self.dcs_ready[SVC] or self.acquiring[SVC]:
+                                self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                                return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                            
+                            threading.Timer(1, self.exp_progress).start()
+
                             self.acquiring[SVC] = True
                             self.start_acquisition()
                         else:
+                            threading.Timer(1, self.exp_progress).start()
+
                             self.start_acquisition("H_K")
 
                     elif self.apply_mode == DAYCAL_MODE:
+                        #add 20240110
+                        if not self.dcs_ready[H] or not self.dcs_ready[K]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                        if self.acquiring[H] or self.acquiring[K]:
+                            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                        
+                        threading.Timer(1, self.exp_progress).start()
+
                         self.acquiring[H] = True
                         self.acquiring[K] = True
                         self.start_acquisition("H_K")

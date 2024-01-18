@@ -463,7 +463,6 @@ class uploader(threading.Thread):
                 self.hk_list[GEA_DETH_SP] = float(param[4])
                 
                 self.temp_sts_detH = self.alarm_temperature(self.label_list[4], GEA_DETH)
-                self.log.send(self.iam, DEBUG, self.temp_sts_detH)
                 
         except:
             self.log.send(self.iam, WARNING, "parsing error tmc3")
@@ -772,12 +771,12 @@ class uploader(threading.Thread):
             cur_am = pStatus.getDataAsDouble(0)
             print (f'The tcs:sad:airMass is: {cur_am}')
             
-            #modify 20240107
-            pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:instrPA", 20)
-            cur_pa = pStatus.getDataAsDouble(0)
-            print (f'The tcs:sad:instrPA is: {cur_pa}')
-            msg = "%s %d" % (INSTSEQ_TCS_INFO_PA, cur_pa)
-            self.publish_to_queue(msg)
+            #add 20240104
+            #pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:instrPA", 20)
+            #cur_pa = pStatus.getDataAsInt(0)
+            #print (f'The tcs:sad:instrPA is: {cur_pa}')
+            #msg = "%s %d" % (INSTSEQ_TCS_INFO_PA, cur_pa)
+            #self.publish_to_queue(msg)
             
             #pass
 
@@ -809,7 +808,6 @@ class uploader(threading.Thread):
         
         
     def uploade_to_GEA(self):
-        '''
         # --------------------------------------------------------------
         # upload status items
         for key, value in GEA_Items.items():
@@ -823,7 +821,6 @@ class uploader(threading.Thread):
             giapi.StatusUtil.setValueAsFloat(cmd, self.hk_list[key] + stalePrevention)
             msg = "Updating %s" % cmd
             self.log.send(self.iam, DEBUG, msg)
-        '''
 
         
         # --------------------------------------------------------------
@@ -920,21 +917,6 @@ class uploader(threading.Thread):
         
         msg = "%s %d" % (IG2_HEALTH, health[HEALTH_IG2])
         self.publish_to_queue(msg)
-
-         # --------------------------------------------------------------
-        # upload status items
-        for key, value in GEA_Items.items():
-            if key > 20:
-                break
-            cmd = "ig2:sts:" + value
-          #  if key == 0:
-          #      giapi.StatusUtil.setValueAsDouble(cmd, self.hk_list[key])
-          #  else:
-            stalePrevention = random.uniform(0.000001, 0.000009)
-            giapi.StatusUtil.setValueAsFloat(cmd, self.hk_list[key] + stalePrevention)
-            msg = "Updating %s" % cmd
-            self.log.send(self.iam, DEBUG, msg)
-
         
         threading.Timer(self.upload_interval, self.uploade_to_GEA).start()
         

@@ -3,7 +3,7 @@
 """
 Created on Feb 10, 2023
 
-Modified on Jan 4, 2024
+Modified on Sep 29, 2023
 
 @author: hilee
 """
@@ -75,7 +75,6 @@ CMD_RESTART = "Restart"
 
 INSTSEQ_TCS_INFO_PA = "TCSInfoPA"
 INSTSEQ_PQ = "OffsetPQ"
-DAYCAL_MODE = "dayCal"
 
 OBSAPP_CAL_OFFSET = "CalOffset"
 OBSAPP_OUTOF_NUMBER_SVC = "Out_of_Number_SVC"
