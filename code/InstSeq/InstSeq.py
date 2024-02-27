@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Jan 5, 2024
+Modified on Feb 20, 2024
 
 @author: hilee
 """
@@ -125,7 +125,7 @@ class Inst_Seq(threading.Thread):
         
         tmp = cfg.get(SC, "slit-cen").split(',')
         self.slit_cen = [int(tmp[0]), int(tmp[1])]
-        self.pixel_scale = float(cfg.get(SC, "pixelscale"))
+        #self.pixel_scale = float(cfg.get(SC, "pixelscale"))
         self.slit_width = float(cfg.get(SC,'slit-wid'))
         self.slit_len = float(cfg.get(SC,'slit-len'))
         self.slit_ang = float(cfg.get(SC,'slit-ang'))
@@ -201,12 +201,12 @@ class Inst_Seq(threading.Thread):
         _hdul.close()   
         
         self._handler = instDummy.InstCmdHandler.create(self._callback_giapi)
-        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.TEST, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
-        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.REBOOT, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
-        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.INIT, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.TEST, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.REBOOT, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.INIT, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
         giapi.CommandUtil.subscribeApply("ig2", giapi.command.ActivitySet.SET_PRESET_START, self._handler)
-        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.OBSERVE, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
-        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.ABORT, giapi.command.ActivitySet.SET_PRESET_START,self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.OBSERVE, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.ABORT, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
         
         # for sending the current obs progress
         giapi.StatusUtil.createStatusItem(IS_STS_OBSTIME, giapi.type.Type.FLOAT)
@@ -217,6 +217,9 @@ class Inst_Seq(threading.Thread):
         self.obs_time_readout = 0.0   
         self.obs_time_createMEF = 0.0
         self.obs_progress = IDLE
+        
+        self.publshing = False
+        self.publish_heartbeat()
                 
         #print(f'Subscribing APPLY {giapi.CommandUtil.subscribeApply("ig", giapi.command.ActivitySet.SET_PRESET, self._handler)}')
         
@@ -843,12 +846,29 @@ class Inst_Seq(threading.Thread):
         self.producer = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, self.InstSeq_ex)      
         self.producer.connect_to_server()
         self.producer.define_producer()
+        
+        
+    def publish_heartbeat(self):
+        if self.producer == None or self.publshing:
+            threading.Timer(2, self.publish_heartbeat).start()
+            return
+        
+        self.publshing = True
+        self.producer.send_message(self.InstSeq_q, HEART_BEAT)
+        self.publshing = False
+        
+        msg = "%s ->" % HEART_BEAT
+        self.log.send(self.iam, DEBUG, msg)
+        
+        threading.Timer(60, self.publish_heartbeat).start()
             
             
     def publish_to_queue(self, msg):
-        if self.producer == None:   return
+        if self.producer == None or self.publshing:   return
         
+        self.publshing = True
         self.producer.send_message(self.InstSeq_q, msg)
+        self.publshing = False
         
         msg = "%s ->" % msg
         self.log.send(self.iam, INFO, msg)

@@ -28,6 +28,7 @@ except:
     
 MAIN = "MAIN"
 HK = "HK"
+SC = "SC"
 
 # LOG option
 DEBUG = "DEBUG"
@@ -74,6 +75,14 @@ HEALTH_DCSH = 2
 HEALTH_DCSK = 3
 HEALTH_DCSS = 4
 
+# ---------------------------
+# state
+GOOD = 0
+STOPPED = 1
+DISCON = 2
+PWR_OFF = 3
+TMP_ERR = 4
+TMP_WARN = 5
 
 HK_REQ_COM_STS = "ComPortStatus"
 
@@ -87,7 +96,7 @@ HK_REQ_PWR_ONOFF = "PowerOnOff" #pdu
 HK_REQ_PWR_ONOFF_IDX = "PowerOnOffIndex" #pdu
 
 HK_REQ_UPLOAD_DB = "UploadDB"   #uploader
-HK_REQ_UPLOAD_STS = "UploadDBStatus"    #uploader
+#HK_REQ_UPLOAD_STS = "UploadDBStatus"    #uploader
 
 DT_REQ_INITMOTOR = "InitMotor"  #motor  
 DT_REQ_MOVEMOTOR = "MoveMotor"  #motor
@@ -106,3 +115,5 @@ CMD_INIT2_DONE = "Initialize2_Done" # to DCS
 CMD_INITIALIZE2_ICS = "Initialize2_ics"
 CMD_SETFSPARAM_ICS = "SetFSParam_ics"
 CMD_ACQUIRERAMP_ICS = "ACQUIRERAMP_ics"
+
+HEART_BEAT = "HeartBeat"

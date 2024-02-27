@@ -2,7 +2,7 @@
 """
 Created on Nov 8, 2022
 
-Modified on July 26, 2023
+Modified on Feb 19, 2024
 
 @author: hilee
 """
@@ -62,6 +62,8 @@ class temp_ctrl(threading.Thread):
         self.producer = None
         self.consumer_hk, self.consumer_uploader = None, None
         
+        self.publshing = False
+        
         self.prev_cmd = ""
         #self.pause = False
         
@@ -73,7 +75,10 @@ class temp_ctrl(threading.Thread):
             self.cmd_list = [self.get_value("A"), self.get_value("B"), self.get_heating_power(1), self.get_heating_power(2), self.get_setpoint(1), self.get_setpoint(2)]
             
         self.wait_time = float(Period/self.com_len)
-        self.res = [DEFAULT_VALUE for _ in range(self.com_len)]    
+        self.res = [DEFAULT_VALUE for _ in range(self.com_len)]   
+        
+        self.publish_heartbeat()
+         
         
     def __del__(self):
         msg = "Closing %s" % self.iam
@@ -241,11 +246,28 @@ class temp_ctrl(threading.Thread):
         self.producer.connect_to_server()
         self.producer.define_producer()
         
+        
+    def publish_heartbeat(self):
+        if self.producer == None or self.publshing:
+            threading.Timer(2, self.publish_heartbeat).start()
+            return
+        
+        self.publshing = True
+        self.producer.send_message(self.sub_q, HEART_BEAT)
+        self.publshing = False
+        
+        msg = "%s ->" % HEART_BEAT
+        self.log.send(self.iam, DEBUG, msg)
+        
+        threading.Timer(60, self.publish_heartbeat).start()
+        
     
     def publish_to_queue(self, msg):
-        if self.producer == None:   return
+        if self.producer == None or self.publshing:   return
         
+        self.publshing = True
         self.producer.send_message(self.sub_q, msg)
+        self.publshing = False
         
         msg = "%s ->" % msg
         self.log.send(self.iam, INFO, msg)

@@ -83,6 +83,8 @@ OBSAPP_TAKING_IMG = "StartTakingImage"
 
 MOVEPOS_P_Q = "Current_p_and_q_Position"
 
+HEART_BEAT = "HeartBeat"
+
 #OBSAPP_BUSY = "ObsAppBusy"
 
 #CMD_COMPLETED = "Completed"

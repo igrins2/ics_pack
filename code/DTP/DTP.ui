@@ -172,15 +172,15 @@
    <widget class="QLabel" name="label_prog_time_H">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>73</x>
       <y>444</y>
-      <width>241</width>
+      <width>251</width>
       <height>20</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <pointsize>9</pointsize>
+      <pointsize>8</pointsize>
       <bold>false</bold>
      </font>
     </property>
@@ -241,7 +241,7 @@
    <widget class="QLabel" name="label_prog_elapsed_H">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>73</x>
       <y>466</y>
       <width>121</width>
       <height>20</height>
@@ -266,7 +266,7 @@
    <widget class="QLabel" name="label_prog_sts_H">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>73</x>
       <y>422</y>
       <width>131</width>
       <height>20</height>
@@ -363,7 +363,7 @@
     </property>
     <property name="font">
      <font>
-      <pointsize>9</pointsize>
+      <pointsize>8</pointsize>
       <bold>false</bold>
      </font>
     </property>
@@ -382,7 +382,7 @@
      <rect>
       <x>20</x>
       <y>552</y>
-      <width>81</width>
+      <width>101</width>
       <height>21</height>
      </rect>
     </property>
@@ -598,9 +598,9 @@
    <widget class="QLabel" name="label_23">
     <property name="geometry">
      <rect>
-      <x>200</x>
+      <x>185</x>
       <y>380</y>
-      <width>51</width>
+      <width>71</width>
       <height>20</height>
      </rect>
     </property>
@@ -743,15 +743,15 @@
    <widget class="QLabel" name="label_prog_time_K">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>73</x>
       <y>444</y>
-      <width>241</width>
+      <width>251</width>
       <height>20</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <pointsize>9</pointsize>
+      <pointsize>8</pointsize>
       <bold>false</bold>
      </font>
     </property>
@@ -837,7 +837,7 @@
    <widget class="QLabel" name="label_prog_elapsed_K">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>73</x>
       <y>466</y>
       <width>121</width>
       <height>20</height>
@@ -862,7 +862,7 @@
    <widget class="QLabel" name="label_prog_sts_K">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>73</x>
       <y>422</y>
       <width>131</width>
       <height>20</height>
@@ -959,7 +959,7 @@
     </property>
     <property name="font">
      <font>
-      <pointsize>9</pointsize>
+      <pointsize>8</pointsize>
       <bold>false</bold>
      </font>
     </property>
@@ -997,7 +997,7 @@
      <rect>
       <x>20</x>
       <y>552</y>
-      <width>81</width>
+      <width>101</width>
       <height>21</height>
      </rect>
     </property>
@@ -1194,9 +1194,9 @@
    <widget class="QLabel" name="label_24">
     <property name="geometry">
      <rect>
-      <x>200</x>
+      <x>185</x>
       <y>380</y>
-      <width>51</width>
+      <width>71</width>
       <height>20</height>
      </rect>
     </property>
@@ -1232,9 +1232,9 @@
    <widget class="QCheckBox" name="chk_whole">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>10</x>
       <y>13</y>
-      <width>101</width>
+      <width>121</width>
       <height>31</height>
      </rect>
     </property>
@@ -1709,9 +1709,9 @@
     <widget class="QLabel" name="label_3">
      <property name="geometry">
       <rect>
-       <x>10</x>
+       <x>-1</x>
        <y>30</y>
-       <width>120</width>
+       <width>131</width>
        <height>20</height>
       </rect>
      </property>
@@ -1725,15 +1725,15 @@
       <string>Upper Translator</string>
      </property>
      <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
     <widget class="QLabel" name="label_4">
      <property name="geometry">
       <rect>
-       <x>10</x>
+       <x>-1</x>
        <y>158</y>
-       <width>120</width>
+       <width>131</width>
        <height>20</height>
       </rect>
      </property>
@@ -1747,7 +1747,7 @@
       <string>Lower Translator</string>
      </property>
      <property name="alignment">
-      <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      <set>Qt::AlignCenter</set>
      </property>
     </widget>
     <widget class="QPushButton" name="bt_ut_motor_init">
@@ -2893,9 +2893,9 @@
    <widget class="QPushButton" name="bt_parking">
     <property name="geometry">
      <rect>
-      <x>140</x>
+      <x>23</x>
       <y>304</y>
-      <width>104</width>
+      <width>221</width>
       <height>31</height>
      </rect>
     </property>
@@ -2988,9 +2988,9 @@
    <widget class="QLabel" name="label_22">
     <property name="geometry">
      <rect>
-      <x>200</x>
+      <x>185</x>
       <y>380</y>
-      <width>51</width>
+      <width>71</width>
       <height>20</height>
      </rect>
     </property>
@@ -3108,7 +3108,7 @@
    <widget class="QLabel" name="label_prog_stats_svc">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>73</x>
       <y>422</y>
       <width>131</width>
       <height>20</height>
@@ -3209,15 +3209,15 @@
    <widget class="QLabel" name="label_prog_time_svc">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>73</x>
       <y>444</y>
-      <width>241</width>
+      <width>251</width>
       <height>20</height>
      </rect>
     </property>
     <property name="font">
      <font>
-      <pointsize>9</pointsize>
+      <pointsize>8</pointsize>
       <bold>false</bold>
      </font>
     </property>
@@ -3234,7 +3234,7 @@
    <widget class="QLabel" name="label_prog_elapsed_svc">
     <property name="geometry">
      <rect>
-      <x>80</x>
+      <x>73</x>
       <y>466</y>
       <width>121</width>
       <height>20</height>
@@ -3349,7 +3349,7 @@
      <rect>
       <x>20</x>
       <y>552</y>
-      <width>81</width>
+      <width>101</width>
       <height>21</height>
      </rect>
     </property>
@@ -3393,7 +3393,7 @@
     </property>
     <property name="font">
      <font>
-      <pointsize>9</pointsize>
+      <pointsize>8</pointsize>
       <bold>false</bold>
      </font>
     </property>
@@ -3566,9 +3566,9 @@
   <widget class="QCheckBox" name="chk_open_calibration">
    <property name="geometry">
     <rect>
-     <x>843</x>
+     <x>823</x>
      <y>6</y>
-     <width>191</width>
+     <width>211</width>
      <height>21</height>
     </rect>
    </property>
@@ -3610,7 +3610,7 @@
    <widget class="QRadioButton" name="radio_H">
     <property name="geometry">
      <rect>
-      <x>330</x>
+      <x>340</x>
       <y>15</y>
       <width>81</width>
       <height>25</height>
@@ -3620,6 +3620,7 @@
      <font>
       <pointsize>11</pointsize>
       <bold>true</bold>
+      <underline>false</underline>
      </font>
     </property>
     <property name="text">
@@ -3650,7 +3651,7 @@
      <rect>
       <x>20</x>
       <y>15</y>
-      <width>101</width>
+      <width>121</width>
       <height>25</height>
      </rect>
     </property>
@@ -3658,6 +3659,7 @@
      <font>
       <pointsize>11</pointsize>
       <bold>true</bold>
+      <underline>false</underline>
      </font>
     </property>
     <property name="text">
@@ -3667,7 +3669,7 @@
    <widget class="QRadioButton" name="radio_SVC">
     <property name="geometry">
      <rect>
-      <x>260</x>
+      <x>275</x>
       <y>15</y>
       <width>61</width>
       <height>25</height>
@@ -3677,6 +3679,7 @@
      <font>
       <pointsize>11</pointsize>
       <bold>true</bold>
+      <underline>false</underline>
      </font>
     </property>
     <property name="text">
@@ -3686,9 +3689,9 @@
    <widget class="QRadioButton" name="radio_whole_sync">
     <property name="geometry">
      <rect>
-      <x>136</x>
+      <x>150</x>
       <y>15</y>
-      <width>111</width>
+      <width>121</width>
       <height>25</height>
      </rect>
     </property>
@@ -3696,6 +3699,7 @@
      <font>
       <pointsize>11</pointsize>
       <bold>true</bold>
+      <underline>false</underline>
      </font>
     </property>
     <property name="text">
@@ -3705,7 +3709,7 @@
    <widget class="QRadioButton" name="radio_K">
     <property name="geometry">
      <rect>
-      <x>420</x>
+      <x>425</x>
       <y>15</y>
       <width>81</width>
       <height>25</height>
@@ -3715,6 +3719,7 @@
      <font>
       <pointsize>11</pointsize>
       <bold>true</bold>
+      <underline>false</underline>
      </font>
     </property>
     <property name="text">
@@ -3737,9 +3742,9 @@
    <widget class="QRadioButton" name="radio_zscale">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>16</x>
       <y>16</y>
-      <width>61</width>
+      <width>81</width>
       <height>21</height>
      </rect>
     </property>
@@ -3819,9 +3824,9 @@
    <widget class="QRadioButton" name="radio_mscale">
     <property name="geometry">
      <rect>
-      <x>20</x>
+      <x>16</x>
       <y>40</y>
-      <width>71</width>
+      <width>81</width>
       <height>21</height>
      </rect>
     </property>
