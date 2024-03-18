@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Feb 20, 2024
+Modified on March 12, 2024
 
 @author: hilee
 """
@@ -156,8 +156,9 @@ class Inst_Seq(threading.Thread):
                                 
         self.obs_start_T = 0.0
 
-        self.obs_start_ut = datetime.datetime.utcnow()
-        self.obs_end_ut = datetime.datetime.utcnow()
+        # remove 20240312
+        #self.obs_start_ut = datetime.datetime.utcnow()
+        #self.obs_end_ut = datetime.datetime.utcnow()
 
         #add 20240104
         self.stop_by_ObsApp = False
@@ -646,7 +647,7 @@ class Inst_Seq(threading.Thread):
                     self.obs_progress = EXPOSING
                     threading.Timer(1, self.exp_progress).start()
                     
-                    self.obs_start_ut = datetime.datetime.utcnow()
+                    #self.obs_start_ut = datetime.datetime.utcnow()
                     self.obs_start_T = ti.time()
                     
                     if self.apply_mode == ACQ_MODE:
@@ -709,7 +710,7 @@ class Inst_Seq(threading.Thread):
                     self.obs_progress = EXPOSING
                     threading.Timer(1, self.exp_progress).start()
                     
-                    self.obs_start_ut = datetime.datetime.utcnow()
+                    #self.obs_start_ut = datetime.datetime.utcnow()
                     self.obs_start_T = ti.time()
                     
                     if self.apply_mode == ACQ_MODE:
@@ -1401,7 +1402,7 @@ class Inst_Seq(threading.Thread):
         else:
             if self.acquiring[H] or self.acquiring[K]:  return
         
-        self.obs_end_ut = datetime.datetime.utcnow()
+        #self.obs_end_ut = datetime.datetime.utcnow()
 
         # request TCS info
         #self.req_from_TCS()
@@ -1446,6 +1447,7 @@ class Inst_Seq(threading.Thread):
         #Primary_hdu.header.set("INSTRUME", "IGRINS-2", "Instrument used to acquire data")
         #Primary_hdu.header.set("TIMESYS", "UTC", "Time system used in this header")
        
+        '''
         _t = self.obs_start_ut
         _obs_start_t = "%02d:%02d:%02d.%04d" % (_t.hour, _t.minute, _t.second, _t.microsecond)
         Primary_hdu.header.set("UTSTART", _obs_start_t, "UT at observation start")
@@ -1453,6 +1455,7 @@ class Inst_Seq(threading.Thread):
         _t = self.obs_end_ut
         _obs_end_t = "%02d:%02d:%02d.%04d" % (_t.hour, _t.minute, _t.second, _t.microsecond)
         Primary_hdu.header.set("UTEND", _obs_end_t, "UT at observation end")
+        '''
        
         _onoff = "off"
         if self.cur_ObsApp_taking == 2:

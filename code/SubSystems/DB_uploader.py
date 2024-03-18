@@ -827,7 +827,7 @@ class uploader(threading.Thread):
                 cur_ra = '--:--:--.--'                     
                 cur_dec = '+--:--:--.--'
                 cur_am = 1
-                cur_pa = 90
+                cur_pa = 135
         
             else:
                 pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentRA", 20)
