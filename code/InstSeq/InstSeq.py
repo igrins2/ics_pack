@@ -137,6 +137,18 @@ class Inst_Seq(threading.Thread):
         self.cur_ObsApp_taking = 0
                 
         self.cur_expTime = 1.63
+        
+        # add 20240321 read MEF path
+        cfg_file ="/usr/local/share/gmp-server-0.2.6-SNAPSHOT/conf/services/edu.gemini.aspen.gmp.services.properties.SimplePropertyHolder-default.cfg"
+        with open(cfg_file) as f:
+            for line in f:
+                if '=' in line:
+                    key, value = line.strip().split('=')
+                    #print(f"{key} = {value}")
+                    if key.strip() == "DHS_SCIENCE_DATA_PATH":
+                        self.MEF_path = value      
+                        break
+        #print(self.MEF_path)
                         
         self.dcs_list = ["DCSS", "DCSH", "DCSK"]    # for receive
         self.dcs_ready = [False for _ in range(DCS_CNT)]
@@ -162,6 +174,9 @@ class Inst_Seq(threading.Thread):
 
         #add 20240104
         self.stop_by_ObsApp = False
+        
+        #add 20240408
+        self.stop_by_InstSeq = False
         
         #self.airmass = [0.0, 0.0]
         #self.HA = [None, None]
@@ -285,7 +300,8 @@ class Inst_Seq(threading.Thread):
             
             # ----------------------------------------------------
             # SequenceCommand.TEST
-            if seq_cmd == giapi.command.SequenceCommand.TEST:                
+            if seq_cmd == giapi.command.SequenceCommand.TEST:  
+                '''              
                 if activity == giapi.command.Activity.PRESET:
                     self.log.send(self.iam, INFO, "SequenceCommand.TEST, Activity.PRESET")
                     
@@ -311,7 +327,9 @@ class Inst_Seq(threading.Thread):
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
-                elif activity == giapi.command.Activity.PRESET_START:
+                el
+                '''
+                if activity == giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, INFO, "SequenceCommand.TEST, Activity.PRESET_START")
                     
                     self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_TEST}   
@@ -371,7 +389,7 @@ class Inst_Seq(threading.Thread):
             # ----------------------------------------------------
             # SequenceCommand.INIT    
             elif seq_cmd == giapi.command.SequenceCommand.INIT:
-                
+                '''
                 if activity == giapi.command.Activity.PRESET:
                     self.log.send(self.iam, INFO, "SequenceCommand.INIT, Activity.PRESET")
                     
@@ -396,7 +414,9 @@ class Inst_Seq(threading.Thread):
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
-                elif activity == giapi.command.Activity.PRESET_START:
+                el
+                '''
+                if activity == giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, INFO, "SequenceCommand.INIT, Activity.PRESET_START")
                     
                     self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_INIT}
@@ -417,6 +437,7 @@ class Inst_Seq(threading.Thread):
             # SequenceCommand.APPLY                       
             elif seq_cmd == giapi.command.SequenceCommand.APPLY:
                 _exptime_sci, _FS_number_sci = 0.0, 0
+                '''
                 if activity == giapi.command.Activity.PRESET:
                     self.log.send(self.iam, INFO, "SequenceCommand.APPLY, Activity.PRESET")
                     
@@ -505,12 +526,16 @@ class Inst_Seq(threading.Thread):
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
-                elif activity == giapi.command.Activity.PRESET_START:
+                el
+                '''
+                if activity == giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, INFO, "SequenceCommand.APPLY, Activity.PRESET_START")
                     
                     self.actRequested[action_id] = {'t': t, 'response': None, 'numAct': ACT_APPLY}
                     
                     offset_p, offset_q = 0.0, 0.0
+                    cur_step, end_step = 0, 0
+                    
                     for k in config.getKeys():
                         keys = config.getValue(k)
                         # keys = ig2:dcs:expTime=1.63 / ig2:seq:state="acq" or "sci"
@@ -525,6 +550,12 @@ class Inst_Seq(threading.Thread):
                         elif k == "ig2:seq:state":  self.apply_mode = keys
                         elif k == "ig2:seq:p":      offset_p = float(keys.c_str())
                         elif k == "ig2:seq:q":      offset_q = float(keys.c_str())
+                        
+                        #add 20240408
+                        elif k == "ig2:seq:cstep":
+                            cur_step = int(keys.c_str())
+                        elif k == "ig2:seq:estep":
+                            end_step = int(keys.c_str())
                     
                     #send to ObsApp
                     print(offset_p, offset_q)
@@ -536,6 +567,12 @@ class Inst_Seq(threading.Thread):
                     elif offset_p == 0 and offset_q == 0: self.frame_mode = "ON"
                     elif offset_p != 0 and offset_q != 0: self.frame_mode = "OFF"
                     
+                    #add 20240408
+                    if cur_step == end_step:
+                        self.stop_by_InstSeq = True
+                    else:
+                        self.stop_by_InstSeq = False
+                        
                     if self.apply_mode == ACQ_MODE:
                         self.dcs_setparam[SVC] = False
                         self.set_exp(self.dcs_list[SVC])
@@ -583,6 +620,7 @@ class Inst_Seq(threading.Thread):
             # ----------------------------------------------------
             # SequenceCommand.OBSERVE                                                        
             elif seq_cmd == giapi.command.SequenceCommand.OBSERVE:
+                '''
                 if activity == giapi.command.Activity.PRESET:
                     self.log.send(self.iam, INFO, "SequenceCommand.OBSERVE, Activity.PRESET")
 
@@ -675,7 +713,9 @@ class Inst_Seq(threading.Thread):
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
-                elif activity == giapi.command.Activity.PRESET_START:
+                el
+                '''
+                if activity == giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, INFO, "SequenceCommand.OBSERVE, Activity.PRESET_START")
                     self.cur_action_id_old = action_id
                     self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_OBSERVE}
@@ -1556,12 +1596,23 @@ class Inst_Seq(threading.Thread):
         
         #_t = datetime.datetime.utcnow()
         #path = "%sIGRINS/Data/%04d%02d%02d" % (WORKING_DIR, _t.year, _t.month, _t.day)
-        path = "%sIGRINS/Data" % WORKING_DIR
-        self.log.createFolder(path)
-        MEF_file = "%s/%s" % (path, self.data_label)
+        
+        #------------------------------------------------------
+        # modify 20240408
+        #path = "%sIGRINS/Data" % WORKING_DIR
+        #self.log.createFolder(path)
+        #self.MEF_path = "%s/%s" % (path, self.data_label)
+        
+        #new_hdul = pyfits.HDUList(hdu_list)
+        #new_hdul.writeto(self.MEF_path, overwrite=True) 
+        
+        #path = "%sIGRINS/Data" % WORKING_DIR
+        self.log.createFolder(self.MEF_path)
+        path = "%s/%s" % (self.MEF_path, self.data_label)
         
         new_hdul = pyfits.HDUList(hdu_list)
-        new_hdul.writeto(MEF_file, overwrite=True) 
+        new_hdul.writeto(path, overwrite=True) 
+        #------------------------------------------------------
 
         end_t = ti.time() - start_t
         msg = "MEF T: %f" % end_t
@@ -1586,6 +1637,11 @@ class Inst_Seq(threading.Thread):
 
         self.response_complete(True)
         self.setValue_to_SeqExec(IS_STS_CURRENT, IDLE, INFO)
+        
+        # add 20240408
+        # if last one of sequence, abort!
+        if self.stop_by_InstSeq:
+            self.stop_acquistion()            
         
         #self.log.send(self.iam, INFO, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, IDLE)")
         #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, IDLE)
