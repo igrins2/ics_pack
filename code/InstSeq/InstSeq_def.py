@@ -3,7 +3,7 @@
 """
 Created on Feb 10, 2023
 
-Modified on Jan 4, 2024
+Modified on Apr 16, 2024
 
 @author: hilee
 """
@@ -53,6 +53,8 @@ ACT_INIT = 2
 ACT_APPLY = 3
 ACT_OBSERVE = 4
 ACT_ABORT = 5
+
+END_SEQ_MODE = "endsequence"
 
 T_br = 2
 T_minFowler = 0.168

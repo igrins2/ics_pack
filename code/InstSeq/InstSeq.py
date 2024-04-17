@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on March 12, 2024
+Modified on Apr 16, 2024
 
 @author: hilee
 """
@@ -223,6 +223,9 @@ class Inst_Seq(threading.Thread):
         giapi.CommandUtil.subscribeApply("ig2", giapi.command.ActivitySet.SET_PRESET_START, self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.OBSERVE, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.ABORT, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        
+        # add 20240416
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.ENGINEERING, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
         
         # for sending the current obs progress
         giapi.StatusUtil.createStatusItem(IS_STS_OBSTIME, giapi.type.Type.FLOAT)
@@ -794,6 +797,28 @@ class Inst_Seq(threading.Thread):
                     
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
                     return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "") 
+            
+            # ----------------------------------------------------
+            # add 20240416
+            # SequenceCommand.ENGINEERING
+            elif seq_cmd == giapi.command.SequenceCommand.ENGINEERING:
+                if activity != giapi.command.Activity.PRESET_START:
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "No implemented the PRESET and START activity. Please, execute the PRESET_START")
+
+                self.log.send(self.iam, INFO, "SequenceCommand.ENGINEERING, Activity.PRESET_START")
+
+                cmdName = config.getValue("COMMAND_NAME").c_str()
+                if cmdName == "endsequense":
+                    print('endsequenseeeeeeeeeeeeeeeeeeeeeeeeeeee')
+                    
+                    # need to check!!!
+                    self.stop_by_InstSeq = True
+                    
+                    #self.apply_mode = END_SEQ_MODE
+                    #self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_ABORT}
+                    #self.stop_acquistion()
+                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "SENT the Detector ABORT COMMAND")
             
             # ----------------------------------------------------
             # SequenceCommand.ABORT        
@@ -1641,7 +1666,8 @@ class Inst_Seq(threading.Thread):
         # add 20240408
         # if last one of sequence, abort!
         if self.stop_by_InstSeq:
-            self.stop_acquistion()            
+            self.stop_acquistion()
+            self.stop_by_InstSeq = False            
         
         #self.log.send(self.iam, INFO, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, IDLE)")
         #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, IDLE)

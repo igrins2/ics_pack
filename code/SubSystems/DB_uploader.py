@@ -819,7 +819,8 @@ class uploader(threading.Thread):
         
         cur_ra = ""
         cur_dec = ""
-        cur_am = 0        
+        cur_am = 0    
+        cur_pa = 0  # add 20240415 by Emma    
         
         try:
             #add 20240119
