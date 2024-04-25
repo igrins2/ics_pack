@@ -2,7 +2,7 @@
 """
 Created on Nov 9, 2022
 
-Created on July 26, 2023
+Created on Apr 23, 2024
 
 @author: hilee
 """
@@ -63,7 +63,11 @@ class monitor(threading.Thread) :
         self.comStatus = False
         
         self.producer = None    
-        self.consumer = None 
+        self.consumer = None
+        
+        self.publshing = False 
+        
+        self.publish_heartbeat()
                 
         
     
@@ -157,9 +161,10 @@ class monitor(threading.Thread) :
             #rev
             res0 = self.comSocket.recv(REBUFSIZE)
             info = res0.decode()
+            
                     
-            log = "recv <<< %s" % info[:-2]
-            if len(info) < 20:
+            log = "recv <<< %s(%d)" % (info[:-2], len(info[:-2]))
+            if len(info) < 80:
                 self.log.send(self.iam, INFO, log)   
                                             
             if self.iam == "tm":
@@ -210,6 +215,7 @@ class monitor(threading.Thread) :
                     
         elif self.iam == "vm" and len(vm) <= 10:
             msg = "%s %s" % (HK_REQ_GETVALUE, vm)
+        
         self.publish_to_queue(msg) 
 
         ti.sleep(self.Period)
@@ -225,12 +231,30 @@ class monitor(threading.Thread) :
         self.producer.define_producer()
         
         
+    def publish_heartbeat(self):
+        if self.producer == None or self.publshing:
+            threading.Timer(2, self.publish_heartbeat).start()
+            return
+        
+        self.publshing = True
+        self.producer.send_message(self.sub_q, HEART_BEAT)
+        self.publshing = False
+        
+        msg = "%s ->" % HEART_BEAT
+        self.log.send(self.iam, DEBUG, msg)
+        
+        threading.Timer(HEART_BEAT_PUB, self.publish_heartbeat).start() # modify 20240423
+        
+        
     def publish_to_queue(self, msg):
-        if self.producer == None:   return
+        if self.producer == None or self.publshing:   return
         
+        self.publshing = True
         self.producer.send_message(self.sub_q, msg)
+        self.publshing = False
         
-        if len(msg) > 30:   return
+        #if len(msg) > 30:   return
+        
         msg = "%s ->" % msg
         self.log.send(self.iam, INFO, msg)
         

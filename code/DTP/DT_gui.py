@@ -880,7 +880,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         _exptime = float(self.e_exptime[dc_idx].text())
         _FS_number = int(self.e_FS_number[dc_idx].text())
         _fowlerTime = _exptime - T_frame * _FS_number
-        _cal_waittime = T_br + (T_frame + _fowlerTime + (2 * T_frame * _FS_number))
+        _cal_waittime = T_br + (T_frame + _fowlerTime + (2 * T_frame * _FS_number)) + T_br
             
         start_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())       
         

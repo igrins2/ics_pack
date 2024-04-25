@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>782</width>
-    <height>498</height>
+    <height>470</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -68,7 +68,7 @@
    <property name="geometry">
     <rect>
      <x>60</x>
-     <y>289</y>
+     <y>263</y>
      <width>171</width>
      <height>20</height>
     </rect>
@@ -86,7 +86,7 @@
    <property name="geometry">
     <rect>
      <x>36</x>
-     <y>290</y>
+     <y>264</y>
      <width>19</width>
      <height>20</height>
     </rect>
@@ -105,7 +105,7 @@
    <property name="geometry">
     <rect>
      <x>137</x>
-     <y>290</y>
+     <y>264</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -142,7 +142,7 @@
    <property name="geometry">
     <rect>
      <x>8</x>
-     <y>129</y>
+     <y>103</y>
      <width>19</width>
      <height>20</height>
     </rect>
@@ -161,7 +161,7 @@
    <property name="geometry">
     <rect>
      <x>8</x>
-     <y>179</y>
+     <y>153</y>
      <width>19</width>
      <height>20</height>
     </rect>
@@ -180,7 +180,7 @@
    <property name="geometry">
     <rect>
      <x>8</x>
-     <y>154</y>
+     <y>128</y>
      <width>19</width>
      <height>20</height>
     </rect>
@@ -199,7 +199,7 @@
    <property name="geometry">
     <rect>
      <x>8</x>
-     <y>204</y>
+     <y>178</y>
      <width>19</width>
      <height>20</height>
     </rect>
@@ -218,8 +218,8 @@
    <property name="geometry">
     <rect>
      <x>30</x>
-     <y>55</y>
-     <width>201</width>
+     <y>29</y>
+     <width>211</width>
      <height>221</height>
     </rect>
    </property>
@@ -284,7 +284,7 @@
     <number>1</number>
    </attribute>
    <attribute name="horizontalHeaderDefaultSectionSize">
-    <number>70</number>
+    <number>50</number>
    </attribute>
    <attribute name="horizontalHeaderHighlightSections">
     <bool>false</bool>
@@ -330,7 +330,7 @@
     </property>
     <property name="font">
      <font>
-      <pointsize>10</pointsize>
+      <pointsize>9</pointsize>
       <bold>true</bold>
      </font>
     </property>
@@ -361,6 +361,11 @@
     <property name="text">
      <string/>
     </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
     </property>
@@ -379,6 +384,11 @@
    <item row="1" column="1">
     <property name="text">
      <string/>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
     </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
@@ -399,6 +409,11 @@
     <property name="text">
      <string/>
     </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
     </property>
@@ -417,6 +432,11 @@
    <item row="3" column="1">
     <property name="text">
      <string/>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
     </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
@@ -437,6 +457,11 @@
     <property name="text">
      <string/>
     </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
     <property name="flags">
      <set>ItemIsEnabled</set>
     </property>
@@ -455,6 +480,11 @@
    <item row="5" column="1">
     <property name="text">
      <string/>
+    </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
     </property>
     <property name="flags">
      <set>NoItemFlags</set>
@@ -475,6 +505,11 @@
     <property name="text">
      <string/>
     </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
     <property name="flags">
      <set>NoItemFlags</set>
     </property>
@@ -494,6 +529,11 @@
     <property name="text">
      <string/>
     </property>
+    <property name="font">
+     <font>
+      <pointsize>9</pointsize>
+     </font>
+    </property>
     <property name="flags">
      <set>NoItemFlags</set>
     </property>
@@ -503,7 +543,7 @@
    <property name="geometry">
     <rect>
      <x>8</x>
-     <y>104</y>
+     <y>78</y>
      <width>19</width>
      <height>20</height>
     </rect>
@@ -522,7 +562,7 @@
    <property name="geometry">
     <rect>
      <x>8</x>
-     <y>258</y>
+     <y>227</y>
      <width>19</width>
      <height>20</height>
     </rect>
@@ -541,7 +581,7 @@
    <property name="geometry">
     <rect>
      <x>8</x>
-     <y>229</y>
+     <y>203</y>
      <width>19</width>
      <height>20</height>
     </rect>
@@ -560,7 +600,7 @@
    <property name="geometry">
     <rect>
      <x>8</x>
-     <y>79</y>
+     <y>53</y>
      <width>19</width>
      <height>20</height>
     </rect>
@@ -579,7 +619,7 @@
    <property name="geometry">
     <rect>
      <x>3</x>
-     <y>27</y>
+     <y>1</y>
      <width>19</width>
      <height>25</height>
     </rect>
@@ -598,7 +638,7 @@
    <property name="geometry">
     <rect>
      <x>30</x>
-     <y>31</y>
+     <y>5</y>
      <width>111</width>
      <height>16</height>
     </rect>
@@ -617,7 +657,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>436</y>
+     <y>410</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -636,7 +676,7 @@
    <property name="geometry">
     <rect>
      <x>580</x>
-     <y>469</y>
+     <y>443</y>
      <width>171</width>
      <height>20</height>
     </rect>
@@ -655,7 +695,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>336</y>
+     <y>310</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -674,7 +714,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>286</y>
+     <y>260</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -693,7 +733,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>411</y>
+     <y>385</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -712,7 +752,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>57</y>
+     <y>31</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -731,7 +771,7 @@
    <property name="geometry">
     <rect>
      <x>751</x>
-     <y>470</y>
+     <y>444</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -750,7 +790,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>261</y>
+     <y>235</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -769,7 +809,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>211</y>
+     <y>185</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -788,7 +828,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>311</y>
+     <y>285</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -807,7 +847,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>111</y>
+     <y>85</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -826,7 +866,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>136</y>
+     <y>110</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -845,7 +885,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>361</y>
+     <y>335</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -864,7 +904,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>161</y>
+     <y>135</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -883,7 +923,7 @@
    <property name="geometry">
     <rect>
      <x>395</x>
-     <y>54</y>
+     <y>28</y>
      <width>81</width>
      <height>25</height>
     </rect>
@@ -902,7 +942,7 @@
    <property name="geometry">
     <rect>
      <x>481</x>
-     <y>58</y>
+     <y>32</y>
      <width>30</width>
      <height>17</height>
     </rect>
@@ -921,7 +961,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>386</y>
+     <y>360</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -940,7 +980,7 @@
    <property name="geometry">
     <rect>
      <x>271</x>
-     <y>58</y>
+     <y>32</y>
      <width>121</width>
      <height>17</height>
     </rect>
@@ -959,7 +999,7 @@
    <property name="geometry">
     <rect>
      <x>270</x>
-     <y>87</y>
+     <y>61</y>
      <width>501</width>
      <height>371</height>
     </rect>
@@ -1883,7 +1923,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>186</y>
+     <y>160</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -1898,30 +1938,11 @@
     <string>⚫</string>
    </property>
   </widget>
-  <widget class="QCheckBox" name="chk_alert">
-   <property name="geometry">
-    <rect>
-     <x>273</x>
-     <y>469</y>
-     <width>201</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <pointsize>10</pointsize>
-     <bold>false</bold>
-    </font>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-  </widget>
   <widget class="QLabel" name="sts_monitor_ok">
    <property name="geometry">
     <rect>
      <x>680</x>
-     <y>470</y>
+     <y>444</y>
      <width>19</width>
      <height>20</height>
     </rect>
@@ -1940,7 +1961,7 @@
    <property name="geometry">
     <rect>
      <x>247</x>
-     <y>236</y>
+     <y>210</y>
      <width>20</width>
      <height>20</height>
     </rect>
@@ -1959,7 +1980,7 @@
    <property name="geometry">
     <rect>
      <x>270</x>
-     <y>31</y>
+     <y>5</y>
      <width>81</width>
      <height>16</height>
     </rect>
@@ -1974,49 +1995,11 @@
     <string>Monitor</string>
    </property>
   </widget>
-  <widget class="QLabel" name="alert_status">
-   <property name="geometry">
-    <rect>
-     <x>690</x>
-     <y>54</y>
-     <width>81</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="font">
-    <font>
-     <underline>false</underline>
-     <strikeout>false</strikeout>
-     <kerning>true</kerning>
-    </font>
-   </property>
-   <property name="autoFillBackground">
-    <bool>false</bool>
-   </property>
-   <property name="frameShape">
-    <enum>QFrame::StyledPanel</enum>
-   </property>
-   <property name="frameShadow">
-    <enum>QFrame::Plain</enum>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="scaledContents">
-    <bool>false</bool>
-   </property>
-   <property name="alignment">
-    <set>Qt::AlignCenter</set>
-   </property>
-   <property name="margin">
-    <number>0</number>
-   </property>
-  </widget>
   <widget class="QPushButton" name="bt_com_tc1">
    <property name="geometry">
     <rect>
      <x>80</x>
-     <y>430</y>
+     <y>404</y>
      <width>71</width>
      <height>26</height>
     </rect>
@@ -2029,7 +2012,7 @@
    <property name="geometry">
     <rect>
      <x>160</x>
-     <y>430</y>
+     <y>404</y>
      <width>71</width>
      <height>26</height>
     </rect>
@@ -2042,7 +2025,7 @@
    <property name="geometry">
     <rect>
      <x>80</x>
-     <y>460</y>
+     <y>434</y>
      <width>71</width>
      <height>26</height>
     </rect>
@@ -2055,7 +2038,7 @@
    <property name="geometry">
     <rect>
      <x>160</x>
-     <y>460</y>
+     <y>434</y>
      <width>71</width>
      <height>26</height>
     </rect>
@@ -2064,115 +2047,163 @@
     <string>TM</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="bt_pwr_onoff1">
+  <widget class="QPushButton" name="bt_pwr_off1">
    <property name="geometry">
     <rect>
-     <x>188</x>
-     <y>78</y>
-     <width>41</width>
+     <x>209</x>
+     <y>52</y>
+     <width>30</width>
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
-    <string>On</string>
+    <string>Off</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="bt_pwr_onoff2">
+  <widget class="QPushButton" name="bt_pwr_off2">
    <property name="geometry">
     <rect>
-     <x>188</x>
-     <y>103</y>
-     <width>41</width>
+     <x>209</x>
+     <y>77</y>
+     <width>30</width>
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
-    <string>On</string>
+    <string>Off</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="bt_pwr_onoff3">
+  <widget class="QPushButton" name="bt_pwr_off3">
    <property name="geometry">
     <rect>
-     <x>188</x>
-     <y>128</y>
-     <width>41</width>
+     <x>209</x>
+     <y>102</y>
+     <width>30</width>
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
-    <string>On</string>
+    <string>Off</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="bt_pwr_onoff4">
+  <widget class="QPushButton" name="bt_pwr_off4">
    <property name="geometry">
     <rect>
-     <x>188</x>
-     <y>153</y>
-     <width>41</width>
+     <x>209</x>
+     <y>127</y>
+     <width>30</width>
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
-    <string>On</string>
+    <string>Off</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="bt_pwr_onoff5">
+  <widget class="QPushButton" name="bt_pwr_off5">
    <property name="geometry">
     <rect>
-     <x>188</x>
-     <y>178</y>
-     <width>41</width>
+     <x>209</x>
+     <y>152</y>
+     <width>30</width>
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
-    <string>On</string>
+    <string>Off</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="bt_pwr_onoff6">
+  <widget class="QPushButton" name="bt_pwr_off6">
    <property name="geometry">
     <rect>
-     <x>188</x>
-     <y>203</y>
-     <width>41</width>
+     <x>209</x>
+     <y>177</y>
+     <width>30</width>
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
-    <string>On</string>
+    <string>Off</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="bt_pwr_onoff7">
+  <widget class="QPushButton" name="bt_pwr_off7">
    <property name="geometry">
     <rect>
-     <x>188</x>
-     <y>228</y>
-     <width>41</width>
+     <x>209</x>
+     <y>202</y>
+     <width>30</width>
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
-    <string>On</string>
+    <string>Off</string>
    </property>
   </widget>
-  <widget class="QPushButton" name="bt_pwr_onoff8">
+  <widget class="QPushButton" name="bt_pwr_off8">
    <property name="geometry">
     <rect>
-     <x>188</x>
-     <y>252</y>
-     <width>41</width>
+     <x>209</x>
+     <y>226</y>
+     <width>30</width>
      <height>22</height>
     </rect>
    </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
    <property name="text">
-    <string>On</string>
+    <string>Off</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_13">
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>370</y>
+     <y>344</y>
      <width>61</width>
      <height>21</height>
     </rect>
@@ -2194,7 +2225,7 @@
    <property name="geometry">
     <rect>
      <x>80</x>
-     <y>370</y>
+     <y>344</y>
      <width>151</width>
      <height>26</height>
     </rect>
@@ -2207,7 +2238,7 @@
    <property name="geometry">
     <rect>
      <x>80</x>
-     <y>400</y>
+     <y>374</y>
      <width>151</width>
      <height>26</height>
     </rect>
@@ -2223,7 +2254,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>400</y>
+     <y>374</y>
      <width>61</width>
      <height>21</height>
     </rect>
@@ -2245,7 +2276,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>340</y>
+     <y>314</y>
      <width>141</width>
      <height>21</height>
     </rect>
@@ -2258,6 +2289,158 @@
    </property>
    <property name="text">
     <string>Manual Test</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_pwr_on6">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>177</y>
+     <width>30</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>On</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_pwr_on7">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>202</y>
+     <width>30</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>On</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_pwr_on2">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>77</y>
+     <width>30</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>On</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_pwr_on3">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>102</y>
+     <width>30</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>On</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_pwr_on4">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>127</y>
+     <width>30</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>On</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_pwr_on8">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>226</y>
+     <width>30</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>On</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_pwr_on5">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>152</y>
+     <width>30</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>On</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="bt_pwr_on1">
+   <property name="geometry">
+    <rect>
+     <x>178</x>
+     <y>52</y>
+     <width>30</width>
+     <height>22</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>9</pointsize>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>On</string>
    </property>
   </widget>
  </widget>

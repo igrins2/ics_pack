@@ -3,7 +3,7 @@
 """
 Created on Sep 17, 2021
 
-Modified on July 26, 2023
+Modified on Feb 20, 2024
 
 @author: hilee
 """
@@ -51,7 +51,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def __init__(self):
         super().__init__()
     
-        self.setFixedSize(782, 498)
+        self.setFixedSize(782, 470)
         
         self.iam = HK     
         
@@ -98,8 +98,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.init_events()   
         self.show_info()
                
-        self.iter_color = cycle(["white", "black"]) 
-        self.iter_bgcolor = cycle(["red", "white"])
+        #self.iter_color = cycle(["white", "black"]) 
+        #self.iter_bgcolor = cycle(["red", "white"])
          
         self.temp_warn_lower, self.temp_normal_lower, self.temp_normal_upper, self.temp_warn_upper = dict() ,dict() ,dict() ,dict() 
         range_list = label_list[0:4] + [label_list[5], label_list[-1]]
@@ -132,8 +132,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.consumer_sub = [None for _ in range(COM_CNT)]
                 
         self.alarm_status = ALM_OK
-        self.alarm_status_back = None
-        self.alert_toggling = False
+        self.alarm_status_back = self.alarm_status
+        #self.alert_toggling = False
         self.monitoring = False
         
         self.uploade_start = 0
@@ -159,7 +159,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.monit_timer.stop()
         self.show_timer.stop()
         
-        self.alert_toggling = False
+        #self.alert_toggling = False
         self.monitoring = False
         #ti.sleep(2)
         
@@ -192,20 +192,35 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for i in range(PDU_IDX):
             self.tb_pdu.item(i, 1).setText(self.power_list[i])
             
-        self.bt_pwr_onoff = [self.bt_pwr_onoff1, self.bt_pwr_onoff2, self.bt_pwr_onoff3, 
-                             self.bt_pwr_onoff4, self.bt_pwr_onoff5, self.bt_pwr_onoff6, 
-                             self.bt_pwr_onoff7, self.bt_pwr_onoff8]
-        for i in range(PDU_IDX):
-            self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black")
+        self.bt_pwr_on = [self.bt_pwr_on1, self.bt_pwr_on2, self.bt_pwr_on3, 
+                             self.bt_pwr_on4, self.bt_pwr_on5, self.bt_pwr_on6, 
+                             self.bt_pwr_on7, self.bt_pwr_on8]
         
-        self.bt_pwr_onoff1.clicked.connect(lambda: self.power_onoff_index(0))
-        self.bt_pwr_onoff2.clicked.connect(lambda: self.power_onoff_index(1))
-        self.bt_pwr_onoff3.clicked.connect(lambda: self.power_onoff_index(2))
-        self.bt_pwr_onoff4.clicked.connect(lambda: self.power_onoff_index(3))
-        self.bt_pwr_onoff5.clicked.connect(lambda: self.power_onoff_index(4))
-        self.bt_pwr_onoff6.clicked.connect(lambda: self.power_onoff_index(5))
-        self.bt_pwr_onoff7.clicked.connect(lambda: self.power_onoff_index(6))
-        self.bt_pwr_onoff8.clicked.connect(lambda: self.power_onoff_index(7))       
+        self.bt_pwr_off = [self.bt_pwr_off1, self.bt_pwr_off2, self.bt_pwr_off3, 
+                             self.bt_pwr_off4, self.bt_pwr_off5, self.bt_pwr_off6, 
+                             self.bt_pwr_off7, self.bt_pwr_off8]
+                
+        for i in range(PDU_IDX):
+            self.QWidgetBtnColor(self.bt_pwr_on[i], "white", "green")
+            self.QWidgetBtnColor(self.bt_pwr_off[i], "black")
+        
+        self.bt_pwr_on1.clicked.connect(lambda: self.power_onoff_index(0, ON))
+        self.bt_pwr_on2.clicked.connect(lambda: self.power_onoff_index(1, ON))
+        self.bt_pwr_on3.clicked.connect(lambda: self.power_onoff_index(2, ON))
+        self.bt_pwr_on4.clicked.connect(lambda: self.power_onoff_index(3, ON))
+        self.bt_pwr_on5.clicked.connect(lambda: self.power_onoff_index(4, ON))
+        self.bt_pwr_on6.clicked.connect(lambda: self.power_onoff_index(5, ON))
+        self.bt_pwr_on7.clicked.connect(lambda: self.power_onoff_index(6, ON))
+        self.bt_pwr_on8.clicked.connect(lambda: self.power_onoff_index(7, ON)) 
+        
+        self.bt_pwr_off1.clicked.connect(lambda: self.power_onoff_index(0, OFF))
+        self.bt_pwr_off2.clicked.connect(lambda: self.power_onoff_index(1, OFF))
+        self.bt_pwr_off3.clicked.connect(lambda: self.power_onoff_index(2, OFF))
+        self.bt_pwr_off4.clicked.connect(lambda: self.power_onoff_index(3, OFF))
+        self.bt_pwr_off5.clicked.connect(lambda: self.power_onoff_index(4, OFF))
+        self.bt_pwr_off6.clicked.connect(lambda: self.power_onoff_index(5, OFF))
+        self.bt_pwr_off7.clicked.connect(lambda: self.power_onoff_index(6, OFF))
+        self.bt_pwr_off8.clicked.connect(lambda: self.power_onoff_index(7, OFF))        
         
         self.chk_manual_test.clicked.connect(self.Periodic)
         self.chk_manual_test.setChecked(False)
@@ -243,12 +258,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
                         self.sts_monitor3, self.sts_monitor5, self.sts_monitor12, self.sts_monitor7,
                         self.sts_monitor8, self.sts_monitor9, self.sts_monitor10, self.sts_monitor11,
                         self.sts_monitor13, self.sts_monitor14] 
-                
-        #btn_txt = "Send Alert (T_%s>%d)" % (self.alert_label, self.alert_temperature)
+
+        '''                
         btn_txt = "Send Alert"
         self.chk_alert.setText(btn_txt)
         self.chk_alert.setChecked(True)
         self.chk_alert.clicked.connect(self.toggle_alert)
+        '''
         
         self.bt_com_tc1.clicked.connect(lambda: self.manual_command(TMC1))
         self.bt_com_tc2.clicked.connect(lambda: self.manual_command(TMC2))
@@ -267,7 +283,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         interval_sec = "Interval : %d s" % self.Period
         self.sts_interval.setText(interval_sec)
         
-        self.QWidgetLabelColor(self.sts_pdu_on, "red")
+        self.QWidgetLabelColor(self.sts_pdu_on, "green")
         self.QWidgetLabelColor(self.sts_pdu_off, "gray")
         
         self.QWidgetLabelColor(self.sts_monitor_ok, "green")
@@ -499,7 +515,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def pdu_monitor(self, con):
         clr = "gray"
         if con:
-            clr = "red"
+            clr = "green"
         self.QWidgetLabelColor(self.sts_pdu, clr) 
         
 
@@ -507,14 +523,9 @@ class MainWindow(Ui_Dialog, QMainWindow):
     def show_pdu_status(self):
         for i in range(PDU_IDX):
             if self.power_status[i] == ON:
-                self.QWidgetLabelColor(self.pdulist[i], "red")
-                self.bt_pwr_onoff[i].setText(OFF)
-                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "white", "green")
+                self.QWidgetLabelColor(self.pdulist[i], "green")
             else:
-                self.QWidgetLabelColor(self.pdulist[i], "gray")
-                self.bt_pwr_onoff[i].setText(ON)
-                self.QWidgetBtnColor(self.bt_pwr_onoff[i], "black") 
-       
+                self.QWidgetLabelColor(self.pdulist[i], "gray")       
         
     #-------------------------------
     # control and show 
@@ -549,8 +560,17 @@ class MainWindow(Ui_Dialog, QMainWindow):
 
     #-----------------------------
     # button
+    '''
     def power_onoff_index(self, idx):
         if self.power_status[idx] == ON:
+            msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx+1, OFF)
+        else:
+            msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx+1, ON)
+        self.publish_to_queue(msg)
+    '''
+    
+    def power_onoff_index(self, idx, onoff):
+        if onoff == OFF:
             msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx+1, OFF)
         else:
             msg = "%s %d %s" % (HK_REQ_PWR_ONOFF_IDX, idx+1, ON)
@@ -561,12 +581,14 @@ class MainWindow(Ui_Dialog, QMainWindow):
         msg = "%s %s %s" % (HK_REQ_MANUAL_CMD, self.sub_list[idx], self.e_sendto.text())
         self.publish_to_queue(msg)
         
-        
+    
+    '''    
     def toggle_alert(self):
         if not self.chk_alert.isChecked():
             self.set_alert_status_off()
             self.alarm_status = None
             self.alarm_status_back = self.alarm_status
+    '''
             
             
     def manaul_test(self, status):
@@ -606,7 +628,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.monitoring = False
                         
             self.log.send(self.iam, INFO, "Periodic Monitoring paused")
-            self.set_alert_status_off()
+            #self.set_alert_status_off()
         
         else:   
             self.manaul_test(False)
@@ -626,7 +648,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         if self.producer == None:   return
         
-        self.send_alert_if_needed()
+        #self.send_alert_if_needed()
         self.LoggingFun()
         
                         
@@ -667,11 +689,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
                       self.dtvalue[label_list[TM_1+6]],  
                       self.dtvalue[label_list[TM_1+7]]]  
 
-        #alert_status = "On(T>%d)" % self.alert_temperature
-        if self.chk_alert.isChecked():    
-            alert_status = "On"
-        else:
-            alert_status = "Off"
+        #if self.chk_alert.isChecked():    
+        #    alert_status = "On"
+        #else:
+            
+        alert_status = "Off"
         hk_entries.append(alert_status)
 
         # hk_entries to string
@@ -691,7 +713,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
             self.uploade_start = ti.time()
               
-        
+    '''    
     def send_alert_if_needed(self):
         if not self.chk_alert.isChecked():  return 
 
@@ -723,7 +745,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.alert_toggling = False
         self.alert_status.setText("Okay")
         self.QWidgetLabelColor(self.alert_status, "black") 
-
+    '''
         
     #----------------------
     # about gui set   
@@ -791,10 +813,10 @@ class MainWindow(Ui_Dialog, QMainWindow):
         for idx in range(COM_CNT):
             if not self.com_status[idx]:
                 self.alarm_status = ALM_ERR
-                if not self.alert_toggling:
-                    self.alert_toggling = True
-                    self.set_alert_status_on()                        
-                    self.sendToEngTools_status()
+                #if not self.alert_toggling:
+                #    self.alert_toggling = True
+                    #self.set_alert_status_on()                        
+                    #self.sendToEngTools_status()
                 break 
             
         # show lamp
@@ -843,7 +865,8 @@ class MainWindow(Ui_Dialog, QMainWindow):
             state = "normal"
         self.QShowValueVM(self.dpvalue, state)  
 
-        self.show_pdu_status()      
+        self.show_pdu_status()     
+        self.sendToEngTools_status() 
                             
         
         

@@ -2,7 +2,7 @@
 """
 Created on Nov 9, 2022
 
-Created on Nov 20, 2023
+Created on Apr 23, 2024
 
 @author: hilee
 """
@@ -68,6 +68,10 @@ class pdu(threading.Thread) :
         self.producer = None
         self.consumer_hk = None
         self.consumer_dt = None
+        
+        self.publshing = False
+        
+        self.publish_heartbeat()
         
     
     def __del__(self):
@@ -232,10 +236,27 @@ class pdu(threading.Thread) :
         self.producer.define_producer()     
         
         
-    def publish_to_queue(self, msg):
-        if self.producer == None:   return
+    def publish_heartbeat(self):
+        if self.producer == None or self.publshing:
+            threading.Timer(2, self.publish_heartbeat).start()
+            return
         
+        self.publshing = True
+        self.producer.send_message(self.sub_q, HEART_BEAT)
+        self.publshing = False
+        
+        msg = "%s ->" % HEART_BEAT
+        self.log.send(self.iam, DEBUG, msg)
+        
+        threading.Timer(HEART_BEAT_PUB, self.publish_heartbeat).start() # modify 20240423
+        
+        
+    def publish_to_queue(self, msg):
+        if self.producer == None or self.publshing:   return
+        
+        self.publshing = True
         self.producer.send_message(self.sub_q, msg)
+        self.publshing = False
         
         msg = "%s ->" % msg
         self.log.send(self.iam, INFO, msg)
