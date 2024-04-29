@@ -91,7 +91,7 @@ class monitor(threading.Thread) :
         
 
     def connect_to_component(self):
-            
+           
         try:            
             self.comSocket = socket(AF_INET, SOCK_STREAM)
             self.comSocket.settimeout(TOUT)
@@ -110,8 +110,8 @@ class monitor(threading.Thread) :
             
             self.re_connect_to_component()
 
-            
-        msg = "%s %d" % (HK_REQ_COM_STS, self.comStatus)   
+
+        msg = "%s %d" % (HK_REQ_COM_STS, self.comStatus)
         self.publish_to_queue(msg)    
                  
     

@@ -2,12 +2,13 @@
 """
 Created on Feb 15, 2023
 
-Modified on Apr 23, 2024
+Modified on Apr 27, 2024
 
 @author: hilee
 """
 
 import os, sys
+from pickle import FALSE
 import threading
 
 import time as ti
@@ -156,6 +157,20 @@ class Inst_Seq(threading.Thread):
         self.dcs_setparam = [False for _ in range(DCS_CNT)]
         self.acquiring = [False for _ in range(DCS_CNT)]
         self.rebooting = [False for _ in range(DCS_CNT)]
+        
+        # add 20240427 for heartbeat
+        self.heartbeat_check_interval = 60
+        self.heartbeat_time = [-200 for _ in range(DCS_CNT)]
+        self.alive_dcs = [False for _ in range(DCS_CNT)]
+
+        # add 20240427 for timeout response
+        self.timeout_timer = [None for _ in range(7)]
+        self.wait_t = 5
+        self.timeout_timer[ACT_TEST] = threading.Timer(9 + self.wait_t, lambda: self.check_timeout_error("TEST"))
+        self.timeout_timer[ACT_INIT] = threading.Timer(3 + self.wait_t, lambda: self.check_timeout_error("INIT"))
+        self.timeout_timer[ACT_APPLY] = threading.Timer(1 + self.wait_t, lambda: self.check_timeout_error("APPLY"))
+        #self.timeout_timer[ACT_ABORT] = threading.Timer(1 + self.wait_t, lambda: self.check_timeout_error("ABORT"))
+        #self.timeout_timer[ACT_ENG] = threading.Timer(1 + self.wait_t, lambda: self.check_timeout_error("ENGINEERING"))
 
         self.actRequested = {}
         self.tcs_info = {}
@@ -168,9 +183,14 @@ class Inst_Seq(threading.Thread):
         self.frame_mode = ""    #A, B, ON, OFF
                                 
         self.obs_start_T = 0.0
+        
+        self.offset_p, self.offset_q = 0.0, 0.0
 
         #add 20240104
         self.stop_by_ObsApp = False
+
+        # add 20240427
+        self.cur_Seq_command = ""
         
         _hdul = pyfits.open(WORKING_DIR + "ics_pack/code/InstSeq/slitmaskv0_igrins2.fits")
         _mask = _hdul[0].data
@@ -189,6 +209,20 @@ class Inst_Seq(threading.Thread):
         # add 20240416
         giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.ENGINEERING, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
         
+        #add 20240426
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.DATUM, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.PARK, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.VERIFY, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.END_VERIFY, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.GUIDE, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.END_GUIDE, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.END_OBSERVE, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.PAUSE, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.CONTINUE, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.STOP, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        giapi.CommandUtil.subscribeSequenceCommand(giapi.command.SequenceCommand.STOP_CYCLE, giapi.command.ActivitySet.SET_PRESET_START, self._handler)
+        
+
         # for sending the current obs progress
         giapi.StatusUtil.createStatusItem(IS_STS_OBSTIME, giapi.type.Type.FLOAT)
         giapi.StatusUtil.createStatusItem(IS_STS_CURRENT, giapi.type.Type.STRING)
@@ -201,6 +235,9 @@ class Inst_Seq(threading.Thread):
         
         self.publshing = False
         self.publish_heartbeat()
+        
+        for idx in range(DCS_CNT):
+            self.monit_heartbeat(idx)
                 
         if self.reboot:
             print("restart")                                 
@@ -258,9 +295,22 @@ class Inst_Seq(threading.Thread):
             # It is necessary to know if the apply detector will consume more than 300 milisenconds 
             # in that case, it would be necessary to reponse with STARTED
             
+            self.cur_Seq_command = seq_cmd  # add 20240427
             # ----------------------------------------------------
             # SequenceCommand.TEST
             if seq_cmd == giapi.command.SequenceCommand.TEST:  
+                
+                # add 20240425 if dc core shutdown, response error!!!
+                if not self.alive_dcs[SVC] or not self.alive_dcs[H] or not self.alive_dcs[K]:
+                    sts = self.check_alive()
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR: " + sts)
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, sts)
+                
+                # add 20240424 if InstSeq receive TEST command during acquiring, response error!!!
+                if self.acquiring[SVC] or self.acquiring[H] or self.acquiring[K]:
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                    
                 if activity == giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, INFO, "SequenceCommand.TEST, Activity.PRESET_START")
                     
@@ -276,6 +326,9 @@ class Inst_Seq(threading.Thread):
                     self.apply_mode = TEST_MODE
                 
                     self.set_exp("all")
+
+                    # add 20240427 start: timeout timer
+                    self.timeout_timer[ACT_TEST].start()
                     
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
@@ -321,7 +374,17 @@ class Inst_Seq(threading.Thread):
             # ----------------------------------------------------
             # SequenceCommand.INIT    
             elif seq_cmd == giapi.command.SequenceCommand.INIT:
+                
+                # add 20240425 if dc core shutdown, response error!!!
+                if not self.alive_dcs[SVC] or not self.alive_dcs[H] or not self.alive_dcs[K]:
+                    sts = self.check_alive()
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR: " + sts)
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, sts)
+                
                 if activity == giapi.command.Activity.PRESET_START:
+                    
+                    self.apply_mode = None  # add 20240424
+                    
                     self.log.send(self.iam, INFO, "SequenceCommand.INIT, Activity.PRESET_START")
                     
                     self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_INIT}
@@ -330,6 +393,9 @@ class Inst_Seq(threading.Thread):
                         self.dcs_ready[idx] = False
                         
                     self.initialize2()
+
+                    # add 20240427 start: timeout timer
+                    self.timeout_timer[ACT_INIT].start()
                 
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
@@ -341,14 +407,24 @@ class Inst_Seq(threading.Thread):
             # ----------------------------------------------------
             # SequenceCommand.APPLY                       
             elif seq_cmd == giapi.command.SequenceCommand.APPLY:
+                
+                # add 20240425 if dc core shutdown, response error!!!
+                if not self.alive_dcs[SVC] or not self.alive_dcs[H] or not self.alive_dcs[K]:
+                    sts = self.check_alive()
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR: " + sts)
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, sts)
+                
+                # add 20240424 if InstSeq receive TEST command during acquiring, response error!!!
+                if self.acquiring[SVC] or self.acquiring[H] or self.acquiring[K]:
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                
                 _exptime_sci, _FS_number_sci = 0.0, 0
                 if activity == giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, INFO, "SequenceCommand.APPLY, Activity.PRESET_START")
                     
                     self.actRequested[action_id] = {'t': t, 'response': None, 'numAct': ACT_APPLY}
-                    
-                    offset_p, offset_q = 0.0, 0.0
-                    
+                                        
                     for k in config.getKeys():
                         keys = config.getValue(k)
                         # keys = ig2:dcs:expTime=1.63 / ig2:seq:state="acq" or "sci"
@@ -361,22 +437,24 @@ class Inst_Seq(threading.Thread):
                             print(f'after asigned {self.cur_expTime}')
                         
                         elif k == "ig2:seq:state":  self.apply_mode = keys
-                        elif k == "ig2:seq:p":      offset_p = float(keys.c_str())
-                        elif k == "ig2:seq:q":      offset_q = float(keys.c_str())
+                        elif k == "ig2:seq:p":      self.offset_p = float(keys.c_str())
+                        elif k == "ig2:seq:q":      self.offset_q = float(keys.c_str())
                         
                     #send to ObsApp
-                    print(offset_p, offset_q)
-                    msg = "%s %f %f" % (INSTSEQ_PQ, offset_p, offset_q)
+                    print(self.offset_p, self.offset_q)
+                    msg = "%s %f %f" % (INSTSEQ_PQ, self.offset_p, self.offset_q)
                     self.publish_to_queue(msg)
                     ti.sleep(0.1)
-                    if offset_p == 0 and offset_q > 0:    self.frame_mode = "A"
-                    elif offset_p == 0 and offset_q < 0:  self.frame_mode = "B"
-                    elif offset_p == 0 and offset_q == 0: self.frame_mode = "ON"
-                    elif offset_p != 0 and offset_q != 0: self.frame_mode = "OFF"
-                    
+                    if self.offset_p == 0 and self.offset_q > 0:    self.frame_mode = "A"
+                    elif self.offset_p == 0 and self.offset_q < 0:  self.frame_mode = "B"
+                    elif self.offset_p == 0 and self.offset_q == 0: self.frame_mode = "ON"
+                    elif self.offset_p != 0 and self.offset_q != 0: self.frame_mode = "OFF"
+                    setExpCmd=self.dcs_list[SVC]
+                    expTime=1.63 
+                    FS_number=1
                     if self.apply_mode == ACQ_MODE:
                         self.dcs_setparam[SVC] = False
-                        self.set_exp(self.dcs_list[SVC])
+                        #self.set_exp(self.dcs_list[SVC])
                         
                     elif self.apply_mode == SCI_MODE:
                         self.dcs_setparam[SVC] = False
@@ -392,8 +470,14 @@ class Inst_Seq(threading.Thread):
                             
                         print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
                         
-                        if self.cur_ObsApp_taking == 0:  self.set_exp("all", _exptime_sci, _FS_number_sci)
-                        else:                           self.set_exp("H_K", _exptime_sci, _FS_number_sci)
+                        #if self.cur_ObsApp_taking == 0:  self.set_exp("all", _exptime_sci, _FS_number_sci)
+                        #else:                           self.set_exp("H_K", _exptime_sci, _FS_number_sci)
+                        expTime = _exptime_sci
+                        FS_number = _FS_number_sci
+                        if self.cur_ObsApp_taking == 0: 
+                            setExpCmd = "all"
+                        else:                           
+                            setExpCmd = "H_K"
                         
                     elif self.apply_mode == DAYCAL_MODE:
                         self.dcs_setparam[H] = False
@@ -408,10 +492,14 @@ class Inst_Seq(threading.Thread):
                             
                         print(f'exptime_sci: {_exptime_sci} sending {_FS_number_sci}')
                         
-                        self.set_exp("H_K", _exptime_sci, _FS_number_sci)
+                        #self.set_exp("H_K", _exptime_sci, _FS_number_sci)
+                        setExpCmd = "H_K"
+                        expTime = _exptime_sci
+                        FS_number = _FS_number_sci
                             
-                    self.log.send(self.iam, DEBUG, self.apply_mode)
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")                                                
+                    #self.log.send(self.iam, DEBUG, self.apply_mode)
+                    self.log.send(self.iam, INFO, f'giapi.HandlerResponse.STARTED applymode: {self.apply_mode}')                                                
+                    self.set_exp(setExpCmd, expTime, FS_number)
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
                 else:
@@ -421,6 +509,19 @@ class Inst_Seq(threading.Thread):
             # ----------------------------------------------------
             # SequenceCommand.OBSERVE                                                        
             elif seq_cmd == giapi.command.SequenceCommand.OBSERVE:
+                
+                #self.timeout_timer[ACT_OBSERVE].cancel()
+                # add 20240425 if dc core shutdown, response error!!!
+                if not self.alive_dcs[SVC] or not self.alive_dcs[H] or not self.alive_dcs[K]:
+                    sts = self.check_alive()
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR: " + sts)
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, sts)
+                
+                # add 20240424 if InstSeq receive TEST command during acquiring, response error!!!
+                if self.acquiring[SVC] or self.acquiring[H] or self.acquiring[K]:
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                
                 if activity == giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, INFO, "SequenceCommand.OBSERVE, Activity.PRESET_START")
                     self.cur_action_id_old = action_id
@@ -450,13 +551,9 @@ class Inst_Seq(threading.Thread):
                     
                     self.obs_time_cur = 0
                     self.setValue_to_SeqExec(IS_STS_CURRENT, EXPOSING, INFO)
-                    #self.log.send(self.iam, INFO, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, EXPOSING)")
-                    #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, EXPOSING)
-                    #giapi.StatusUtil.postStatus()
                     self.obs_progress = EXPOSING
                     threading.Timer(1, self.exp_progress).start()
                     
-                    #self.obs_start_ut = datetime.datetime.utcnow()
                     self.obs_start_T = ti.time()
                     
                     if self.apply_mode == ACQ_MODE:
@@ -476,27 +573,22 @@ class Inst_Seq(threading.Thread):
                         self.acquiring[H] = True
                         self.acquiring[K] = True
                         self.start_acquisition("H_K")
-                        
+
                     else:
                         self.setValue_to_SeqExec(IS_STS_CURRENT, ERROR, ERROR)
-                        #self.log.send(self.iam, ERROR, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, ERROR)")
-                        #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, ERROR)
-                        #giapi.StatusUtil.postStatus()
                         
                         self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
                         return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                       
+                   
+                    # add 20240427 start: timeout timer
+                    self.timeout_timer[ACT_OBSERVE] = threading.Timer(self.obs_time + 20, lambda: self.check_timeout_error("OBSERVE"))
+                    self.timeout_timer[ACT_OBSERVE].start()
 
-                    # request TCS info
-                    #self.req_from_TCS()
-                    
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
                 else:
                     self.setValue_to_SeqExec(IS_STS_CURRENT, ERROR, ERROR)
-                    #self.log.send(self.iam, ERROR, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, ERROR)")
-                    #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, ERROR)
-                    #giapi.StatusUtil.postStatus()
                     
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
                     return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "") 
@@ -505,6 +597,15 @@ class Inst_Seq(threading.Thread):
             # add 20240416
             # SequenceCommand.ENGINEERING
             elif seq_cmd == giapi.command.SequenceCommand.ENGINEERING:
+               
+                self.timeout_timer[ACT_OBSERVE].cancel()
+
+                # add 20240425 if dc core shutdown, response error!!!
+                if not self.alive_dcs[SVC] or not self.alive_dcs[H] or not self.alive_dcs[K]:
+                    sts = self.check_alive()
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR: " + sts)
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, sts)
+                
                 if activity != giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
                     return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "No implemented the PRESET and START activity. Please, execute the PRESET_START")
@@ -523,6 +624,15 @@ class Inst_Seq(threading.Thread):
             # ----------------------------------------------------
             # SequenceCommand.ABORT        
             elif seq_cmd == giapi.command.SequenceCommand.ABORT:
+                
+                self.timeout_timer[ACT_OBSERVE].cancel()
+
+                # add 20240425 if dc core shutdown, response error!!!
+                if not self.alive_dcs[SVC] or not self.alive_dcs[H] or not self.alive_dcs[K]:
+                    sts = self.check_alive()
+                    self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR: " + sts)
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, sts)
+                
                 if activity != giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
                     return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
@@ -532,10 +642,79 @@ class Inst_Seq(threading.Thread):
                 if self.actRequested[self.cur_action_id_old]['response'] != giapi.HandlerResponse.COMPLETED:
                     print(f'Sending completed of {self.cur_action_id_old}')
                     giapi.CommandUtil.postCompletionInfo(self.cur_action_id_old, giapi.HandlerResponse.createError("ABORTED by the user"))     
+                    self.cur_Seq_command = "" # add = 20240427
+
                 self.actRequested[action_id] = {'t' : t, 'response' : None, 'numAct':ACT_ABORT}
                 self.stop_acquistion()
                 print (f' responded STARTED')
                 return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "SENT the Detector ABORT COMMAND")
+            
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.DATUM
+            elif seq_cmd == giapi.command.SequenceCommand.DATUM:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.PARK
+            elif seq_cmd == giapi.command.SequenceCommand.PARK:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.VERIFY
+            elif seq_cmd == giapi.command.SequenceCommand.VERIFY:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.END_VERIFY
+            elif seq_cmd == giapi.command.SequenceCommand.END_VERIFY:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.GUIDE
+            elif seq_cmd == giapi.command.SequenceCommand.GUIDE:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.END_GUIDE
+            elif seq_cmd == giapi.command.SequenceCommand.END_GUIDE:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.END_OBSERVE
+            elif seq_cmd == giapi.command.SequenceCommand.END_OBSERVE:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.PAUSE
+            elif seq_cmd == giapi.command.SequenceCommand.PAUSE:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.CONTINUE
+            elif seq_cmd == giapi.command.SequenceCommand.CONTINUE:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.STOP
+            elif seq_cmd == giapi.command.SequenceCommand.STOP:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
+            #------------------------------------------------------
+            # add 20240426
+            # SequenceCommand.STOP_CYCLE
+            elif seq_cmd == giapi.command.SequenceCommand.STOP_CYCLE:
+                return instDummy.DataResponse(giapi.HandlerResponse.COMPLETED, "")
+
 
         except Exception as e:
             print (e)
@@ -666,14 +845,43 @@ class Inst_Seq(threading.Thread):
         self.publish_to_queue(msg)
                         
                 
+    # add 20240427         
+    def monit_heartbeat(self, idx):
+                
+        if ti.time() - self.heartbeat_time[idx] > self.heartbeat_check_interval: 
             
+            if self.alive_dcs[idx]:     # when alive -> die, send alarm just 1 time
+                sts = self.check_alive()
+                self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR: " + sts)
+                instDummy.DataResponse(giapi.HandlerResponse.ERROR, sts)
+                
+            self.alive_dcs[idx] = False
+            
+        else:
+            self.alive_dcs[idx] = True
+
+        threading.Timer(20, lambda: self.monit_heartbeat(idx)).start()
+                
+        
+    # add 20240425 if dc core shutdown, response error!!!
+    def check_alive(self):
+        dcs = ["SVC", "H", "K"]
+        sts = "" 
+        for idx in range(DCS_CNT):
+            if not self.alive_dcs[idx]:
+                sts += dcs[idx] + ": dead, " 
+                
+        return sts[:-2]    
+                    
+                    
+    # add 20240425 for heartbeat        
     def callback_svc(self, ch, method, properties, body):
         cmd = body.decode()        
         param = cmd.split()            
 
         msg = "<- [DCSS] %s" % cmd
         self.log.send(self.iam, INFO, msg)
- 
+    
         self.dcs_data_processing_SVC(param)
                                                
     
@@ -693,18 +901,47 @@ class Inst_Seq(threading.Thread):
                     
         msg = "<- [DCSK] %s" % cmd
         self.log.send(self.iam, INFO, msg)
-        
+                
         self.dcs_data_processing_HK(param, K)
             
-            
+    
+
+    # add 20240427 timeout check
+    def check_timeout_error(self, seq_cmd):
+        self.response_complete(False)
+        self.log.send(self.iam, ERROR, f"{seq_cmd} command - timeout")
+
+
     def dcs_data_processing_SVC(self, param):
+        
+        # add 20240427 for heartbeat
+        self.heartbeat_time[SVC] = ti.time() 
+        self.alive_dcs[SVC] = True 
+ 
         if param[0] == CMD_INITIALIZE1:
+
+            # add 20240427
+            if param[2] == "0":
+                #self.detector_err(self, "svc: "+ param[0])
+                self.response_complete(False)
+                return
+
             msg = "%s %s %d" % (CMD_INIT2_DONE, self.dcs_list[SVC], self.simulation_mode)
             self.publish_to_queue(msg)    
             
         elif param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
-            if self.cur_action_id == 0: return
-                        
+            if self.apply_mode != None or self.cur_action_id == 0: return   # modify 20240424
+            
+            # add 20240427
+            if self.cur_Seq_command != giapi.command.SequenceCommand.INIT:
+                return
+
+            # add 20240427
+            if param[1] == "0":
+                #self.detector_err(self, "svc: "+ param[0])
+                self.response_complete(False)
+                return
+
             self.dcs_ready[SVC] = True
             
             if self.rebooting[SVC]:
@@ -713,10 +950,21 @@ class Inst_Seq(threading.Thread):
             else:
                 if self.dcs_ready[SVC] and self.dcs_ready[H] and self.dcs_ready[K]:
                     self.response_complete(bool(int(param[1])))
+                    # add 20240427 stop: timeout timer
+                    self.timeout_timer[ACT_INIT].cancel()
     
         elif param[0] == CMD_SETFSPARAM_ICS:   
             if self.apply_mode == None or self.cur_action_id == 0:  return
             if self.cur_ObsApp_taking != 0:                              return
+
+            # add 20240427
+            if self.cur_Seq_command != giapi.command.SequenceCommand.APPLY:
+                return
+
+            # add 20240427
+            #if param[1] == "0":
+            #    self.detector_err(self, "svc: "+ param[0])
+            #    return
             
             print('SVC(CMD_SETFSPARAM_ICS)', self.apply_mode) 
             
@@ -727,8 +975,8 @@ class Inst_Seq(threading.Thread):
             if self.apply_mode == TEST_MODE:
                 if res:
                     if self.dcs_setparam[SVC] and self.dcs_setparam[H] and self.dcs_setparam[K]:
-                        for idx in range(DCS_CNT):
-                            self.acquiring[idx] = True
+                        for i in range(DCS_CNT):
+                            self.acquiring[i] = True
                         self.start_acquisition()
                 else:
                     self.response_complete(False)
@@ -736,19 +984,25 @@ class Inst_Seq(threading.Thread):
             elif self.apply_mode == ACQ_MODE:
                 self.response_complete(res)
 
+                # add 20240427 stop: timeout timer
+                self.timeout_timer[ACT_APPLY].cancel()
+
                 # request TCS info     
                 #self.req_from_TCS()
                 
-        elif param[0] == CMD_ACQUIRERAMP_ICS:
-            #if not self.acquiring[SVC]:
-            #    return    
-            
+        elif param[0] == CMD_ACQUIRERAMP_ICS:            
             if self.apply_mode == None or self.cur_action_id == 0: return
+
+            # add 20240427
+            if self.cur_Seq_command != giapi.command.SequenceCommand.OBSERVE:
+                return
+
+            # add 20240427
+            #if param[3] == "0":
+            #    self.detector_err(self, "svc: "+ param[0])
+            #    return
             
             print('SVC(CMD_ACQUIRERAMP_ICS)', self.apply_mode)
-            
-            # request TCS info
-            #self.req_from_TCS()
             
             res = bool(int(param[3]))
             
@@ -757,6 +1011,8 @@ class Inst_Seq(threading.Thread):
                 if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
                     self.apply_mode = None
                     self.response_complete(res)
+                    # add 20240427 stop: timeout timer
+                    self.timeout_timer[ACT_TEST].cancel()
                        
             elif self.apply_mode == ACQ_MODE:
                 if not self.acquiring[SVC]:     return
@@ -765,33 +1021,45 @@ class Inst_Seq(threading.Thread):
                 #add 20240104
                 if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
                     self.apply_mode = None
+
+                # add 20240427 start: timeout timer
+                self.timeout_timer[ACT_OBSERVE].cancel()
                 if res:
                     self.svc_file_list.append(param[2])
                     self.save_fits_MEF(self.dcs_list[SVC])
+
+                    # add 20240427 start: timeout timer
+                    #self.timeout_timer[ACT_OBSERVE].cancel()
+
                 else:
                     self.response_complete(False)
                     
                     self.setValue_to_SeqExec(IS_STS_CURRENT, ERROR, ERROR)
-                    #self.log.send(self.iam, ERROR, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, ERROR)")
-                    #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, ERROR)
-                    #giapi.StatusUtil.postStatus()
                 
             elif self.apply_mode == SCI_MODE:
                 
-                self.acquiring[SVC] = False
-                #print("self.cur_number_svc", self.cur_number_svc)
+                #self.acquiring[SVC] = False    # remove 20240424
                 if self.cur_number_svc == 1:                        self.svc_file_list.append(param[2])
-                if self.cur_number_svc == self.out_of_number_svc:   self.cur_number_svc = 0
+                if self.cur_number_svc == self.out_of_number_svc:   self.cur_number_svc = 0  
                 
                 self.cur_number_svc += 1
+                
+                # add 20240424
+                if not self.acquiring[SVC]:     return
+                
                 if self.cur_ObsApp_taking == 0 and self.acquiring[H] and self.acquiring[K]:     #add 20240105
-                    self.acquiring[SVC] = True
+                    #self.acquiring[SVC] = True # remove 20240424
                     ti.sleep(1) #for test
                     self.start_acquisition(self.dcs_list[SVC])
             
         elif param[0] == CMD_STOPACQUISITION:
             if self.apply_mode == None or self.cur_action_id == 0: return
             
+            # add 20240427
+            #if not (self.cur_Seq_command == giapi.command.SequenceCommand.ABORT or \
+            #    self.cur_Seq_command == giapi.command.SequenceCommand.ENGINEERING):
+            #    return
+
             #add 20240104
             if self.stop_by_ObsApp:
                 self.stop_by_ObsApp = False
@@ -802,7 +1070,6 @@ class Inst_Seq(threading.Thread):
             self.acquiring[SVC] = False
                 
             if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                #if self.apply_mode != None:
                 self.apply_mode = None
                 # This is sleep avoid a bug. 
                 ti.sleep(0.400)
@@ -810,13 +1077,37 @@ class Inst_Seq(threading.Thread):
                     
                     
     def dcs_data_processing_HK(self, param, idx):
+        
+        # add 20240427 for heartbeat
+        self.heartbeat_time[idx] = ti.time() 
+        self.alive_dcs[idx] = True
+        
         if param[0] == CMD_INITIALIZE1:
+
+            # add 20240427
+            if param[2] == "0":
+                #if idx == H:    self.detector_err(self, "H: "+ param[0])
+                #else:           self.detector_err(self, "K: "+ param[0])
+                self.response_complete(False)
+                return
+
             msg = "%s %s %d" % (CMD_INIT2_DONE, self.dcs_list[idx], self.simulation_mode)
             self.publish_to_queue(msg)    
             
         elif param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
             if self.cur_action_id == 0: return
-            
+           
+            # add 20240427
+            if self.cur_Seq_command != giapi.command.SequenceCommand.INIT:
+                return
+
+            # add 20240427
+            if param[1] == "0":
+                #if idx == H:    self.detector_err(self, "H: "+ param[0])
+                #else:           self.detector_err(self, "K: "+ param[0])
+                self.response_complete(False)
+                return
+
             self.dcs_ready[idx] = True
             
             if self.rebooting[H]:
@@ -825,67 +1116,102 @@ class Inst_Seq(threading.Thread):
             else:
                 if self.dcs_ready[SVC] and self.dcs_ready[H] and self.dcs_ready[K]:
                     self.response_complete(bool(int(param[1])))
+                    # add 20240427 stop: timeout timer
+                    self.timeout_timer[ACT_INIT].cancel()
     
         elif param[0] == CMD_SETFSPARAM_ICS:   
             if self.apply_mode == None or self.cur_action_id == 0: return
-            
+           
+            # add 20240427
+            if self.cur_Seq_command != giapi.command.SequenceCommand.APPLY:
+                return
+
+            # add 20240427
+            if param[1] == "0":
+                #if idx == H:    self.detector_err(self, "H: "+ param[0])
+                #else:           self.detector_err(self, "K: "+ param[0])
+                self.response_complete(False)
+                return
+
             print(idx, '(CMD_SETFSPARAM_ICS)', self.apply_mode)
             
             self.dcs_setparam[idx] = True  
-            #self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ACCEPTED
             
             if self.apply_mode == TEST_MODE:
                 if self.dcs_setparam[SVC] and self.dcs_setparam[H] and self.dcs_setparam[K]:
-                    for idx in range(DCS_CNT):
-                        self.acquiring[idx] = True
+                    for i in range(DCS_CNT):
+                        self.acquiring[i] = True
                     self.start_acquisition()
                     
             else:
                 if self.dcs_setparam[H] and self.dcs_setparam[K]:
                     self.response_complete(bool(int(param[1])))
+
+                    # add 20240427 stop: timeout timer
+                    self.timeout_timer[ACT_APPLY].cancel()
         
         elif param[0] == CMD_ACQUIRERAMP_ICS:
             if not self.acquiring[idx]:     return   
             if self.apply_mode == None or self.cur_action_id == 0: return
-            
+           
+            # add 20240427
+            if self.cur_Seq_command != giapi.command.SequenceCommand.OBSERVE:
+                return
+
+            # add 20240427
+            #if param[3] == "0":
+            #    if idx == H:    self.detector_err(self, "H: "+ param[0])
+            #    else:           self.detector_err(self, "K: "+ param[0])
+            #    return
+
             print(idx, '(CMD_ACQUIRERAMP_ICS)', self.apply_mode)
             
             res = bool(int(param[3]))
+            
+            self.acquiring[SVC] = False     # add 20240424
             
             self.acquiring[idx] = False
             if self.apply_mode == TEST_MODE:
                 if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
                     self.apply_mode = None
                     self.response_complete(res)
+                    # add 20240427 stop: timeout timer
+                    self.timeout_timer[ACT_TEST].cancel()
                 
-            #change 20240104    
-            #if self.apply_mode == SCI_MODE:
             else:
                 self.filepath[idx-1] = param[2]
                 if not self.acquiring[H] and not self.acquiring[K]:
+                    # add 20240427 start: timeout timer
+                    self.timeout_timer[ACT_OBSERVE].cancel()
+
                     self.apply_mode = None
-                    if res: self.save_fits_MEF()
+                    if res: 
+                        self.save_fits_MEF()
+     
+                        # add 20240427 start: timeout timer
+                        #self.timeout_timer[ACT_OBSERVE].cancel()
                     else:
                         self.response_complete(False)
                         
                         self.setValue_to_SeqExec(IS_STS_CURRENT, ERROR, ERROR)
-                        #self.log.send(self.iam, ERROR, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, ERROR)")
-                        #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, ERROR)   
-                        #giapi.StatusUtil.postStatus()
             
         elif param[0] == CMD_STOPACQUISITION:
             if self.apply_mode == None or self.cur_action_id == 0: return
-            
+           
+            # add 20240427
+            #if not (self.cur_Seq_command == giapi.command.SequenceCommand.ABORT or \
+            #    self.cur_Seq_command == giapi.command.SequenceCommand.ENGINEERING):
+            #    return
+
             print(idx, '(CMD_STOPACQUISITION)', self.apply_mode)    
             
             self.acquiring[idx] = False
                 
             if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                #if self.apply_mode != None:
-                    self.apply_mode = None
-                    # This is sleep avoid a bug. 
-                    ti.sleep(0.400)
-                    self.response_complete(True)
+                self.apply_mode = None
+                # This is sleep avoid a bug. 
+                ti.sleep(0.400)
+                self.response_complete(True)
 
 
     def response_complete(self, status=False):
@@ -913,6 +1239,7 @@ class Inst_Seq(threading.Thread):
         #    giapi.CommandUtil.postCompletionInfo(self.cur_action_id, giapi.HandlerResponse.create(self.actRequested[self.cur_action_id]['response']))      
                  
         self.cur_action_id = 0
+        self.cur_Seq_command = ""   # add 20240427
 
 
     def restart_icc(self):
@@ -927,6 +1254,8 @@ class Inst_Seq(threading.Thread):
         
         for idx in range(DCS_CNT):
             self.rebooting[idx] = False
+
+        self.cur_Seq_command = "" # add 20240427
             
             
     def power_onoff(self, onoff):
@@ -1002,9 +1331,6 @@ class Inst_Seq(threading.Thread):
         if self.obs_progress != IDLE: #0 <= self.obs_time_cur < self.obs_time and self.obs_progress != IDLE:                
             if self.obs_progress == EXPOSING and self.obs_time_readout <= self.obs_time_cur <= self.obs_time_createMEF:
                 self.setValue_to_SeqExec(IS_STS_CURRENT, FOWLER_BACK, INFO)
-                #self.log.send(self.iam, INFO, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, READOUT)")
-                #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, READOUT) 
-                #giapi.StatusUtil.postStatus()
                 self.obs_progress = FOWLER_BACK
                 
             self.log.send(self.iam, INFO, f"giapi.StatusUtil.setValueAsInt(IS_STS_TIMEPROG, {int(self.obs_time) - self.obs_time_cur})")
@@ -1025,26 +1351,20 @@ class Inst_Seq(threading.Thread):
         
         for idx, svc_name in enumerate(self.svc_file_list):
             # read data and header
-            #msg = "create_cube %d %s" % (idx, svc_name)
-            #self.log.send(self.iam, DEBUG, msg)
             filepath = "%sIGRINS/dcss/Fowler/%s" % (WORKING_DIR, svc_name)
             _hdul = pyfits.open(filepath)
             _img = _hdul[0].data
             _header = _hdul[0].header
             _hdul.close()
-            #msg = "closed %s" % svc_name
-            #self.log.send(self.iam, DEBUG, msg)
             
             # make cube
             cx, cy = int(self.slit_cen[0]), int(self.slit_cen[1])
-            #pixelscale = self.pixel_scale / 3600.
             
             svc_proc = svc_process.SlitviewProc(self.mask_svc)
             _header.set("SVC-IDX", idx+1, "Number of SVC data")
             slices = slice(cx-128, cx+128), slice(cx-128, cy+128)
             hdu_list = svc_proc.get_hdulist(_header, _img, slices)
-            #update_header2(hdu_list[1].header, cx, cy, pixelscale)
-            #update_header2(hdu_list[2].header, 128, 128, pixelscale)
+
             svc_list.append(hdu_list[1].data)
             cutout_list.append(hdu_list[2].data)
             
@@ -1123,7 +1443,11 @@ class Inst_Seq(threading.Thread):
                     _header = _hdul[0].header
                     if idx == 0:    gain=2.5
                     else:           gain=1.8
-                    _header.set("GAIN", gain, "[electrons/ADU], Conversion Gain")                
+                    _header.set("GAIN", gain, "[electrons/ADU], Conversion Gain") 
+                    
+                    # add 20240427
+                    _header.set("POFFSET0", self.offset_p, "Telescope offset in p in arcsec (NOT ACCUMALTED)")
+                    _header.set("QOFFSET0", self.offset_q, "Telescope offset in q in arcsec (NOT ACCUMALTED)")
                     #-----------------------------------------------------------
                     
                     _hdul.close()
@@ -1140,9 +1464,6 @@ class Inst_Seq(threading.Thread):
                 self.response_complete(False)
                 
                 self.setValue_to_SeqExec(IS_STS_CURRENT, ERROR, ERROR)
-                #self.log.send(self.iam, ERROR, "giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, ERROR)")
-                #giapi.StatusUtil.setValueAsString(IS_STS_CURRENT, ERROR)
-                #giapi.StatusUtil.postStatus()
                 
                 return
                 

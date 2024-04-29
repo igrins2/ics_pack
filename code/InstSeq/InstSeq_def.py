@@ -3,7 +3,7 @@
 """
 Created on Feb 10, 2023
 
-Modified on Apr 23, 2024
+Modified on Apr 25, 2024
 
 @author: hilee
 """
@@ -53,6 +53,7 @@ ACT_INIT = 2
 ACT_APPLY = 3
 ACT_OBSERVE = 4
 ACT_ABORT = 5
+ACT_ENG = 6
 
 END_SEQ_MODE = "endsequence"
 
@@ -65,6 +66,7 @@ T_readout = {1:0.5, 2:1.5, 4:2.5, 8:3, 16:4}
 T_fowler_cal = {1:0.586, 2:0.939, 4:1.595, 8:3.1364, 16:6.2142}
 
 HEART_BEAT_PUB = 30 # add 20240423
+HEART_BEAT_CHK = 40 # add 20240425
 
 #EXIT = "Exit"
 HK_REQ_PWR_ONOFF = "PowerOnOff" #pdu

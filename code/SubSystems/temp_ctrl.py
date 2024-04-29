@@ -11,6 +11,7 @@ import os, sys
 from socket import *
 import threading
 import time as ti
+import traceback
 
 from distutils.util import strtobool
 
@@ -65,7 +66,7 @@ class temp_ctrl(threading.Thread):
         self.publshing = False
         
         self.prev_cmd = ""
-        #self.pause = False
+        self.pause = False
         
         if self.iam == "tmc3":
             self.com_len = 4            
@@ -110,11 +111,12 @@ class temp_ctrl(threading.Thread):
             msg = "connected"
             self.log.send(self.iam, INFO, msg)          
             
-        except:
+        except Exception as e:
+            e = traceback.print_exc()
             self.comSocket = None
             self.comStatus = False
             
-            msg = "disconnected"
+            msg = "disconnected Error %s" % (e)
             self.log.send(self.iam, ERROR, msg)
                         
             self.re_connect_to_component()
@@ -128,6 +130,8 @@ class temp_ctrl(threading.Thread):
         
         msg = "trying to connect again"
         self.log.send(self.iam, WARNING, msg)
+
+        ti.sleep(1)
             
         if self.comSocket != None:
             self.close_component()
@@ -217,7 +221,11 @@ class temp_ctrl(threading.Thread):
             
     
     def start_monitoring(self):
-        
+       
+        if self.pause:
+            threading.Thread(target=self.start_monitoring).start()
+            return
+
         idx = 0
         while idx < self.com_len:
             self.res[idx] = self.socket_send(self.cmd_list[idx])
@@ -296,18 +304,31 @@ class temp_ctrl(threading.Thread):
                             
         if param[0] == HK_REQ_MANUAL_CMD:            
             if self.iam != param[1]:    return
+
+            self.pause = True
                     
             cmd = ""
             for idx in range(len(param)-2):
                 cmd += param[idx+2] + " "
             cmd = cmd[:-1] + "\r\n"
+           
+            # test 20240425
+            msg = "<- [HKP] %s" % cmd
+            self.log.send(self.iam, INFO, msg)
             
+            res = self.socket_send(cmd) 
+            self.log.send(self.iam, INFO, res)
+
             try:
-                idx = self.cmd_list.index(cmd)
-                msg = "%s %s" % (param[0], self.res[idx]) 
+                #idx = self.cmd_list.index(cmd)
+                #msg = "%s %s" % (param[0], self.res[idx]) 
+                msg = "%s %s" % (param[0], res)
+
                 self.publish_to_queue(msg)
             except:
                 pass
+
+            self.pause = False
                         
             
    

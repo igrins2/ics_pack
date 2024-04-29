@@ -1,16 +1,13 @@
 """
 ... from uploader.py from IGRINS
 
-Modified on Apr 23, 2024
+Modified on Apr 26, 2024
 
 @author: hilee, Emma.K
 """
 
-import enum
 import os, sys
-from re import S
-from socket import TIPC_SRC_DROPPABLE
-#import time as ti
+import time as ti
 import datetime
 import pytz
 import random
@@ -228,6 +225,9 @@ class uploader(threading.Thread):
         self.tel_ra=-1.0 # the unit is in degree
         self.tel_dec=-1.0 # the unit is in degree
         
+        # add 20240426
+        self.epoch = "2024"
+        
         for idx in range(COM_CNT+DCS_CNT):
             self.monit_heartbeat(idx)
         
@@ -257,7 +257,8 @@ class uploader(threading.Thread):
             giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETH], giapi.type.Type.BOOLEAN) 
             
             # create health items
-            giapi.StatusUtil.createHealthStatusItem("ig2:health") 
+            # FR for testiong TODO.revert
+            #giapi.StatusUtil.createHealthStatusItem("ig2:health") 
             giapi.StatusUtil.createHealthStatusItem("ig2:ics:health") 
             giapi.StatusUtil.createHealthStatusItem("ig2:dcsh:health") 
             giapi.StatusUtil.createHealthStatusItem("ig2:dcsk:health") 
@@ -420,13 +421,16 @@ class uploader(threading.Thread):
         #self.log.send(self.iam, DEBUG, msg)
         
         if ti.time() - self.heartbeat_time[idx] > self.heartbeat_check_interval: 
+            
+            # add 20240422 -> modify 20240425
+            if self.alive[idx]:     # when alive -> die, send alarm just 1 time
+                if GEA_COM_TC1-34 <= idx <= GEA_COM_PDU-34:
+                    self.alarm_com_status(GEA_COM_TC1+idx, "dead")
+                
             self.alive[idx] = False
+            
         else:
             self.alive[idx] = True
-       
-        # add 20240422
-        if GEA_COM_TC1 <= idx <= GEA_COM_PDU:
-            self.alarm_com_status(idx)
 
         # modify 20240423
         #threading.Timer(self.heartbeat_check_interval, lambda: self.monit_heartbeat(idx)).start()
@@ -443,11 +447,11 @@ class uploader(threading.Thread):
         self.log.send(self.iam, INFO, msg)
 
         try:
-            if param[0] == HEART_BEAT:
-                self.heartbeat_time[TMC1] = ti.time()
-                self.alive[TMC1] = True # add 20240422
+            #if param[0] == HEART_BEAT:
+            self.heartbeat_time[TMC1] = ti.time()
+            self.alive[TMC1] = True # add 20240422
                 
-            elif param[0] == HK_REQ_COM_STS:
+            if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_TC1] = bool(int(param[1]))
                 self.alarm_com_status(GEA_COM_TC1)            
             
@@ -477,11 +481,11 @@ class uploader(threading.Thread):
         self.log.send(self.iam, INFO, msg)
 
         try:
-            if param[0] == HEART_BEAT:
-                self.heartbeat_time[TMC2] = ti.time()
-                self.alive[TMC2] = True # add 20240422
+            #if param[0] == HEART_BEAT:
+            self.heartbeat_time[TMC2] = ti.time()
+            self.alive[TMC2] = True # add 20240422
             
-            elif param[0] == HK_REQ_COM_STS:
+            if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_TC2] = bool(int(param[1]))
                 self.alarm_com_status(GEA_COM_TC2)
             
@@ -511,11 +515,11 @@ class uploader(threading.Thread):
         self.log.send(self.iam, INFO, msg)
         
         try:
-            if param[0] == HEART_BEAT:
-                self.heartbeat_time[TMC3] = ti.time()
-                self.alive[TMC3] = True # add 20240422
+            #if param[0] == HEART_BEAT:
+            self.heartbeat_time[TMC3] = ti.time()
+            self.alive[TMC3] = True # add 20240422
 
-            elif param[0] == HK_REQ_COM_STS:
+            if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_TC3] = bool(int(param[1]))
                 self.alarm_com_status(GEA_COM_TC3)
             
@@ -544,11 +548,11 @@ class uploader(threading.Thread):
         self.log.send(self.iam, INFO, msg)
         
         try:
-            if param[0] == HEART_BEAT:
-                self.heartbeat_time[TM] = ti.time()
-                self.alive[TM] = True   # add 20240422
+            #if param[0] == HEART_BEAT:
+            self.heartbeat_time[TM] = ti.time()
+            self.alive[TM] = True   # add 20240422
 
-            elif param[0] == HK_REQ_COM_STS:
+            if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_TM] = bool(int(param[1]))
                 self.alarm_com_status(GEA_COM_TM)
             
@@ -580,26 +584,35 @@ class uploader(threading.Thread):
         self.log.send(self.iam, INFO, msg)
 
         try:
-            if param[0] == HEART_BEAT:
-                self.heartbeat_time[VM] = ti.time()
-                self.alive[VM] = True   # add 20240422
-            
-            elif param[0] == HK_REQ_COM_STS:
+            #if param[0] == HEART_BEAT:
+            self.heartbeat_time[VM] = ti.time()
+            self.alive[VM] = True   # add 20240422
+           
+            dpvalue = ""
+            if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_VM] = bool(int(param[1]))
                 self.alarm_com_status(GEA_COM_VM)
-            
+
             elif param[0] == HK_REQ_GETVALUE:
-                dpvalue = ""
+                #dpvalue = ""
                 if len(param[1]) > 10 or param[1] == DEFAULT_VALUE:
                     dpvalue = float(DEFAULT_VALUE)
+                    self.hk_list[GEA_COM_VM] = False
+                    self.alarm_com_status(GEA_COM_VM)
                 else:
-                    dpvalue = float(param[1])
-                
-                self.hk_list[GEA_COM_VM] = True
+                    dpvalue = float(param[1])      
+                    self.hk_list[GEA_COM_VM] = True
+
                 self.hk_list[GEA_VACUUM] = dpvalue
+
+            # add 20240427
+            if dpvalue == float(DEFAULT_VALUE):
+                self.hk_list[GEA_COM_VM] = False
                 
         except:
             self.log.send(self.iam, WARNING, "parsing error vm")
+
+        giapi.StatusUtil.postStatus()
             
             
         
@@ -611,21 +624,39 @@ class uploader(threading.Thread):
         self.log.send(self.iam, INFO, msg)
         
         try:
-            if param[0] == HEART_BEAT:
-                self.heartbeat_time[PDU] = ti.time()
-                self.alive[PDU] = True  # add 20240422
+            #if param[0] == HEART_BEAT:
+            self.heartbeat_time[PDU] = ti.time()
+            self.alive[PDU] = True  # add 20240422
             
-            elif param[0] == HK_REQ_COM_STS:
+            if param[0] == HK_REQ_COM_STS:
                 self.hk_list[GEA_COM_PDU] = bool(int(param[1]))
-                self.alarm_com_status(GEA_COM_PDU)
-            
             elif param[0] == HK_REQ_PWR_STS:
                 self.hk_list[GEA_COM_PDU] = True
                 for i in range(PDU_IDX):
                     if param[i+1] == "on":
                         self.hk_list[GEA_PDU1_PWR+i] = True
+                        
+                        # add 20240425 when MACIE power on, alarm!
+                        if i == 0:  
+                            cmd = "ig2:alm:" + GEA_Items[GEA_DETH]
+                            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_OK, giapi.alarm.Cause.ALARM_CAUSE_OK) 
+                            md = "ig2:alm:" + GEA_Items[GEA_DETK]
+                            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_OK, giapi.alarm.Cause.ALARM_CAUSE_OK)
+                            md = "ig2:alm:" + GEA_Items[GEA_DETS]
+                            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_OK, giapi.alarm.Cause.ALARM_CAUSE_OK)
+                            
                     elif param[i+1] == "off":                  
                         self.hk_list[GEA_PDU1_PWR+i] = False
+                        
+                        # add 20240425 when MACIE power off, alarm!
+                        if i == 0:  
+                            cmd = "ig2:alm:" + GEA_Items[GEA_DETH]
+                            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_FAILURE, giapi.alarm.Cause.ALARM_CAUSE_OTHER, "power off")
+                            cmd = "ig2:alm:" + GEA_Items[GEA_DETK]
+                            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_FAILURE, giapi.alarm.Cause.ALARM_CAUSE_OTHER, "power off")
+                            cmd = "ig2:alm:" + GEA_Items[GEA_DETS]
+                            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_FAILURE, giapi.alarm.Cause.ALARM_CAUSE_OTHER, "power off")
+                                                    
                     self.log.send(self.iam, DEBUG, self.hk_list[GEA_PDU1_PWR+i])
         
         except:
@@ -638,20 +669,20 @@ class uploader(threading.Thread):
 
         if not (param[0] == HK_REQ_UPLOAD_DB):  return
 
-        msg = "<- [HKP] %s" % cmd
+        msg = "<- [HKP] %s" % cmd 
         self.log.send(self.iam, INFO, msg)
 
-        try:
-            if param[0] == HK_REQ_UPLOAD_DB:
-                db = param[1:]
+        try: 
+            if param[0] == HK_REQ_UPLOAD_DB: 
+                db = param[1:] 
                 if not self.upload_to_web:    return
                 
-                if self.simul:
+                if self.simul: 
                     print("uploaded virtual firebase database...")
                 
                 self.start_upload_to_firebase(db)
                 
-        except:
+        except: 
             self.log.send(self.iam, WARNING, "parsing error hk")
                     
     
@@ -659,105 +690,105 @@ class uploader(threading.Thread):
     # dcs queue
     def connect_to_server_dcs_q(self):
         # RabbitMQ connect
-        dcs_list = ["DCSS", "DCSH", "DCSK"]
-        dcs_dt_ex = [dcs_list[i]+'.ex' for i in range(DCS_CNT)]
+        dcs_list = ["DCSS", "DCSH", "DCSK"] 
+        dcs_dt_ex = [dcs_list[i]+'.ex' for i in range(DCS_CNT)] 
         for idx in range(DCS_CNT):
-            self.consumer_dcs[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, dcs_dt_ex[idx])
+            self.consumer_dcs[idx] = MsgMiddleware(self.iam, self.ics_ip_addr,self.ics_id, self.ics_pwd, dcs_dt_ex[idx])
             self.consumer_dcs[idx].connect_to_server()
         
-        self.consumer_dcs[SVC].define_consumer(dcs_list[SVC]+'.q', self.callback_svc)  
+        self.consumer_dcs[SVC].define_consumer(dcs_list[SVC]+'.q',self.callback_svc)
         self.consumer_dcs[H].define_consumer(dcs_list[H]+'.q', self.callback_h)
         self.consumer_dcs[K].define_consumer(dcs_list[K]+'.q', self.callback_k)   
         
-        for idx in range(DCS_CNT):
+        for idx in range(DCS_CNT): 
             th = threading.Thread(target=self.consumer_dcs[idx].start_consumer)
             th.start()
             
     
-    def callback_svc(self, ch, method, properties, body):
-        cmd = body.decode()        
+    def callback_svc(self, ch, method, properties, body): 
+        cmd = body.decode()
         param = cmd.split()            
 
-        msg = "<- [DCSS] %s" % cmd
+        msg = "<- [DCSS] %s" % cmd 
         self.log.send(self.iam, INFO, msg)
  
         self.dcs_data_processing(param, SVC)
                                                
     
-    def callback_h(self, ch, method, properties, body):
-        cmd = body.decode()        
+    def callback_h(self, ch, method, properties, body): 
+        cmd = body.decode()
         param = cmd.split()
 
-        msg = "<- [DCSH] %s" % cmd
+        msg = "<- [DCSH] %s" % cmd 
         self.log.send(self.iam, INFO, msg)
         
         self.dcs_data_processing(param, H)
         
                     
-    def callback_k(self, ch, method, properties, body):
-        cmd = body.decode()        
+    def callback_k(self, ch, method, properties, body): 
+        cmd = body.decode()
         param = cmd.split()
                     
-        msg = "<- [DCSK] %s" % cmd
+        msg = "<- [DCSK] %s" % cmd 
         self.log.send(self.iam, INFO, msg)
         
         self.dcs_data_processing(param, K)
 
     #-------------------------------
-    # add 20240419
-    # command taking image from InstSeq, ObsApp, DTP -> for saving DC core: Tel RA, Dec
+    # add 20240419 command taking image from InstSeq, ObsApp, DTP -> for saving
+    # DC core: Tel RA, Dec
     def connect_to_server_taking_image_q(self):
         # RabbitMQ connect
-        cmd_list = ["InstSeq", "dt", "ObsApp"]
-        cmd_ex = [cmd_list[i]+'.ex' for i in range(3)]
-        for idx in range(3):
-            self.consumer_cmd[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, cmd_ex[idx])
+        cmd_list = ["InstSeq", "dt", "ObsApp"] 
+        cmd_ex = [cmd_list[i]+'.ex' for i in range(3)] 
+        for idx in range(3): 
+            self.consumer_cmd[idx] = MsgMiddleware(self.iam, self.ics_ip_addr, self.ics_id, self.ics_pwd, cmd_ex[idx]) 
             self.consumer_cmd[idx].connect_to_server()
 
-        self.consumer_cmd[0].define_consumer(cmd_list[0]+'.q', self.callback_InstSeq)
-        self.consumer_cmd[1].define_consumer(cmd_list[1]+'.q', self.callback_DT)
-        self.consumer_cmd[2].define_consumer(cmd_list[2]+'.q', self.callback_ObsApp)
+        self.consumer_cmd[0].define_consumer(cmd_list[0]+'.q',
+                self.callback_InstSeq)
+        self.consumer_cmd[1].define_consumer(cmd_list[1]+'.q',
+                self.callback_DT)
+        self.consumer_cmd[2].define_consumer(cmd_list[2]+'.q',
+                self.callback_ObsApp)
 
-        for idx in range(3):
+        for idx in range(3): 
             th = threading.Thread(target=self.consumer_cmd[idx].start_consumer)
             th.start()
 
 
-    def callback_InstSeq(self, ch, method, properties, body):
-        cmd = body.decode()
+    def callback_InstSeq(self, ch, method, properties, body): 
+        cmd = body.decode() 
         param = cmd.split()
 
-        if param[0] != CMD_ACQUIRERAMP_ICS:
-            return
+        if param[0] != CMD_ACQUIRERAMP_ICS: return
 
-        msg = "<- [InstSeq] %s" % cmd
+        msg = "<- [InstSeq] %s" % cmd 
         self.log.send(self.iam, INFO, msg)
 
         self.publish_tel_ra_dec()
 
 
-    def callback_DT(self, ch, method, properties, body):
+    def callback_DT(self, ch, method, properties, body): 
         cmd = body.decode()
         param = cmd.split()
 
-        if param[0] != CMD_ACQUIRERAMP_ICS:
-            return
+        if param[0] != CMD_ACQUIRERAMP_ICS: return
 
-        msg = "<- [DT] %s" % cmd
+        msg = "<- [DT] %s" % cmd 
         self.log.send(self.iam, INFO, msg)
 
         self.publish_tel_ra_dec()
 
 
 
-    def callback_ObsApp(self, ch, method, properties, body):
-        cmd = body.decode()
+    def callback_ObsApp(self, ch, method, properties, body): 
+        cmd = body.decode() 
         param = cmd.split()
 
-        if param[0] != CMD_ACQUIRERAMP_ICS:
-            return
+        if param[0] != CMD_ACQUIRERAMP_ICS: return
 
-        msg = "<- [ObsApp] %s" % cmd
+        msg = "<- [ObsApp] %s" % cmd 
         self.log.send(self.iam, INFO, msg)
 
         self.publish_tel_ra_dec()
@@ -765,135 +796,122 @@ class uploader(threading.Thread):
         
         
     # from tcs
-    def callbackStatus(self, t, statusItem):
-        if self.simul:
-            return
+    def callbackStatus(self, t, statusItem): 
+        if self.simul: return
         
-        print (f'Recieved the message type is: {t} {giapi.type.DOUBLE} {giapi.type.STRING}')
-        #print (f'{statusItem.getDataAsDouble(0)}')
+        print (f'Recieved the message type is: {t} {giapi.type.DOUBLE} {giapi.type.STRING}') #print (f'{statusItem.getDataAsDouble(0)}')
         
-        if  giapi.type.BOOLEAN == t:
+        if  giapi.type.BOOLEAN == t: 
             print (f'{statusItem.getDataAsInt(0)}')
-        elif giapi.type.INT == t:
-            print (f'{statusItem.getDataAsInt(0)}')
-        if giapi.type.DOUBLE == t:
-            print (f'{statusItem.getDataAsDouble(0)}')
-        elif giapi.type.STRING == t:
-            print (f'{statusItem.getDataAsString(0)}')
-        elif giapi.type.BYTE == t:
-            print (f'{statusItem.getDataAsByte(0)}')
+        elif giapi.type.INT == t: 
+            print (f'{statusItem.getDataAsInt(0)}') 
+        if giapi.type.DOUBLE == t: 
+            print (f'{statusItem.getDataAsDouble(0)}') 
+        elif giapi.type.STRING == t: 
+            print (f'{statusItem.getDataAsString(0)}') 
+        elif giapi.type.BYTE == t: 
+            print (f'{statusItem.getDataAsByte(0)}') 
         else:
             print (f'Not defined, it is an error')
         
         
     def dcs_data_processing(self, param, idx):
         
-        if param[0] == HEART_BEAT:
-            self.heartbeat_time[UPLOADER+idx] = ti.time()
-            self.alive[UPLOADER+idx] = True # add 20240422
+        #if param[0] == HEART_BEAT: 
+        self.heartbeat_time[UPLOADER+idx] = ti.time() 
+        self.alive[UPLOADER+idx] = True # add 20240422
             
-        elif param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
+        if param[0] == CMD_INIT2_DONE or param[0] == CMD_INITIALIZE2_ICS:
             self.dcs_enable[idx] = bool(int(param[1]))
     
         elif param[0] == CMD_SETFSPARAM_ICS:   
             self.dcs_enable[idx] = bool(int(param[1]))
                 
-        elif param[0] == CMD_ACQUIRERAMP_ICS:
+        elif param[0] == CMD_ACQUIRERAMP_ICS: 
             self.dcs_enable[idx] = bool(int(param[3]))
             
-
-
-    '''            
-    def judge_value(self, input):
-        if input != DEFAULT_VALUE:
-            value = "%.2f" % float(input)
-        else:
-            value = input
-        return value
-    '''
     
-    def alarm_com_status(self, idx):
-        if self.simul:
-            return
+    def alarm_com_status(self, idx, err = "communication error"): 
+        if self.simul: return
         
-        cmd = "ig2:alm:" + GEA_Items[idx]
+        cmd = "ig2:alm:" + GEA_Items[idx] 
         if self.hk_list[idx]:
-            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_OK, giapi.alarm.Cause.ALARM_OK) 
+            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_OK,
+                    giapi.alarm.Cause.ALARM_CAUSE_OK) 
+            self.log.send(self.iam, INFO, cmd) # add 20240426
 
-        else:
-            err = "communication error"
-            giapi.StatusUtil.setAlarm(cmd, giapi.alarm.Severity.ALARM_FAILURE, giapi.alarm.Cause.ALARM_OTHER, err) 
-            
-            #add 20240105
-            self.log.send(self.iam, ERROR, GEA_Items[idx] + " " + err)  
+        else: giapi.StatusUtil.setAlarm(cmd,
+                giapi.alarm.Severity.ALARM_FAILURE,
+                giapi.alarm.Cause.ALARM_CAUSE_OTHER, err)
+        self.log.send(self.iam, ERROR, cmd)  
             
             
-    def alarm_temperature(self, label, idx):
+    def alarm_temperature(self, label, idx): 
         cmd = "ig2:alm:" + GEA_Items[idx]
         severity, cause = None, None
         
-        if float(self.temp_warn_lower[label]) > self.hk_list[idx]:
-            severity = giapi.alarm.Severity.ALARM_FAILURE
+        if float(self.temp_warn_lower[label]) > self.hk_list[idx]: 
+            severity = giapi.alarm.Severity.ALARM_FAILURE 
             cause = giapi.alarm.Cause.ALARM_CAUSE_LOLO
             
-        elif float(self.temp_warn_lower[label]) <= self.hk_list[idx] < float(self.temp_normal_lower[label]):
-            severity = giapi.alarm.Severity.ALARM_WARNING
+        elif float(self.temp_warn_lower[label]) <= self.hk_list[idx] < float(self.temp_normal_lower[label]): 
+            severity = giapi.alarm.Severity.ALARM_WARNING 
             cause = giapi.alarm.Cause.ALARM_CAUSE_LO
             
-        elif float(self.temp_normal_lower[label]) <= self.hk_list[idx] <= float(self.temp_normal_upper[label]):
-            severity = giapi.alarm.Severity.ALARM_OK
+        elif float(self.temp_normal_lower[label]) <= self.hk_list[idx] <= float(self.temp_normal_upper[label]): 
+            severity = giapi.alarm.Severity.ALARM_OK 
             cause = giapi.alarm.Cause.ALARM_CAUSE_OK
             
-        elif float(self.temp_normal_upper[label]) < self.hk_list[idx] <= float(self.temp_warn_upper[label]):
-            severity = giapi.alarm.Severity.ALARM_WARNING
+        elif float(self.temp_normal_upper[label]) < self.hk_list[idx] <= float(self.temp_warn_upper[label]): 
+            severity = giapi.alarm.Severity.ALARM_WARNING 
             cause = giapi.alarm.Cause.ALARM_CAUSE_HI
             
-        elif float(self.temp_warn_upper[label]) < self.hk_list[idx]:
-            severity = giapi.alarm.Severity.ALARM_FAILURE
+        elif float(self.temp_warn_upper[label]) < self.hk_list[idx]: 
+            severity = giapi.alarm.Severity.ALARM_FAILURE 
             cause = giapi.alarm.Cause.ALARM_CAUSE_HIHI
         
-        #if severity != None and cause != None:
-        if severity != giapi.alarm.Severity.ALARM_OK:
+        #if severity != None and cause != None: 
+        if severity != giapi.alarm.Severity.ALARM_OK: 
             if not self.simul:
                 giapi.StatusUtil.setAlarm(cmd, severity, cause) 
             
-            #add 20240105
+            #add 20240105 
             if severity == giapi.alarm.Severity.ALARM_WARNING:
-                self.log.send(self.iam, WARNING, GEA_Items[idx] + " warning")
+                self.log.send(self.iam, WARNING, GEA_Items[idx] + " warning") 
             elif severity == giapi.alarm.Severity.ALARM_FAILURE:
                 self.log.send(self.iam, ERROR, GEA_Items[idx] + " failure")
         
         return severity, cause
             
         
-    def alarm_temperature_m(self, label, idx):
-        cmd = "ig2:alm:" + GEA_Items[idx]
+    def alarm_temperature_m(self, label, idx): 
+        cmd = "ig2:alm:" + GEA_Items[idx] 
         severity, cause = None, None
     
-        if self.hk_list[idx] < float(self.temp_normal_lower[label]):
-            severity = giapi.alarm.Severity.ALARM_WARNING
+        if self.hk_list[idx] < float(self.temp_normal_lower[label]): 
+            severity = giapi.alarm.Severity.ALARM_WARNING 
             cause = giapi.alarm.Cause.ALARM_CAUSE_LO
             
-        elif float(self.temp_normal_lower[label]) <= self.hk_list[idx] <= float(self.temp_normal_upper[label]):
-            severity = giapi.alarm.Severity.ALARM_OK
+        elif float(self.temp_normal_lower[label]) <= self.hk_list[idx] <= float(self.temp_normal_upper[label]): 
+            severity = giapi.alarm.Severity.ALARM_OK 
             cause = giapi.alarm.Cause.ALARM_CAUSE_OK
             
-        elif float(self.temp_normal_upper[label]) < self.hk_list[idx] <= float(self.temp_warn_upper[label]):
-            severity = giapi.alarm.Severity.ALARM_WARNING
+        elif float(self.temp_normal_upper[label]) < self.hk_list[idx] <= float(self.temp_warn_upper[label]): 
+            severity = giapi.alarm.Severity.ALARM_WARNING 
             cause = giapi.alarm.Cause.ALARM_CAUSE_HI
             
-        elif float(self.temp_warn_upper[label]) < self.hk_list[idx]:
-            severity = giapi.alarm.Severity.ALARM_FAILURE
+        elif float(self.temp_warn_upper[label]) < self.hk_list[idx]: 
+            severity = giapi.alarm.Severity.ALARM_FAILURE 
             cause = giapi.alarm.Cause.ALARM_CAUSE_HIHI
             
-        #if severity != None and cause != None:
-        if severity != giapi.alarm.Severity.ALARM_OK:
-            if not self.simul: 
+        #if severity != None and cause != None: 
+        if severity != giapi.alarm.Severity.ALARM_OK: 
+            if not self.simul:
                 giapi.StatusUtil.setAlarm(cmd, severity, cause) 
                         
-            #add 20240105
+            #add 20240105 
             if severity == giapi.alarm.Severity.ALARM_WARNING:
-                self.log.send(self.iam, WARNING, GEA_Items[idx] + " warning")
+                self.log.send(self.iam, WARNING, GEA_Items[idx] + " warning") 
             elif severity == giapi.alarm.Severity.ALARM_FAILURE:
                 self.log.send(self.iam, ERROR, GEA_Items[idx] + " failure")
         
@@ -901,58 +919,90 @@ class uploader(threading.Thread):
     
     
     def publish_dewar_list(self):
-        try:
-            #add 20240119
-            if not self.simul:
-                pStatus =  giapi.GeminiUtil.getChannel("tcs:telescopeRA", 2000)
-                self.tel_ra = pStatus.getDataAsDouble(0)
-                print (f'The tcs:telescopeRA is: {self.tel_ra}')
-                
-                pStatus =  giapi.GeminiUtil.getChannel("tcs:telescopeDec", 2000)
-                self.tel_dec = pStatus.getDataAsDouble(0)
-                print (f'The tcs:telescopeDec is: {self.tel_dec}')
 
-                pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentRA", 2000)
-                self.cur_ra = pStatus.getDataAsString(0)
-                print (f'The tcs:sad:currentRA is: {self.cur_ra}')
+        #add 20240119, modify 20240426 
+        if not self.simul: 
+            info = ["tcs:telescopeRA", "tcs:telescopeDec", "tcs:sad:currentRA",
+                "tcs:sad:currentDec", "tcs:sad:airMass", "tcs:sad:instrPA",
+                "tcs:sad:sourceAInputFrame.VAL", "tcs:sad:sourceAEpoch.VAL"]
+            for idx in range(len(info)): 
+                for _ in range(3): 
+                    try: 
+                        pStatus = giapi.GeminiUtil.getChannel(info[idx], 1000)
+                        
+                        if idx == 0:    
+                            value = pStatus.getDataAsDouble(0)
+                            self.tel_ra = value 
+                        elif idx == 1:  
+                            value = pStatus.getDataAsDouble(0) 
+                            self.tel_dec = value 
+                        elif idx == 2:  
+                            value = pStatus.getDataAsString(0)
+                            self.cur_ra = value 
+                        elif idx == 3:  
+                            value = pStatus.getDataAsString(0) 
+                            self.cur_dec = value 
+                        elif idx == 4:  
+                            value = pStatus.getDataAsDouble(0)
+                            self.cur_am = value 
+                        elif idx == 5:
+                            value = pStatus.getDataAsDouble(0) 
+                            self.cur_pa = value 
+                        elif idx == 6: 
+                            value = pStatus.getDataAsString(0) 
+                            self.RADecSys = value 
+                        elif idx == 7: 
+                            value = pStatus.getDataAsString(0) 
+                            self.epoch = value
+                    
+                        #print (f'The {info} is: {self.tel_ra}')
+                        self.log.send(self.iam, INFO, f"The {info[idx]} is: {value}") 
+                        break
+                    
+                    except: 
+                        self.log.send(self.iam, ERROR, "Error getting tcs info: " + info[idx])
+        
+        ''' try: if not self.simul: pStatus =
+        giapi.GeminiUtil.getChannel("tcs:telescopeRA", 1000) self.tel_ra =
+        pStatus.getDataAsDouble(0) print (f'The tcs:telescopeDec is:
+        {self.tel_ra}')
                 
-                pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentDec", 2000)
-                self.cur_dec = pStatus.getDataAsString(0)
-                print (f'The tcs:sad:currentDec is: {self.cur_dec}')
-                
-                pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:airMass", 2000)
-                self.cur_am = pStatus.getDataAsDouble(0)
-                print (f'The tcs:sad:airMass is: {self.cur_am}')
-                
-                #modify 20240107
-                pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:instrPA", 2000)
-                self.cur_pa = pStatus.getDataAsDouble(0)
-                print (f'The tcs:sad:instrPA is: {self.cur_pa}')
-            
-            #pass
+                pStatus =  giapi.GeminiUtil.getChannel("tcs:telescopeDec",
+                        1000) self.tel_dec = pStatus.getDataAsDouble(0) print
+                (f'The tcs:telescopeDec is: {self.tel_dec}')
 
-        except:
-            self.log.send(self.iam, ERROR, "Error getting tcs info")
+                pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentRA",
+                        1000) self.cur_ra = pStatus.getDataAsString(0) print
+                (f'The tcs:sad:currentRA is: {self.cur_ra}')
+                
+                pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentDec",
+                        1000) self.cur_dec = pStatus.getDataAsString(0) print
+                (f'The tcs:sad:currentDec is: {self.cur_dec}')
+                
+                pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:airMass", 1000)
+                self.cur_am = pStatus.getDataAsDouble(0) print (f'The
+                tcs:sad:airMass is: {self.cur_am}')
+                
+                #modify 20240107 pStatus =
+                giapi.GeminiUtil.getChannel("tcs:sad:instrPA", 1000)
+                self.cur_pa = pStatus.getDataAsDouble(0) print (f'The
+                tcs:sad:instrPA is: {self.cur_pa}')
+        
+        except: self.log.send(self.iam, ERROR, "Error getting tcs info") '''
                                 
-        hk_entries = [self.hk_list[GEA_VACUUM],
-                      self.hk_list[GEA_BENCH],     self.hk_list[GEA_BENCH_SP],
-                      self.hk_list[GEA_GRATING],   self.hk_list[GEA_GRATING_SP],
-                      self.hk_list[GEA_DETS],      self.hk_list[GEA_DETS_SP],
-                      self.hk_list[GEA_DETK],      self.hk_list[GEA_DETK_SP],
-                      self.hk_list[GEA_CAMH],    
-                      self.hk_list[GEA_DETH],      self.hk_list[GEA_DETH_SP],
-                      self.hk_list[GEA_BENCHCEN],
-                      self.hk_list[GEA_COLDHEAD1],    
-                      self.hk_list[GEA_COLDHEAD2],    
-                      self.hk_list[GEA_COLDSTOP],
-                      self.hk_list[GEA_CHARCOALBOX],    
-                      self.hk_list[GEA_CAMK],  
-                      self.hk_list[GEA_SHIELDTOP],
-                      self.hk_list[GEA_AIR],
-                      self.cur_ra, self.cur_dec, self.cur_am,
-                      #self.slit_img_flip, 
-                      self.slit_cen[0], self.slit_cen[1], 
-                      self.cur_pa, self.pixelscale, self.tel_ra, self.tel_dec]  #add 20240119
+        hk_entries = [self.hk_list[GEA_VACUUM], self.hk_list[GEA_BENCH],
+                        self.hk_list[GEA_BENCH_SP], self.hk_list[GEA_GRATING],
+                        self.hk_list[GEA_GRATING_SP], self.hk_list[GEA_DETS],
+                        self.hk_list[GEA_DETS_SP], self.hk_list[GEA_DETK],
+                        self.hk_list[GEA_DETK_SP], self.hk_list[GEA_CAMH],
+                        self.hk_list[GEA_DETH],      self.hk_list[GEA_DETH_SP],
+                        self.hk_list[GEA_BENCHCEN], self.hk_list[GEA_COLDHEAD1],
+                        self.hk_list[GEA_COLDHEAD2],    self.hk_list[GEA_COLDSTOP],
+                        self.hk_list[GEA_CHARCOALBOX],    self.hk_list[GEA_CAMK],
+                        self.hk_list[GEA_SHIELDTOP], self.hk_list[GEA_AIR], self.cur_ra,
+                        self.cur_dec, self.cur_am, #self.slit_img_flip, 
+                        self.slit_cen[0], self.slit_cen[1], self.cur_pa, self.pixelscale, self.tel_ra,
+                        self.tel_dec, self.RADecSys, self.epoch]  #add 20240119->20240426
         
         str_log = "    ".join(list(map(str, hk_entries)))     
         msg = "%s %s" % (UPLOAD_Q, str_log)
@@ -1002,6 +1052,11 @@ class uploader(threading.Thread):
         # giapi.health.Health.GOOD
         # giapi.health.Health.WARNING
         # giapi.health.Health.BAD        
+        
+        health = [giapi.health.Health.GOOD for _ in range(5)]    
+        
+        # ***************************************************************************
+        # ICS HEALTH_IG2
         com = True
         if not self.simul:
             for idx in range(6):
@@ -1014,28 +1069,10 @@ class uploader(threading.Thread):
             if not self.alive[idx]:
                 alive = False
                 break
-                
-        health = [giapi.health.Health.GOOD for _ in range(5)]    
-
-        #self.log.send(self.iam, DEBUG, self.hk_list[GEA_PDU1_PWR])
-        #self.log.send(self.iam, DEBUG, self.hk_list[GEA_PDU2_PWR])
         
-        # ICS HEALTH_IG2
         state_ics = GOOD
-        if not com or not alive or not self.hk_list[GEA_PDU2_PWR] or self.temp_sts_bench == giapi.alarm.Severity.ALARM_FAILURE or \
-            self.temp_sts_grating == giapi.alarm.Severity.ALARM_FAILURE or \
-                self.temp_sts_air == giapi.alarm.Severity.ALARM_FAILURE:
-            health[HEALTH_ICS] = giapi.health.Health.BAD
-            
-            if not com:                             state_ics = DISCON
-            elif not alive:                         state_ics = STOPPED
-            elif not self.hk_list[GEA_PDU2_PWR]:    state_ics = PWR_OFF
-            else:                                   state_ics = TMP_ERR
-                                
-            #add 20240105
-            self.log.send(self.iam, ERROR, "ics failure")
-            
-        elif self.temp_sts_bench == giapi.alarm.Severity.ALARM_WARNING or \
+        
+        if self.temp_sts_bench == giapi.alarm.Severity.ALARM_WARNING or \
             self.temp_sts_grating == giapi.alarm.Severity.ALARM_WARNING or \
                 self.temp_sts_air == giapi.alarm.Severity.ALARM_WARNING:
             health[HEALTH_ICS] = giapi.health.Health.WARNING
@@ -1044,10 +1081,50 @@ class uploader(threading.Thread):
             
             #add 20240105
             self.log.send(self.iam, WARNING, "ics warning")
+            
+        state_ics_detail = 111111   #tc1, tc2, tc3, tm, vm, pdu
+        if not com or not alive or not self.hk_list[GEA_PDU2_PWR] or \
+            self.temp_sts_bench == giapi.alarm.Severity.ALARM_FAILURE or \
+            self.temp_sts_grating == giapi.alarm.Severity.ALARM_FAILURE or \
+            self.temp_sts_air == giapi.alarm.Severity.ALARM_FAILURE:
+            health[HEALTH_ICS] = giapi.health.Health.BAD
+            
+            if not com:                             state_ics = DISCON
+            elif not alive:                         state_ics = STOPPED
+            elif not self.hk_list[GEA_PDU2_PWR]:    state_ics = PWR_OFF
+            else:                                   state_ics = TMP_ERR 
+                
+            # add 20240426 if TC1 error
+            if not self.hk_list[GEA_COM_TC1] or not self.alive[TMC1] or \
+                self.temp_sts_bench == giapi.alarm.Severity.ALARM_FAILURE or \
+                self.temp_sts_grating == giapi.alarm.Severity.ALARM_FAILURE:
+                state_ics_detail -= pow(10, 5)
+                
+            # TC2 error
+            if not self.hk_list[GEA_COM_TC2] or not self.alive[TMC2]:   state_ics_detail -= pow(10, 4)
+            
+            # TC3 error
+            if not self.hk_list[GEA_COM_TC3] or not self.alive[TMC3]:   state_ics_detail -= pow(10, 3)
+                
+            # TM error
+            if not self.hk_list[GEA_COM_TM] or not self.alive[TM] or \
+                self.temp_sts_air == giapi.alarm.Severity.ALARM_FAILURE:     
+                state_ics_detail -= pow(10, 2)
+                
+            # VM error
+            if not self.hk_list[GEA_COM_VM] or not self.alive[VM] or \
+                not self.hk_list[GEA_PDU2_PWR]:     
+                state_ics_detail -= pow(10, 1)
+                
+            # PDU error
+            if not self.hk_list[GEA_COM_PDU] or not self.alive[PDU]:   state_ics_detail -= pow(10, 0)
+                                
+            self.log.send(self.iam, ERROR, "ics failure")
         
         if not self.simul:    
             giapi.StatusUtil.setHealth("ig2:ics:health", health[HEALTH_ICS])    
         
+        # ***************************************************************************
         # DCSH
         state_dcsh = GOOD
         if not self.hk_list[GEA_PDU1_PWR] or not self.dcs_enable[H] or not self.alive[UPLOADER+H] or self.temp_sts_detH == giapi.alarm.Severity.ALARM_FAILURE:
@@ -1072,8 +1149,18 @@ class uploader(threading.Thread):
         if not self.simul:     
             giapi.StatusUtil.setHealth("ig2:dcsh:health", health[HEALTH_DCSH])  
         
+        # ***************************************************************************
         # DCSK
         state_dcsk = GOOD
+        
+        if self.temp_sts_detK == giapi.alarm.Severity.ALARM_WARNING:
+            health[HEALTH_DCSK] = giapi.health.Health.WARNING
+            
+            state_dcsk = TMP_WARN
+            
+            #add 20240105
+            self.log.send(self.iam, WARNING, "dcsk warning")
+            
         if not self.hk_list[GEA_PDU1_PWR] or not self.dcs_enable[K] or not self.alive[UPLOADER+K] or self.temp_sts_detK == giapi.alarm.Severity.ALARM_FAILURE:
             health[HEALTH_DCSK] = giapi.health.Health.BAD
             
@@ -1085,19 +1172,21 @@ class uploader(threading.Thread):
             #add 20240105
             self.log.send(self.iam, ERROR, "dcsk failure")
             
-        elif self.temp_sts_detK == giapi.alarm.Severity.ALARM_WARNING:
-            health[HEALTH_DCSK] = giapi.health.Health.WARNING
-            
-            state_dcsk = TMP_WARN
-            
-            #add 20240105
-            self.log.send(self.iam, WARNING, "dcsk warning")
-            
         if not self.simul: 
             giapi.StatusUtil.setHealth("ig2:dcsk:health", health[HEALTH_DCSK])  
         
+        # ***************************************************************************
         # DCSS
         state_dcss = GOOD
+        
+        if self.temp_sts_detS == giapi.alarm.Severity.ALARM_WARNING:
+            health[HEALTH_DCSS] = giapi.health.Health.WARNING
+            
+            state_dcss = TMP_WARN
+            
+            #add 20240105
+            self.log.send(self.iam, WARNING, "dcss warning")
+            
         if not self.hk_list[GEA_PDU1_PWR] or not self.dcs_enable[SVC] or not self.alive[UPLOADER+SVC] or self.temp_sts_detS == giapi.alarm.Severity.ALARM_FAILURE:
             health[HEALTH_DCSS] = giapi.health.Health.BAD
             
@@ -1108,18 +1197,11 @@ class uploader(threading.Thread):
             
             #add 20240105
             self.log.send(self.iam, ERROR, "dcss failure")
-            
-        elif self.temp_sts_detS == giapi.alarm.Severity.ALARM_WARNING:
-            health[HEALTH_DCSS] = giapi.health.Health.WARNING
-            
-            state_dcss = TMP_WARN
-            
-            #add 20240105
-            self.log.send(self.iam, WARNING, "dcss warning")
                 
         if not self.simul: 
             giapi.StatusUtil.setHealth("ig2:dcss:health", health[HEALTH_DCSS])  
         
+        # ***************************************************************************
         # ig2
         for idx in range(1, 5): #change 20240104
             if health[idx] == giapi.health.Health.WARNING:
@@ -1136,7 +1218,8 @@ class uploader(threading.Thread):
                 break
             
         if not self.simul:
-            giapi.StatusUtil.setHealth("ig2:health", health[HEALTH_IG2])    
+            # FR for testiong TODO.revert
+            #giapi.StatusUtil.setHealth("ig2:health", health[HEALTH_IG2])    
             giapi.StatusUtil.postStatus()
           
         #for i in range(5):
@@ -1146,8 +1229,8 @@ class uploader(threading.Thread):
         
         # modify 20240215
         try:
-            msg = "%s %d %d %d %d %d %d %d %d %d %d %d %.3f %d %d %.3f %d %d %.3f" % (IG2_HEALTH, health[HEALTH_IG2], 
-                        health[HEALTH_ICS], state_ics, health[HEALTH_DCSS], state_dcss, 
+            msg = "%s %d %d %d %06d %d %d %d %d %d %d %d %d %.3f %d %d %.3f %d %d %.3f" % (IG2_HEALTH, health[HEALTH_IG2], 
+                        health[HEALTH_ICS], state_ics, state_ics_detail, health[HEALTH_DCSS], state_dcss, 
                         health[HEALTH_DCSH], state_dcsh, health[HEALTH_DCSK], state_dcsk,
                         self.temp_sts_detS, self.temp_cause_detS, self.hk_list[GEA_DETS],    # temp S
                         self.temp_sts_detH, self.temp_cause_detH, self.hk_list[GEA_DETH],    # temp H
