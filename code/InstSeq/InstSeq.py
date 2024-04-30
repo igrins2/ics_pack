@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Apr 27, 2024
+Modified on Apr 28, 2024
 
 @author: hilee
 """
@@ -10,6 +10,7 @@ Modified on Apr 27, 2024
 import os, sys
 from pickle import FALSE
 import threading
+import traceback
 
 import time as ti
 import datetime
@@ -288,7 +289,7 @@ class Inst_Seq(threading.Thread):
         t = ti.time()
         try:
             self.cur_action_id = action_id  # check!!! whether integer or not
-            print(f'########## callGiapi python function {action_id} - {seq_cmd} {activity} ##########')
+            self.log.send(self.iam, INFO, f'########## callGiapi python function {action_id} - {seq_cmd} {activity} ##########')
             print([f"{str(k)} : {config.getValue(k)}" for k in config.getKeys()])
             
             # TODO. It is necessary to do a regular expression instead of using split
@@ -309,7 +310,7 @@ class Inst_Seq(threading.Thread):
                 # add 20240424 if InstSeq receive TEST command during acquiring, response error!!!
                 if self.acquiring[SVC] or self.acquiring[H] or self.acquiring[K]:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "The system is busy, it is not possible execute this action. Please try after")
                     
                 if activity == giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, INFO, "SequenceCommand.TEST, Activity.PRESET_START")
@@ -318,7 +319,7 @@ class Inst_Seq(threading.Thread):
                     
                     if not self.dcs_ready[SVC] or not self.dcs_ready[H] or not self.dcs_ready[K]:
                         self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                        return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                        return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "You should execute the INIT command first")
                     
                     for idx in range(DCS_CNT):
                         self.dcs_setparam[idx] = False
@@ -328,28 +329,22 @@ class Inst_Seq(threading.Thread):
                     self.set_exp("all")
 
                     # add 20240427 start: timeout timer
+                    self.timeout_timer[ACT_TEST].cancel()
                     self.timeout_timer[ACT_TEST].start()
                     
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
                     return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
                 
-                elif activity == giapi.command.Activity.CANCEL:
-                    self.log.send(self.iam, INFO, "SequenceCommand.TEST, Activity.CANCEL")
-                    self.actRequested[action_id] = {}
-                    self.stop_acquistion()
-                    self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
-                    return instDummy.DataResponse(giapi.HandlerResponse.STARTED, "")
-                
                 else:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "The InstSeq only has implemented the PRESET_START, please provide this activity")                    
                     
             # ----------------------------------------------------
             # SequenceCommand.REBOOT    
             elif seq_cmd == giapi.command.SequenceCommand.REBOOT:
                 if activity != giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "The InstSeq only has implemented the PRESET_START, please provide this activity")                    
                     
                 self.log.send(self.iam, INFO, "SequenceCommand.REBOOT, Activity.PRESET_START")
                 
@@ -402,7 +397,7 @@ class Inst_Seq(threading.Thread):
                 
                 else:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                    
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "The InstSeq only has implemented the PRESET_START, please provide this activity")                    
                                  
             # ----------------------------------------------------
             # SequenceCommand.APPLY                       
@@ -417,7 +412,7 @@ class Inst_Seq(threading.Thread):
                 # add 20240424 if InstSeq receive TEST command during acquiring, response error!!!
                 if self.acquiring[SVC] or self.acquiring[H] or self.acquiring[K]:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "At least one DC_CORE is acquiring and it is not posibble to execute this action")
                 
                 _exptime_sci, _FS_number_sci = 0.0, 0
                 if activity == giapi.command.Activity.PRESET_START:
@@ -504,7 +499,7 @@ class Inst_Seq(threading.Thread):
                 
                 else:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                    
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "The InstSeq only has implemented the PRESET_START, please provide this activity")                    
             
             # ----------------------------------------------------
             # SequenceCommand.OBSERVE                                                        
@@ -520,7 +515,7 @@ class Inst_Seq(threading.Thread):
                 # add 20240424 if InstSeq receive TEST command during acquiring, response error!!!
                 if self.acquiring[SVC] or self.acquiring[H] or self.acquiring[K]:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "At least one DC_CORE is acquiring and it is not posibble to execute this action")
                 
                 if activity == giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, INFO, "SequenceCommand.OBSERVE, Activity.PRESET_START")
@@ -578,10 +573,10 @@ class Inst_Seq(threading.Thread):
                         self.setValue_to_SeqExec(IS_STS_CURRENT, ERROR, ERROR)
                         
                         self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                        return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")                       
+                        return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "Internal error, not apply_mode set before")                       
                    
                     # add 20240427 start: timeout timer
-                    self.timeout_timer[ACT_OBSERVE] = threading.Timer(self.obs_time + 20, lambda: self.check_timeout_error("OBSERVE"))
+                    self.timeout_timer[ACT_OBSERVE] = threading.Timer(self.obs_time + 10, lambda: self.check_timeout_error("OBSERVE"))
                     self.timeout_timer[ACT_OBSERVE].start()
 
                     self.log.send(self.iam, INFO, "giapi.HandlerResponse.STARTED")
@@ -591,7 +586,7 @@ class Inst_Seq(threading.Thread):
                     self.setValue_to_SeqExec(IS_STS_CURRENT, ERROR, ERROR)
                     
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "") 
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "The InstSeq only has implemented the PRESET_START, please provide this activity")                    
             
             # ----------------------------------------------------
             # add 20240416
@@ -635,7 +630,7 @@ class Inst_Seq(threading.Thread):
                 
                 if activity != giapi.command.Activity.PRESET_START:
                     self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                    return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "No implemented the PRESET and START activity. Please, execute the PRESET_START")
                 
                 self.log.send(self.iam, INFO, "SequenceCommand.ABORT, Activity.PRESET_START")
                 
@@ -717,14 +712,13 @@ class Inst_Seq(threading.Thread):
 
 
         except Exception as e:
-            print (e)
-            self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+            self.log.send(self.iam, ERROR, f'giapi.HandlerResponse.ERROR {traceback.format_exc()}')
+            return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "Error executing the current command. Please check the logs")
           
         for k in self.actRequested:
             if self.actRequested[k] is None or self.actRequested[k]['response'] == giapi.HandlerResponse.ERROR:
                 self.log.send(self.iam, ERROR, "giapi.HandlerResponse.ERROR")
-                return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "")
+                return instDummy.DataResponse(giapi.HandlerResponse.ERROR, "The low components responds error. Please check the logs")
 
     
     #--------------------------------------------------------
@@ -959,6 +953,7 @@ class Inst_Seq(threading.Thread):
 
             # add 20240427
             if self.cur_Seq_command != giapi.command.SequenceCommand.APPLY:
+               # self.cur_Seq_command != giapi.command.SequenceCommand.TEST:
                 return
 
             # add 20240427
@@ -995,6 +990,7 @@ class Inst_Seq(threading.Thread):
 
             # add 20240427
             if self.cur_Seq_command != giapi.command.SequenceCommand.OBSERVE:
+                #self.cur_Seq_command != giapi.command.SequenceCommand.TEST:
                 return
 
             # add 20240427
@@ -1009,7 +1005,7 @@ class Inst_Seq(threading.Thread):
             if self.apply_mode == TEST_MODE:
                 self.acquiring[SVC] = False
                 if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
-                    self.apply_mode = None
+                    #self.apply_mode = None
                     self.response_complete(res)
                     # add 20240427 stop: timeout timer
                     self.timeout_timer[ACT_TEST].cancel()
@@ -1019,8 +1015,8 @@ class Inst_Seq(threading.Thread):
                 
                 self.acquiring[SVC] = False
                 #add 20240104
-                if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                    self.apply_mode = None
+                #if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
+                #    self.apply_mode = None
 
                 # add 20240427 start: timeout timer
                 self.timeout_timer[ACT_OBSERVE].cancel()
@@ -1070,7 +1066,7 @@ class Inst_Seq(threading.Thread):
             self.acquiring[SVC] = False
                 
             if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                self.apply_mode = None
+                #self.apply_mode = None
                 # This is sleep avoid a bug. 
                 ti.sleep(0.400)
                 self.response_complete(True)
@@ -1123,7 +1119,8 @@ class Inst_Seq(threading.Thread):
             if self.apply_mode == None or self.cur_action_id == 0: return
            
             # add 20240427
-            if self.cur_Seq_command != giapi.command.SequenceCommand.APPLY:
+            if self.cur_Seq_command != giapi.command.SequenceCommand.APPLY: 
+               # self.cur_Seq_command != giapi.command.SequenceCommand.TEST:
                 return
 
             # add 20240427
@@ -1156,6 +1153,7 @@ class Inst_Seq(threading.Thread):
            
             # add 20240427
             if self.cur_Seq_command != giapi.command.SequenceCommand.OBSERVE:
+                #self.cur_Seq_command != giapi.command.SequenceCommand.TEST:
                 return
 
             # add 20240427
@@ -1173,7 +1171,7 @@ class Inst_Seq(threading.Thread):
             self.acquiring[idx] = False
             if self.apply_mode == TEST_MODE:
                 if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]: 
-                    self.apply_mode = None
+                    #self.apply_mode = None
                     self.response_complete(res)
                     # add 20240427 stop: timeout timer
                     self.timeout_timer[ACT_TEST].cancel()
@@ -1183,8 +1181,11 @@ class Inst_Seq(threading.Thread):
                 if not self.acquiring[H] and not self.acquiring[K]:
                     # add 20240427 start: timeout timer
                     self.timeout_timer[ACT_OBSERVE].cancel()
+                    
+                    # add 20240428 for sync with SVC
+                    self.stop_acquistion("DCSS")
 
-                    self.apply_mode = None
+                    #self.apply_mode = None
                     if res: 
                         self.save_fits_MEF()
      
@@ -1208,7 +1209,7 @@ class Inst_Seq(threading.Thread):
             self.acquiring[idx] = False
                 
             if not self.acquiring[SVC] and not self.acquiring[H] and not self.acquiring[K]:
-                self.apply_mode = None
+                #self.apply_mode = None
                 # This is sleep avoid a bug. 
                 ti.sleep(0.400)
                 self.response_complete(True)
@@ -1217,27 +1218,19 @@ class Inst_Seq(threading.Thread):
     def response_complete(self, status=False):
         if self.cur_action_id == 0:     return 
         
-        if status:  self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.COMPLETED
-        else:       self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ERROR
-        
         _t = ti.time() - self.actRequested[self.cur_action_id]['t'] 
+        if status:  
+            self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.COMPLETED
+            giapi.CommandUtil.postCompletionInfo(self.cur_action_id, giapi.HandlerResponse.create(self.actRequested[self.cur_action_id]['response']))      
+        else:       
+            self.actRequested[self.cur_action_id]['response'] = giapi.HandlerResponse.ERROR
+            giapi.CommandUtil.postCompletionInfo(self.cur_action_id, giapi.HandlerResponse.createError(f"Low level error. MSG = {self.actRequested[self.cur_action_id]['response']}"))      
+        
 
-        '''
-        if _t < 0.300:
-            print("instDummy.DataResponse.COMPLETED")                    
-        el
-        '''
         print (f"response_complete cur_action_id: {self.cur_action_id}  time: {_t} response: {self.actRequested[self.cur_action_id]['response']}")
-        #if _t >= 0.300:
-        #    print("postCompetionInfo")
-        giapi.CommandUtil.postCompletionInfo(self.cur_action_id, giapi.HandlerResponse.create(self.actRequested[self.cur_action_id]['response']))      
         msg = "postCompetionInfo %d , currentActionId: %s " % (self.actRequested[self.cur_action_id]['response'], self.cur_action_id)
         self.log.send(self.iam, INFO, msg)
         
-        #if _t >= 0.300:
-        #    print("postCompetionInfo")
-        #    giapi.CommandUtil.postCompletionInfo(self.cur_action_id, giapi.HandlerResponse.create(self.actRequested[self.cur_action_id]['response']))      
-                 
         self.cur_action_id = 0
         self.cur_Seq_command = ""   # add 20240427
 

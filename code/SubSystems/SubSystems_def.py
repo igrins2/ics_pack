@@ -46,6 +46,7 @@ TM = 3
 VM = 4
 PDU = 5
 UPLOADER = 6
+GMP = 9
 # ---------------------------
 ON = "on"
 OFF = "off"

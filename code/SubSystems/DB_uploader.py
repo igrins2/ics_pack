@@ -210,9 +210,9 @@ class uploader(threading.Thread):
         self.dcs_enable = [True for _ in range(DCS_CNT)]
         
         self.heartbeat_check_interval = 60
-        self.heartbeat_time = [-200 for _ in range(COM_CNT+DCS_CNT)]    # modify 20240422
+        self.heartbeat_time = [-200 for _ in range(COM_CNT+DCS_CNT+1)]    # modify 20240422 -> 20240429 GMP heartbeat[9]
         
-        self.alive = [True for _ in range(COM_CNT+DCS_CNT)]
+        self.alive = [True for _ in range(COM_CNT+DCS_CNT+1)]
         
         self.publshing = False
         self.publish_heartbeat()
@@ -226,9 +226,10 @@ class uploader(threading.Thread):
         self.tel_dec=-1.0 # the unit is in degree
         
         # add 20240426
+        self.RADecSys = "FK4"
         self.epoch = "2024"
         
-        for idx in range(COM_CNT+DCS_CNT):
+        for idx in range(COM_CNT+DCS_CNT+1):
             self.monit_heartbeat(idx)
         
         if not self.simul:    
@@ -244,17 +245,25 @@ class uploader(threading.Thread):
                 giapi.StatusUtil.createStatusItem(cmd, giapi.type.Type.FLOAT) 
                 print(cmd)
 
+            giapi.StatusUtil.createStatusItem("ig2:sts:"+GEA_Items[GEA_PDU1_PWR], giapi.type.Type.INT)
+            giapi.StatusUtil.createStatusItem("ig2:sts:"+GEA_Items[GEA_PDU2_PWR], giapi.type.Type.INT)
+            giapi.StatusUtil.createStatusItem("ig2:sts:"+GEA_Items[GEA_PDU3_PWR], giapi.type.Type.INT)
+            giapi.StatusUtil.createStatusItem("ig2:sts:"+GEA_Items[GEA_PDU4_PWR], giapi.type.Type.INT)
+            giapi.StatusUtil.createStatusItem("ig2:sts:"+GEA_Items[GEA_PDU5_PWR], giapi.type.Type.INT)
+
+            self.log.send(self.iam, DEBUG, "ig2:sts:"+GEA_Items[GEA_PDU1_PWR])
+
             # create alarm items 
             for idx in range(GEA_COM_PDU, len(GEA_Items)):
                 cmd = "ig2:alm:" + GEA_Items[idx]            
                 giapi.StatusUtil.createAlarmStatusItem(cmd, giapi.type.Type.BOOLEAN)
                 print(cmd)
         
-            giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_BENCH], giapi.type.Type.BOOLEAN) 
-            giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_GRATING], giapi.type.Type.BOOLEAN) 
-            giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETS], giapi.type.Type.BOOLEAN) 
-            giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETK], giapi.type.Type.BOOLEAN) 
-            giapi.StatusUtil.createAlarmStatusItem("ig2:alm" + GEA_Items[GEA_DETH], giapi.type.Type.BOOLEAN) 
+            giapi.StatusUtil.createAlarmStatusItem("ig2:alm:" + GEA_Items[GEA_BENCH], giapi.type.Type.BOOLEAN) 
+            giapi.StatusUtil.createAlarmStatusItem("ig2:alm:" + GEA_Items[GEA_GRATING], giapi.type.Type.BOOLEAN) 
+            giapi.StatusUtil.createAlarmStatusItem("ig2:alm:" + GEA_Items[GEA_DETS], giapi.type.Type.BOOLEAN) 
+            giapi.StatusUtil.createAlarmStatusItem("ig2:alm:" + GEA_Items[GEA_DETK], giapi.type.Type.BOOLEAN) 
+            giapi.StatusUtil.createAlarmStatusItem("ig2:alm:" + GEA_Items[GEA_DETH], giapi.type.Type.BOOLEAN) 
             
             # create health items
             # FR for testiong TODO.revert
@@ -269,7 +278,7 @@ class uploader(threading.Thread):
             #self._handler = instDummy.InstStatusHandler.create(self._callbackStatus)
             
             #pStatus =  giapi.GeminiUtil.getChannel("tcs:sad:currentRA", 20)       
-            #print (f'The currentRA  is: {pStatus.getDataAsString(0)}') 
+            #print (f'The currentRA  is: {pStatus.getDataAsS/tring(0)}') 
 
             #giapi.GeminiUtil.subscribeEpicsStatus("tcs:sad:currentRA", self._handler)
             #giapi.GeminiUtil.subscribeEpicsStatus("tcs:sad:currentDec", self._handler)
@@ -908,6 +917,7 @@ class uploader(threading.Thread):
         if severity != giapi.alarm.Severity.ALARM_OK: 
             if not self.simul:
                 giapi.StatusUtil.setAlarm(cmd, severity, cause) 
+                giapi.StatusUtil.postStatus()
                         
             #add 20240105 
             if severity == giapi.alarm.Severity.ALARM_WARNING:
@@ -924,7 +934,8 @@ class uploader(threading.Thread):
         if not self.simul: 
             info = ["tcs:telescopeRA", "tcs:telescopeDec", "tcs:sad:currentRA",
                 "tcs:sad:currentDec", "tcs:sad:airMass", "tcs:sad:instrPA",
-                "tcs:sad:sourceAInputFrame.VAL", "tcs:sad:sourceAEpoch.VAL"]
+                "tcs:sad:sourceAInputFrame.VAL", "tcs:sad:sourceAEpoch.VAL", 
+                "ig2:gmp:heartbeat"]
             for idx in range(len(info)): 
                 for _ in range(3): 
                     try: 
@@ -954,6 +965,11 @@ class uploader(threading.Thread):
                         elif idx == 7: 
                             value = pStatus.getDataAsString(0) 
                             self.epoch = value
+                        elif idx == 8: 
+                            value = pStatus.getDataAsInt(0) 
+                            self.log.send(self.iam, INFO, f'gmp:heartbeat = {value} ')
+                            self.heartbeat_time[GMP] = ti.time()
+                            
                     
                         #print (f'The {info} is: {self.tel_ra}')
                         self.log.send(self.iam, INFO, f"The {info[idx]} is: {value}") 
@@ -1226,15 +1242,16 @@ class uploader(threading.Thread):
         #    if health[i] == giapi.health.Health.GOOD:       health[i] = 0
         #    elif health[i] == giapi.health.Health.WARNING:  health[i] = 1
         #    elif health[i] == giapi.health.Health.BAD:      health[i] = 2  
-        
+       
         # modify 20240215
         try:
-            msg = "%s %d %d %d %06d %d %d %d %d %d %d %d %d %.3f %d %d %.3f %d %d %.3f" % (IG2_HEALTH, health[HEALTH_IG2], 
+            msg = "%s %d %d %d %06d %d %d %d %d %d %d %d %d %.3f %d %d %.3f %d %d %.3f %d" % (IG2_HEALTH, health[HEALTH_IG2], 
                         health[HEALTH_ICS], state_ics, state_ics_detail, health[HEALTH_DCSS], state_dcss, 
                         health[HEALTH_DCSH], state_dcsh, health[HEALTH_DCSK], state_dcsk,
                         self.temp_sts_detS, self.temp_cause_detS, self.hk_list[GEA_DETS],    # temp S
                         self.temp_sts_detH, self.temp_cause_detH, self.hk_list[GEA_DETH],    # temp H
-                        self.temp_sts_detK, self.temp_cause_detK, self.hk_list[GEA_DETK])    # temp K
+                        self.temp_sts_detK, self.temp_cause_detK, self.hk_list[GEA_DETK],    # temp K
+                        self.alive[GMP])
             self.publish_to_queue(msg)
         except:
             msg = "publish fail"
@@ -1244,16 +1261,25 @@ class uploader(threading.Thread):
         # upload status items
         if not self.simul:
             for key, value in GEA_Items.items():
-                if key > 20:
+                if 20 < key < 26:
+                    continue
+                if key > 31:
                     break
+
                 cmd = "ig2:sts:" + value
             #  if key == 0:
             #      giapi.StatusUtil.setValueAsDouble(cmd, self.hk_list[key])
             #  else:
                 stalePrevention = random.uniform(0.000001, 0.000009)
-                giapi.StatusUtil.setValueAsFloat(cmd, self.hk_list[key] + stalePrevention)
-                msg = "Updating %s" % cmd
-                self.log.send(self.iam, DEBUG, msg)
+                if key <= 20:
+                    giapi.StatusUtil.setValueAsFloat(cmd, self.hk_list[key] + stalePrevention)
+                    msg = "Updating %s %f" % (cmd, self.hk_list[key])
+                elif 26 <= key <= 30:
+                    giapi.StatusUtil.setValueAsInt(cmd, int(self.hk_list[key]))
+                    msg = "Updating %s %d" % (cmd, int(self.hk_list[key]))
+
+                giapi.StatusUtil.postStatus()
+                self.log.send(self.iam, INFO, msg)
 
         threading.Timer(self.publish_interval, self.uploade_to_GEA).start()
         
