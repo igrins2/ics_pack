@@ -141,7 +141,7 @@ class Inst_Seq(threading.Thread):
         self.cur_expTime = 1.63
         
         # add 20240321 read MEF path
-        cfg_file ="/usr/local/share/gmp-server/conf/services/edu.gemini.aspen.gmp.services.properties.SimplePropertyHolder-default.cfg"
+        cfg_file ="/home/ics/gmp-server-0.2.6/conf/services/edu.gemini.aspen.gmp.services.properties.SimplePropertyHolder-default.cfg"
         with open(cfg_file) as f:
             for line in f:
                 if '=' in line:
