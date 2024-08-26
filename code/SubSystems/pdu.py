@@ -50,7 +50,6 @@ class pdu(threading.Thread) :
                 
         self.power_str = cfg.get(HK, "pdu-list").split(',')
         self.pow_flag = [OFF for _ in range(PDU_IDX)]
-        self.pow_flat_full = ""
         
         simul = strtobool(cfg.get(MAIN, "simulation"))
         if simul:
@@ -152,7 +151,7 @@ class pdu(threading.Thread) :
             self.log.send(self.iam, INFO, log)
             
             cmd = "DN0\r"   
-            self.pow_flat_full = self.power_status(cmd) 
+            self.power_status(cmd) 
                 
             self.log.send(self.iam, INFO, "powctr init is completed")
             
@@ -166,12 +165,8 @@ class pdu(threading.Thread) :
         
     
     def monit_power_status(self):
-        # change 20240720 by hliee
-        #pow_flag = self.power_status("DN0\r")
-        
-        self.pow_flat_full = self.power_status("DN0\r")
-        
-        msg = "%s %s" % (HK_REQ_PWR_STS, self.pow_flat_full)
+        pow_flag = self.power_status("DN0\r")
+        msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
         self.publish_to_queue(msg)
         
         #if self.comStatus:
@@ -290,25 +285,20 @@ class pdu(threading.Thread) :
                      
         try:                                  
             if param[0] == HK_REQ_PWR_STS:
-                # change 20240720 by hilee
-                #self.monit_power_status()
-                msg = "%s %s" % (HK_REQ_PWR_STS, self.pow_flat_full)
-                self.publish_to_queue(msg)
+                self.monit_power_status()
                 
             elif param[0] == HK_REQ_PWR_ONOFF_IDX:
-                self.pow_flat_full = self.change_power(int(param[1]), param[2]) 
-                
-                msg = "%s %s" % (HK_REQ_PWR_STS, self.pow_flat_full)
+                pow_flag = self.change_power(int(param[1]), param[2]) 
+                msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
                 self.publish_to_queue(msg)
                 
             elif param[0] == HK_REQ_PWR_ONOFF:
                 #print('CLI >> PDU', param)
                 for idx in range(PDU_IDX):
-                    self.change_power(idx+1, param[idx+1])
+                    pow_flag = self.change_power(idx+1, param[idx+1])
                     
-                #remove 20240720 by hilee   
-                #msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
-                #self.publish_to_queue(msg)
+                msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+                self.publish_to_queue(msg)
         
         except:
             self.log.send(self.iam, WARNING, "parsing error")
@@ -338,10 +328,7 @@ class pdu(threading.Thread) :
                                  
         try:                      
             if param[0] == HK_REQ_PWR_STS:
-                #change 20240720 by hilee
-                #self.monit_power_status()
-                msg = "%s %s" % (HK_REQ_PWR_STS, self.pow_flat_full)
-                self.publish_to_queue(msg)
+                self.monit_power_status()
                 
             #elif param[0] == HK_REQ_PWR_ONOFF_IDX:
             #    pow_flag = self.change_power(int(param[1]), param[2]) 
@@ -358,11 +345,10 @@ class pdu(threading.Thread) :
 
                 for idx in range(PDU_IDX):
                     if self.pow_flag[idx] != param[idx+1]:
-                        self.change_power(idx+1, param[idx+1])
-                
-                # remove 20240720 by hilee    
-                #msg = "%s %sdone" % (HK_REQ_PWR_STS, pow_flag)
-                #self.publish_to_queue(msg)
+                        pow_flag = self.change_power(idx+1, param[idx+1])
+                    
+                msg = "%s %sdone" % (HK_REQ_PWR_STS, pow_flag)
+                self.publish_to_queue(msg)
         except:
             self.log.send(self.iam, WARNING, "parsing error")
             
