@@ -229,7 +229,7 @@ class pdu(threading.Thread) :
         msg = " %s Button clicked"  % self.pow_flag[idx-1]
         self.log.send(self.iam, INFO, self.power_str[idx-1] + msg)
     
-        self.pow_flat_full = self.power_status(cmd)
+        return self.power_status(cmd)
             
     
     #-------------------------------
@@ -296,7 +296,7 @@ class pdu(threading.Thread) :
                 self.publish_to_queue(msg)
                 
             elif param[0] == HK_REQ_PWR_ONOFF_IDX:
-                self.change_power(int(param[1]), param[2]) 
+                self.pow_flat_full = self.change_power(int(param[1]), param[2]) 
                 
                 msg = "%s %s" % (HK_REQ_PWR_STS, self.pow_flat_full)
                 self.publish_to_queue(msg)
@@ -306,8 +306,9 @@ class pdu(threading.Thread) :
                 for idx in range(PDU_IDX):
                     self.change_power(idx+1, param[idx+1])
                     
-                msg = "%s %s" % (HK_REQ_PWR_STS, self.pow_flat_full)
-                self.publish_to_queue(msg)
+                #remove 20240720 by hilee   
+                #msg = "%s %s" % (HK_REQ_PWR_STS, pow_flag)
+                #self.publish_to_queue(msg)
         
         except:
             self.log.send(self.iam, WARNING, "parsing error")
@@ -359,8 +360,9 @@ class pdu(threading.Thread) :
                     if self.pow_flag[idx] != param[idx+1]:
                         self.change_power(idx+1, param[idx+1])
                 
-                msg = "%s %sdone" % (HK_REQ_PWR_STS, self.pow_flat_full)
-                self.publish_to_queue(msg)
+                # remove 20240720 by hilee    
+                #msg = "%s %sdone" % (HK_REQ_PWR_STS, pow_flag)
+                #self.publish_to_queue(msg)
         except:
             self.log.send(self.iam, WARNING, "parsing error")
             
