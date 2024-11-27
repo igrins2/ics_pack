@@ -782,6 +782,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         
     def QWidgetEditColor(self, widget, textcolor, bgcolor=None):
+        print('Edit', textcolor, bgcolor, ti.localtime())   #20240830 test
         if bgcolor == None:
             label = "QLineEdit {color:%s}" % textcolor
             widget.setStyleSheet(label)
@@ -791,6 +792,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         
     def QWidgetLabelColor(self, widget, textcolor, bgcolor=None):
+        print('Label', textcolor, bgcolor, ti.localtime())   #20240830 test
         if bgcolor == None:
             label = "QLabel {color:%s}" % textcolor
             widget.setStyleSheet(label)
@@ -800,6 +802,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             
             
     def QWidgetBtnColor(self, widget, textcolor, bgcolor=None):
+        print('Button', textcolor, bgcolor, ti.localtime())   #20240830 test
         if bgcolor == None:
             label = "QPushButton {color:%s}" % textcolor
             widget.setStyleSheet(label)

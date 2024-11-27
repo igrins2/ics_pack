@@ -621,7 +621,8 @@ class uploader(threading.Thread):
         except:
             self.log.send(self.iam, WARNING, "parsing error vm")
 
-        giapi.StatusUtil.postStatus()
+        if not self.simul:     #add 20240830
+            giapi.StatusUtil.postStatus()
             
             
         

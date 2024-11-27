@@ -764,11 +764,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
                 end_time = ti.strftime("%Y-%m-%d %H:%M:%S", ti.localtime())
                 self.label_prog_time[dc_idx].setText(self.label_prog_time[dc_idx].text() + " / " + end_time)
                             
-                #self.prog_timer[dc_idx].stop()
+                self.prog_timer[dc_idx].stop()  #add 20241010
                 self.cur_prog_step[dc_idx] = 100
                 #self.progressBar[dc_idx].setValue(self.cur_prog_step[dc_idx])           
 
-                #self.elapsed_timer[dc_idx].stop()
+                self.elapsed_timer[dc_idx].stop()   #add 20241010
 
                 self.measure_T[dc_idx] = float(param[1])
                 #print(dc_idx, self.measure_T[dc_idx])
