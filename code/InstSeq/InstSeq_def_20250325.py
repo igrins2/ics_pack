@@ -3,7 +3,7 @@
 """
 Created on Feb 10, 2023
 
-Modified on Mar 25, 2025
+Modified on Apr 25, 2024
 
 @author: hilee
 """
@@ -57,11 +57,6 @@ ACT_ENG = 6
 
 END_SEQ_MODE = "endsequence"
 
-#-------------------
-#add 20250325
-T_minExp_HK = 3.08 
-T_minExp_SVC = 1.63
-#-------------------
 T_br = 2
 T_minFowler = 0.168
 T_frame = 1.45479

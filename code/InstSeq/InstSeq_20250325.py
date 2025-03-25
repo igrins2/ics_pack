@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Mar 25, 2025
+Modified on Apr 28, 2024
 
 @author: hilee
 """
@@ -138,7 +138,7 @@ class Inst_Seq(threading.Thread):
         
         self.cur_ObsApp_taking = 0
                 
-        self.cur_expTime = T_minExp_HK #20250325
+        self.cur_expTime = 1.63
         
         # add 20240321 read MEF path
         cfg_file ="/usr/local/share/gmp-server/conf/services/edu.gemini.aspen.gmp.services.properties.SimplePropertyHolder-default.cfg"
@@ -431,7 +431,7 @@ class Inst_Seq(threading.Thread):
                         
                         if k == "ig2:dcs:expTime":
                             self.cur_expTime = float(keys.c_str())
-                            if self.cur_expTime < T_minExp_HK :     self.cur_expTime = T_minExp_HK        #20250325
+                            if self.cur_expTime < 1.63:     self.cur_expTime = 1.63
                             print(f'after asigned {self.cur_expTime}')
                         
                         elif k == "ig2:seq:state":  self.apply_mode = keys
@@ -448,7 +448,7 @@ class Inst_Seq(threading.Thread):
                     elif self.offset_p == 0 and self.offset_q == 0: self.frame_mode = "ON"
                     elif self.offset_p != 0 and self.offset_q != 0: self.frame_mode = "OFF"
                     setExpCmd=self.dcs_list[SVC]
-                    expTime=T_minExp_SVC    #20250325 
+                    expTime=1.63 
                     FS_number=1
                     if self.apply_mode == ACQ_MODE:
                         self.dcs_setparam[SVC] = False
@@ -1275,7 +1275,7 @@ class Inst_Seq(threading.Thread):
         
         
     # acq:SVC, sci:H_K, test:ALL
-    def set_exp(self, target, expTime=T_minExp_SVC, FS_number=1):   #modify 20250325
+    def set_exp(self, target, expTime=1.63, FS_number=1):  
         if target == self.dcs_list[SVC]:
             _fowlerTime = expTime - T_minFowler
             msg = "%s %s %d" % (CMD_SETFSPARAM_ICS, target, self.simulation_mode)

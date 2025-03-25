@@ -116,10 +116,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         self.e_mscale_max.setText("5000")
         
         for i in range(DCS_CNT):
-            if i == SVC:
-                self.e_exptime[i].setText(str(T_exp_SVC))
-            else:
-                self.e_exptime[i].setText(str(T_exp_HK))
+            self.e_exptime[i].setText(str(T_exp))
             self.e_FS_number[i].setText(str(self.N_fowler))
             self.e_repeat[i].setText("1")
 
@@ -131,7 +128,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.label_cur_num[i].setText("0 / 0")
                     
         for i in range(CAL_CNT):
-            self.cal_e_exptime[i].setText(str(T_exp_HK))
+            self.cal_e_exptime[i].setText(str(T_exp))
             self.cal_e_repeat[i].setText(str(self.N_fowler))
         
         self.label_utpos.setText("---")
@@ -871,9 +868,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         
         self.acquiring[dc_idx] = True  
         
-        #modify 20250325
-        #if self.cal_mode:
-        if self.cal_mode and dc_idx != SVC:
+        if self.cal_mode:
             show_cur_cnt = "%d / %s" % (self.cur_cnt[dc_idx], self.cal_e_repeat[self.cal_cur].text())
             self.e_repeat[dc_idx].setText(self.cal_e_repeat[self.cal_cur].text())
             self.e_exptime[dc_idx].setText(self.cal_e_exptime[self.cal_cur].text())
@@ -1362,16 +1357,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
         # calculation fowler number & exp time
         _expTime = float(self.e_exptime[dc_idx].text())
 
-        _exp = T_exp_HK
-        if dc_idx == SVC:
-            _exp = T_exp_SVC        
-
-        if _expTime < _exp:
-            msg = "Exp.Time should be more than %d." % _exp
+        if _expTime < T_exp:
+            msg = "Exp.Time should be more than %d." % T_exp
             QMessageBox.warning(self, WARNING, msg)
             self.log.send(self.iam, WARNING, msg)
 
-            self.e_exptime[dc_idx].setText(str(_exp))
+            self.e_exptime[dc_idx].setText(str(T_exp))
             self.N_fowler = 1
             
         else:
@@ -1580,12 +1571,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
         # calculation fowler number & exp time
         _expTime = float(self.cal_e_exptime[cal_cnt].text())
 
-        if _expTime < T_exp_HK:
-            msg = "Exp.Time should be more than %d." % T_exp_HK
+        if _expTime < T_exp:
+            msg = "Exp.Time should be more than %d." % T_exp
             QMessageBox.warning(self, WARNING, msg)
             self.log.send(self.iam, WARNING, msg)
 
-            self.cal_e_exptime[cal_cnt].setText(str(T_exp_HK))
+            self.cal_e_exptime[cal_cnt].setText(str(T_exp))
             self.N_fowler = 1
             
         else:

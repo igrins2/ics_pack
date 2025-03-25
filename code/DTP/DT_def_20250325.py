@@ -50,8 +50,7 @@ MODE_H = 3
 MODE_K = 4
 
 T_frame = 1.45479
-T_exp_SVC = 1.63
-T_exp_HK = 3.08
+T_exp = 1.63
 T_minFowler = 0.168
 T_br = 2
 N_fowler_max = 16
