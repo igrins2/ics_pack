@@ -3,7 +3,7 @@
 """
 Created on Jun 28, 2022
 
-Modified on Nov 15, 2023
+Modified on Mar 25, 2025
 
 @author: hilee
 """
@@ -1363,11 +1363,13 @@ class MainWindow(Ui_Dialog, QMainWindow):
         _expTime = float(self.e_exptime[dc_idx].text())
 
         _exp = T_exp_HK
+        _minFowler = T_minFowler_HK # add 20250325
         if dc_idx == SVC:
             _exp = T_exp_SVC        
+            _minFowler = T_minFowler    # add 20250325
 
         if _expTime < _exp:
-            msg = "Exp.Time should be more than %d." % _exp
+            msg = "Exp.Time should be more than %.2f" % _exp  # modify 20250325
             QMessageBox.warning(self, WARNING, msg)
             self.log.send(self.iam, WARNING, msg)
 
@@ -1375,16 +1377,18 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.N_fowler = 1
             
         else:
-            _max_fowler_number = int((_expTime - T_minFowler) / T_frame)
+            _max_fowler_number = int((_expTime - _minFowler) / T_frame)
             self.N_fowler = N_fowler_max
             while self.N_fowler > _max_fowler_number:
                 self.N_fowler //= 2
 
         self.e_FS_number[dc_idx].setText(str(self.N_fowler))            
 
-        if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
-            self.sync_apply_HK()
-        elif dc_idx == H and self.sel_mode == MODE_HK:
+        # modify 20250325
+        #if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
+        #    self.sync_apply_HK()
+        #el
+        if dc_idx == H and self.sel_mode == MODE_HK:
             self.sync_apply_K()
 
 
@@ -1396,10 +1400,12 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.log.send(self.iam, WARNING, msg)
             
             self.e_FS_number[dc_idx].setText(str(self.N_fowler))
-            
-        if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
-            self.sync_apply_HK()
-        elif dc_idx == H and self.sel_mode == MODE_HK:
+        
+        #modify 20250325    
+        #if dc_idx == SVC and self.sel_mode == MODE_WHOLE:
+        #    self.sync_apply_HK()
+        #el
+        if dc_idx == H and self.sel_mode == MODE_HK:
             self.sync_apply_K()
             
     
@@ -1581,7 +1587,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
         _expTime = float(self.cal_e_exptime[cal_cnt].text())
 
         if _expTime < T_exp_HK:
-            msg = "Exp.Time should be more than %d." % T_exp_HK
+            msg = "Exp.Time should be more than %.2f" % T_exp_HK  # modify 20250325
             QMessageBox.warning(self, WARNING, msg)
             self.log.send(self.iam, WARNING, msg)
 
@@ -1589,7 +1595,7 @@ class MainWindow(Ui_Dialog, QMainWindow):
             self.N_fowler = 1
             
         else:
-            _max_fowler_number = int((_expTime - T_minFowler) / T_frame)
+            _max_fowler_number = int((_expTime - T_minFowler_HK) / T_frame)     # modify 20250325
             self.N_fowler = N_fowler_max
             while self.N_fowler > _max_fowler_number:
                 self.N_fowler //= 2
@@ -1600,9 +1606,11 @@ class MainWindow(Ui_Dialog, QMainWindow):
         if self.sel_mode == MODE_HK or self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_K:   
             self.e_exptime[K].setText(self.cal_e_exptime[cal_cnt].text())
             self.e_FS_number[K].setText(str(self.N_fowler))            
-        if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_SVC:   
-            self.e_exptime[SVC].setText(self.cal_e_exptime[cal_cnt].text())
-            self.e_FS_number[SVC].setText(str(self.N_fowler))
+        
+        # remove 20250325
+        #if self.sel_mode == MODE_WHOLE or self.sel_mode == MODE_SVC:   
+        #    self.e_exptime[SVC].setText(self.cal_e_exptime[cal_cnt].text())
+        #    self.e_FS_number[SVC].setText(str(self.N_fowler))
             
             
     def cal_parking(self):

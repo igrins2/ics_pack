@@ -3,7 +3,7 @@
 """
 Created on Jun 28, 2022
 
-Modified on Aug 9, 2022
+Modified on Mar 25, 2025
 
 @author: hilee
 """
@@ -50,9 +50,14 @@ MODE_H = 3
 MODE_K = 4
 
 T_frame = 1.45479
+T_minFowler = 0.168
+#-------------------------------
+# modify 20250325
 T_exp_SVC = 1.63
 T_exp_HK = 3.08
-T_minFowler = 0.168
+T_minFowler_HK = T_minFowler + T_frame
+#-------------------------------
+
 T_br = 2
 N_fowler_max = 16
 

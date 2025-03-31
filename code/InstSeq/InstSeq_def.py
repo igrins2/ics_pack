@@ -63,8 +63,11 @@ T_minExp_HK = 3.08
 T_minExp_SVC = 1.63
 #-------------------
 T_br = 2
-T_minFowler = 0.168
 T_frame = 1.45479
+
+T_minFowler = 0.168
+T_minFowler_HK = T_minFowler + T_frame  #add 20250325
+
 N_fowler_max = 16
 #T_readout = {1:0.5, 2:2, 4:3.5, 8:4.5, 16:6.5}
 T_readout = {1:0.5, 2:1.5, 4:2.5, 8:3, 16:4}

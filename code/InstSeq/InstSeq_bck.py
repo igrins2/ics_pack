@@ -2,7 +2,7 @@
 """
 Created on Feb 15, 2023
 
-Modified on Mar 25, 2025
+Modified on Apr 28, 2024
 
 @author: hilee
 """
@@ -138,10 +138,10 @@ class Inst_Seq(threading.Thread):
         
         self.cur_ObsApp_taking = 0
                 
-        self.cur_expTime = T_minExp_HK #20250325
+        self.cur_expTime = 1.63
         
         # add 20240321 read MEF path
-        cfg_file ="/usr/local/share/gmp-server/conf/services/edu.gemini.aspen.gmp.services.properties.SimplePropertyHolder-default.cfg"
+        cfg_file ="/home/ics/gmp-server-0.2.6/conf/services/edu.gemini.aspen.gmp.services.properties.SimplePropertyHolder-default.cfg"
         with open(cfg_file) as f:
             for line in f:
                 if '=' in line:
@@ -403,9 +403,6 @@ class Inst_Seq(threading.Thread):
             # SequenceCommand.APPLY                       
             elif seq_cmd == giapi.command.SequenceCommand.APPLY:
                 
-                #20250124
-                self.stop_acquistion()
-
                 # add 20240425 if dc core shutdown, response error!!!
                 if not self.alive_dcs[SVC] or not self.alive_dcs[H] or not self.alive_dcs[K]:
                     sts = self.check_alive()
@@ -431,7 +428,7 @@ class Inst_Seq(threading.Thread):
                         
                         if k == "ig2:dcs:expTime":
                             self.cur_expTime = float(keys.c_str())
-                            if self.cur_expTime < T_minExp_HK :     self.cur_expTime = T_minExp_HK        #20250325
+                            if self.cur_expTime < 1.63:     self.cur_expTime = 1.63
                             print(f'after asigned {self.cur_expTime}')
                         
                         elif k == "ig2:seq:state":  self.apply_mode = keys
@@ -448,7 +445,7 @@ class Inst_Seq(threading.Thread):
                     elif self.offset_p == 0 and self.offset_q == 0: self.frame_mode = "ON"
                     elif self.offset_p != 0 and self.offset_q != 0: self.frame_mode = "OFF"
                     setExpCmd=self.dcs_list[SVC]
-                    expTime=T_minExp_SVC    #20250325 
+                    expTime=1.63 
                     FS_number=1
                     if self.apply_mode == ACQ_MODE:
                         self.dcs_setparam[SVC] = False
@@ -461,7 +458,7 @@ class Inst_Seq(threading.Thread):
                                                             
                         _exptime_sci = self.cur_expTime
                                 
-                        _max_fowler_number = int((_exptime_sci - T_minFowler_HK) / T_frame) #modify
+                        _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
                         _FS_number_sci = N_fowler_max
                         while _FS_number_sci > _max_fowler_number:
                             _FS_number_sci //= 2
@@ -483,7 +480,7 @@ class Inst_Seq(threading.Thread):
                         
                         _exptime_sci = self.cur_expTime                        
                                 
-                        _max_fowler_number = int((_exptime_sci - T_minFowler_HK) / T_frame) #20250325
+                        _max_fowler_number = int((_exptime_sci - T_minFowler) / T_frame)
                         _FS_number_sci = N_fowler_max
                         while _FS_number_sci > _max_fowler_number:
                             _FS_number_sci //= 2
@@ -1049,11 +1046,7 @@ class Inst_Seq(threading.Thread):
                 if self.cur_ObsApp_taking == 0 and self.acquiring[H] and self.acquiring[K]:     #add 20240105
                     #self.acquiring[SVC] = True # remove 20240424
                     ti.sleep(1) #for test
-
-                    # modify 20250222
-                    #self.start_acquisition(self.dcs_list[SVC])
-                    if self.obs_time_cur < self.obs_time-10:
-                        self.start_acquisition(self.dcs_list[SVC])
+                    self.start_acquisition(self.dcs_list[SVC])
             
         elif param[0] == CMD_STOPACQUISITION:
             if self.apply_mode == None or self.cur_action_id == 0: return
@@ -1275,7 +1268,7 @@ class Inst_Seq(threading.Thread):
         
         
     # acq:SVC, sci:H_K, test:ALL
-    def set_exp(self, target, expTime=T_minExp_SVC, FS_number=1):   #modify 20250325
+    def set_exp(self, target, expTime=1.63, FS_number=1):  
         if target == self.dcs_list[SVC]:
             _fowlerTime = expTime - T_minFowler
             msg = "%s %s %d" % (CMD_SETFSPARAM_ICS, target, self.simulation_mode)
